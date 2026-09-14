@@ -1,0 +1,4 @@
+package com.hub.synhub_backend.iam.domain.model.queries;
+
+public record GetUserByLeaderId(Long leaderId) {
+}
