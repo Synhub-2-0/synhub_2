@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.iam.domain.model.aggregates;
 
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import io.micrometer.common.lang.Nullable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -44,6 +45,9 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     @NotBlank
     @Size(max = 120)
     private String password;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<GroupProfile> groupProfiles;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
