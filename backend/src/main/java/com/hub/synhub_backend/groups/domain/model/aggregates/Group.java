@@ -14,6 +14,7 @@ import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.ImgUrl;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -39,25 +40,23 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     @NotNull
     private Integer memberCount;
 
-    @OneToMany(mappedBy = "group")
-    private List<GroupProfile> userProfiles;
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    private List<GroupProfile> userProfiles = new ArrayList<>();
 
     private Long leaderId;
 
-    public Group(String name, String description, String imgUrl, User leader, GroupCode code) {
+    public Group(String name, String description, String imgUrl, GroupCode code) {
         this.name = name;
         this.imgUrl = new ImgUrl(imgUrl);
         this.description = description;
         this.memberCount = 0;
         this.code = code;
-
-        this.userProfiles.add(new GroupProfile(leader, this, new Role(Roles.ROLE_LEADER)));
-        this.leaderId = leader.getId();
+        this.leaderId = 0L;
     }
 
     public User getLeader() {
         GroupProfile foundLeaderProfile = this.userProfiles.stream()
-                .filter(profile -> profile.getRole().getName() == Roles.ROLE_LEADER)
+                .filter(profile -> profile.getRole() == Roles.ROLE_LEADER)
                 .findFirst()
                 .orElse(null);
         if (foundLeaderProfile != null) {
@@ -71,10 +70,5 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
         this.name = command.name().isEmpty() ? this.name : command.name();
         this.description = command.description().isEmpty() ? this.description : command.description();
         this.imgUrl = command.imgUrl().isEmpty() ? this.imgUrl : new ImgUrl(command.imgUrl());
-    }
-
-    public void removeMember(Long memberId) {
-        this.userProfiles.removeIf(member -> member.getId().equals(memberId));
-        this.memberCount--;
     }
 }

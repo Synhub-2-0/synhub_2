@@ -1,6 +1,7 @@
 package com.hub.synhub_backend.requests.interfaces.rest;
 
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
+import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
@@ -33,12 +34,15 @@ public class RequestController {
 
     private final RequestCommandService requestCommandService;
     private final RequestQueryService requestQueryService;
-    private final TaskQueryService taskQueryService;
+    private final UserQueryService userQueryService;
 
-    public RequestController(RequestCommandService requestCommandService, RequestQueryService requestQueryService, TaskQueryService taskQueryService) {
+    public RequestController(
+            RequestCommandService requestCommandService,
+            RequestQueryService requestQueryService,
+            UserQueryService userQueryService) {
         this.requestCommandService = requestCommandService;
         this.requestQueryService = requestQueryService;
-        this.taskQueryService = taskQueryService;
+        this.userQueryService = userQueryService;
     }
 
     // TODO: Create a new request for a task

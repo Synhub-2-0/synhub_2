@@ -1,25 +1,39 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
+import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResource;
+import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateGroupCommandFromResourceAssembler;
+import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
+import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByCodeQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.GroupResourceFromEntityAssembler;
+import org.apache.coyote.Response;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "/api/v1/groups")
 @Tag(name = "Groups", description = "Group management API")
 public class GroupController {
     private final GroupQueryService groupQueryService;
+    private final GroupCommandService groupCommandService;
+    private final UserQueryService userQueryService;
 
-    public GroupController(GroupQueryService groupQueryService) {
+    public GroupController(
+            GroupQueryService groupQueryService,
+            UserQueryService userQueryService,
+            GroupCommandService groupCommandService
+            ) {
         this.groupQueryService = groupQueryService;
+        this.userQueryService = userQueryService;
+        this.groupCommandService = groupCommandService;
     }
 
     @GetMapping("/search")
@@ -32,5 +46,29 @@ public class GroupController {
         }
         var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group.get());
         return ResponseEntity.ok(groupResource);
+    }
+
+    @PostMapping()
+    @Operation(summary = "Create a new group", description = "Create a new group")
+    public ResponseEntity<GroupResource> createGroup(@RequestBody CreateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+        var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
+        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var user = userOpt.get();
+        var createGroupCommand = CreateGroupCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
+
+        var newGroupOpt = this.groupCommandService.handle(createGroupCommand);
+        if (newGroupOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        var newGroup = newGroupOpt.get();
+
+        var newGroupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(newGroup);
+
+        return ResponseEntity.ok(newGroupResource);
+
     }
 }

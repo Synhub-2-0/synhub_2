@@ -106,7 +106,7 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
             throw new IllegalArgumentException("User with id " + userToJoin.getId() + " is already in group with id " + group.getId());
         }
 
-        var newGroupProfile = new GroupProfile(userToJoin, group, new Role(Roles.ROLE_MEMBER));
+        var newGroupProfile = new GroupProfile(userToJoin, group, Roles.ROLE_MEMBER);
 
         userToJoin.getGroupProfiles().add(newGroupProfile);
         group.getUserProfiles().add(newGroupProfile);

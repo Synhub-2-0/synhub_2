@@ -47,7 +47,7 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     @Getter
     private List<GroupProfile> groupProfiles;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
