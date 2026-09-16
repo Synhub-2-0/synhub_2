@@ -11,7 +11,7 @@ public class ExternalTasksService {
         this.tasksContextFacade = tasksContextFacade;
     }
 
-    public void deleteTasksByMemberId(Long memberId) {
-        tasksContextFacade.deleteTasksByMemberId(memberId);
+    public void deleteTasksByUserIdAndGroupId(Long userId, Long groupId) {
+        tasksContextFacade.deleteTasksByUserIdAndGroupId(userId, groupId);
     }
 }

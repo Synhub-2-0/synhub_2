@@ -13,10 +13,8 @@ import com.hub.synhub_backend.groups.domain.model.commands.UpdateGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.ImgUrl;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
-import com.hub.synhub_backend.tasks.domain.model.aggregates.Member;
 
 import java.util.List;
-import java.util.Optional;
 
 @Entity
 @NoArgsConstructor
@@ -42,7 +40,9 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     private Integer memberCount;
 
     @OneToMany(mappedBy = "group")
-    private List<GroupProfile> memberProfiles;
+    private List<GroupProfile> userProfiles;
+
+    private Long leaderId;
 
     public Group(String name, String description, String imgUrl, User leader, GroupCode code) {
         this.name = name;
@@ -51,11 +51,12 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
         this.memberCount = 0;
         this.code = code;
 
-        this.memberProfiles.add(new GroupProfile(leader, this, new Role(Roles.ROLE_LEADER)));
+        this.userProfiles.add(new GroupProfile(leader, this, new Role(Roles.ROLE_LEADER)));
+        this.leaderId = leader.getId();
     }
 
     public User getLeader() {
-        GroupProfile foundLeaderProfile = this.memberProfiles.stream()
+        GroupProfile foundLeaderProfile = this.userProfiles.stream()
                 .filter(profile -> profile.getRole().getName() == Roles.ROLE_LEADER)
                 .findFirst()
                 .orElse(null);
@@ -73,7 +74,7 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     }
 
     public void removeMember(Long memberId) {
-        this.memberProfiles.removeIf(member -> member.getId().equals(memberId));
+        this.userProfiles.removeIf(member -> member.getId().equals(memberId));
         this.memberCount--;
     }
 }

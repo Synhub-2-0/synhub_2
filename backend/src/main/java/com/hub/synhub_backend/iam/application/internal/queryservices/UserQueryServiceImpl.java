@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.iam.application.internal.queryservices;
 
+import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
+import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.domain.model.queries.*;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
@@ -15,14 +17,19 @@ import java.util.Optional;
 @Service
 public class UserQueryServiceImpl implements UserQueryService {
   private final UserRepository userRepository;
+  private final GroupProfileRepository groupProfileRepository;
 
   /**
    * Constructor.
    *
    * @param userRepository {@link UserRepository} instance.
    */
-  public UserQueryServiceImpl(UserRepository userRepository) {
+  public UserQueryServiceImpl(
+          UserRepository userRepository,
+          GroupProfileRepository groupProfileRepository
+  ) {
     this.userRepository = userRepository;
+    this.groupProfileRepository = groupProfileRepository;
   }
 
   /**
@@ -58,30 +65,13 @@ public class UserQueryServiceImpl implements UserQueryService {
     return userRepository.findByUsername(query.username());
   }
 
-  /**
-   * This method is used to handle {@link GetUserByMemberId} query.
-   * @param query {@link GetUserByMemberId} instance.
-   * @return {@link Optional} of {@link User} instance.
-   * @see GetUserByMemberId
-   */
-  @Override
-  public Optional<User> handle(GetUserByMemberId query) {
-    return userRepository.findByMember_Id(query.memberId());
-  }
-
-  /**
-   * This method is used to handle {@link GetUserByLeaderId} query.
-   * @param query {@link GetUserByLeaderId} instance.
-   * @return {@link Optional} of {@link User} instance.
-   * @see GetUserByLeaderId
-   */
-  @Override
-  public Optional<User> handle(GetUserByLeaderId query) {
-    return userRepository.findByLeader_Id(query.leaderId());
-  }
-
   @Override
   public List<User> handle(GetUsersByGroupIdQuery query) {
-    return userRepository.findByMember_Group_Id(query.groupId());
+    var groupProfiles = this.groupProfileRepository.findByGroup_Id(query.groupId());
+    List<User> users = new java.util.ArrayList<>(List.of());
+    groupProfiles.forEach(groupProfile -> {
+      users.add(groupProfile.getUser());
+    });
+    return users;
   }
 }

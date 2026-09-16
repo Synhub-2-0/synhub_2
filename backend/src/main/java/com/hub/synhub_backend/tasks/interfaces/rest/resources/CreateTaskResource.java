@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 public record CreateTaskResource(
         String title,
         String description,
-        OffsetDateTime dueDate
+        OffsetDateTime dueDate,
+        Long userId,
+        Long groupId
 ) {
 }

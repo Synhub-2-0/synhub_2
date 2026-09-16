@@ -6,5 +6,5 @@ import java.util.Optional;
 
 public interface TasksContextFacade {
     Optional<Task> getTaskById(Long taskId);
-    void deleteTasksByMemberId(Long memberId);
+    void deleteTasksByUserIdAndGroupId(Long userId, Long groupId);
 }

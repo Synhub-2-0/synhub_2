@@ -7,6 +7,6 @@ public record UpdateTaskCommand(
         String title,
         String description,
         OffsetDateTime dueDate,
-        Long memberId
+        Long userId
 ) {
 }

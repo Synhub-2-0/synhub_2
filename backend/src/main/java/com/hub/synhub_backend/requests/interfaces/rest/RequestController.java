@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.requests.interfaces.rest;
 
+import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
@@ -12,9 +13,7 @@ import com.hub.synhub_backend.requests.interfaces.rest.resources.RequestResource
 import com.hub.synhub_backend.requests.interfaces.rest.transform.CreateRequestCommandFromResourceAssembler;
 import com.hub.synhub_backend.requests.interfaces.rest.transform.RequestResourceFromEntityAssembler;
 import com.hub.synhub_backend.requests.interfaces.rest.transform.UpdateRequestCommandFromResourceAssembler;
-import com.hub.synhub_backend.tasks.domain.model.queries.GetMemberByUsernameQuery;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTaskByIdQuery;
-import com.hub.synhub_backend.tasks.domain.services.MemberQueryService;
 import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,46 +33,19 @@ public class RequestController {
 
     private final RequestCommandService requestCommandService;
     private final RequestQueryService requestQueryService;
-    private final MemberQueryService memberQueryService;
     private final TaskQueryService taskQueryService;
 
-    public RequestController(RequestCommandService requestCommandService, RequestQueryService requestQueryService, MemberQueryService memberQueryService, TaskQueryService taskQueryService) {
+    public RequestController(RequestCommandService requestCommandService, RequestQueryService requestQueryService, TaskQueryService taskQueryService) {
         this.requestCommandService = requestCommandService;
         this.requestQueryService = requestQueryService;
-        this.memberQueryService = memberQueryService;
         this.taskQueryService = taskQueryService;
     }
 
+    // TODO: Create a new request for a task
     @PostMapping
     @Operation(summary = "Create a new request", description = "Create a new request")
     public ResponseEntity<RequestResource> createRequest(@PathVariable Long taskId, @RequestBody CreateRequestResource resource, @AuthenticationPrincipal UserDetails userDetails) {
-
-        String username = userDetails.getUsername();
-        var getMemberByUsernameQuery = new GetMemberByUsernameQuery(username);
-        var member = this.memberQueryService.handle(getMemberByUsernameQuery);
-        if(member.isEmpty()) return ResponseEntity.notFound().build();
-
-        var memberId = member.get().getId();
-
-        var getTaskByIdQuery = new GetTaskByIdQuery(taskId);
-        var optionalTask = this.taskQueryService.handle(getTaskByIdQuery);
-        if (optionalTask.isEmpty() || !optionalTask.get().getMember().getId().equals(memberId))
-            return ResponseEntity.badRequest().build();
-
-        var createRequestCommand = CreateRequestCommandFromResourceAssembler.toCommandFromResource(resource, taskId);
-        var requestId = requestCommandService.handle(createRequestCommand);
-
-        if(requestId.equals(0L))
-            return ResponseEntity.badRequest().build();
-
-        var getRequestByIdQuery = new GetRequestByIdQuery(requestId);
-        var optionalRequest = this.requestQueryService.handle(getRequestByIdQuery);
-
-        if (optionalRequest.isEmpty())
-            return ResponseEntity.badRequest().build();
-
-        var requestResource = RequestResourceFromEntityAssembler.toResourceFromEntity(optionalRequest.get());
-        return new ResponseEntity<>(requestResource, HttpStatus.CREATED);
+        return ResponseEntity.internalServerError().build();
     }
 
     @GetMapping

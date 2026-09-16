@@ -10,5 +10,5 @@ public interface TaskCommandService {
     Optional<Task> handle(UpdateTaskCommand command);
     void handle(DeleteTaskCommand command);
     Optional<Task> handle(UpdateTaskStatusCommand command);
-    void handle(DeleteTasksByMemberId command);
+    void handle(DeleteTasksByUserIdAndGroupIdCommand command);
 }

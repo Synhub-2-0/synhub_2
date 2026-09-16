@@ -5,13 +5,14 @@ import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface GroupRepository extends JpaRepository<Group, Long> {
 
-    Optional<Group> findByLeader_Id(Long leaderId);
-
+    List<Group> findByLeaderId(Long leaderId);
+    
     boolean existsByCode(GroupCode code);
 
     Optional<Group> findByCode(GroupCode code);

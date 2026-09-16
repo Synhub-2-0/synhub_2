@@ -9,7 +9,5 @@ public record UserResource(
         String surname,
         String imgUrl,
         String email,
-        UserLeaderResource leader,
-        UserMemberResource member,
         List<String> roles) {
 }

@@ -9,6 +9,5 @@ public interface GroupCommandService {
     Optional<Group> handle(CreateGroupCommand command);
     Optional<Group> handle(UpdateGroupCommand command);
     void handle(DeleteGroupCommand command);
-    void handle(RemoveMemberFromGroupCommand command);
-    void handle(LeaveGroupCommand command);
+    void handle(RemoveMemberUserFromGroupCommand command);
 }

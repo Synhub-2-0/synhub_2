@@ -1,17 +1,13 @@
 package com.hub.synhub_backend.iam.application.internal.commandservices;
 
-import com.hub.synhub_backend.iam.application.external.outboundedservices.ExternalLeaderService;
 import com.hub.synhub_backend.iam.application.internal.outboundservices.hashing.HashingService;
 import com.hub.synhub_backend.iam.application.internal.outboundservices.tokens.TokenService;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import com.hub.synhub_backend.iam.domain.model.commands.CreateUserLeaderCommand;
-import com.hub.synhub_backend.iam.domain.model.commands.CreateUserMemberCommand;
 import com.hub.synhub_backend.iam.domain.model.commands.SignInCommand;
 import com.hub.synhub_backend.iam.domain.model.commands.SignUpCommand;
 import com.hub.synhub_backend.iam.domain.services.UserCommandService;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
-import com.hub.synhub_backend.shared.application.external.outboundedservices.ExternalMemberService;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.stereotype.Service;
 
@@ -31,18 +27,13 @@ public class UserCommandServiceImpl implements UserCommandService {
   private final HashingService hashingService;
   private final TokenService tokenService;
 
-  private final ExternalMemberService externalMemberService;
-  private final ExternalLeaderService externalLeaderService;
-
   private final RoleRepository roleRepository;
 
   public UserCommandServiceImpl(UserRepository userRepository, HashingService hashingService,
-                                TokenService tokenService, ExternalMemberService externalMemberService, ExternalLeaderService externalLeaderService, RoleRepository roleRepository) {
+                                TokenService tokenService, RoleRepository roleRepository) {
     this.userRepository = userRepository;
     this.hashingService = hashingService;
     this.tokenService = tokenService;
-    this.externalMemberService = externalMemberService;
-    this.externalLeaderService = externalLeaderService;
     this.roleRepository = roleRepository;
   }
 
@@ -96,42 +87,5 @@ public class UserCommandServiceImpl implements UserCommandService {
             roles);
     userRepository.save(user);
     return userRepository.findByUsername(command.username());
-  }
-
-  @Override
-  public Optional<User> handle(CreateUserLeaderCommand command) {
-    var userId = command.userId();
-    if(userRepository.findById(userId).isEmpty()){
-        throw new RuntimeException("User not found");
-    }
-    var user = userRepository.findById(userId).get();
-    var leader = externalLeaderService.createUserLeader(command);
-    user.setLeader(leader.get());
-    leader.get().setUser(user);
-    try {
-      var updatedUser = userRepository.save(user);
-      return Optional.of(updatedUser);
-    } catch (Exception e) {
-        throw new RuntimeException("Failed to create user as leader: " + e.getMessage());
-    }
-  }
-
-  @Override
-  public Optional<User> handle(CreateUserMemberCommand command) {
-    var userId = command.userId();
-    if(userRepository.findById(userId).isEmpty()){
-        throw new RuntimeException("User not found");
-    }
-    var user = userRepository.findById(userId).get();
-    var member = externalMemberService.createUserMember(command);
-    user.setMember(member.get());
-    member.get().setUser(user);
-
-    try {
-      var updatedUser = userRepository.save(user);
-      return Optional.of(updatedUser);
-    } catch (Exception e) {
-        throw new RuntimeException("Failed to create user as member: " + e.getMessage());
-    }
   }
 }
