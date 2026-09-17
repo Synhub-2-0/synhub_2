@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateGroupCommandFromResourceAssembler;
@@ -17,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/v1/groups")
@@ -48,6 +52,24 @@ public class GroupController {
         return ResponseEntity.ok(groupResource);
     }
 
+    @GetMapping("/{groupId}")
+    @Operation(summary = "Get group by id", description = "Get group by id")
+    public ResponseEntity<GroupResource> getGroupById(@PathVariable Long groupId) {
+        var getGroupByIdQuery = new GetGroupByIdQuery(groupId);
+
+        var groupOpt = this.groupQueryService.handle(getGroupByIdQuery);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        var group = groupOpt.get();
+
+        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
+
+        return ResponseEntity.ok(groupResource);
+    }
+
     @PostMapping()
     @Operation(summary = "Create a new group", description = "Create a new group")
     public ResponseEntity<GroupResource> createGroup(@RequestBody CreateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
@@ -69,6 +91,5 @@ public class GroupController {
         var newGroupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(newGroup);
 
         return ResponseEntity.ok(newGroupResource);
-
     }
 }
