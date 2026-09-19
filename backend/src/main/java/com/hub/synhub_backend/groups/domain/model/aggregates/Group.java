@@ -1,9 +1,8 @@
 package com.hub.synhub_backend.groups.domain.model.aggregates;
 
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import com.hub.synhub_backend.iam.domain.model.entities.Role;
-import com.hub.synhub_backend.iam.domain.model.valueobjects.Roles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -56,7 +55,7 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
 
     public User getLeader() {
         GroupProfile foundLeaderProfile = this.userProfiles.stream()
-                .filter(profile -> profile.getRole() == Roles.ROLE_LEADER)
+                .filter(profile -> profile.getRoleInGroup() == GroupRole.GROUP_LEADER)
                 .findFirst()
                 .orElse(null);
         if (foundLeaderProfile != null) {

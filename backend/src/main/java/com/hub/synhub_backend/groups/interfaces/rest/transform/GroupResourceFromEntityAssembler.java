@@ -2,11 +2,6 @@ package com.hub.synhub_backend.groups.interfaces.rest.transform;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResource;
-import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import com.hub.synhub_backend.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class GroupResourceFromEntityAssembler {
     public static GroupResource toResourceFromEntity(Group group) {
@@ -19,7 +14,7 @@ public class GroupResourceFromEntityAssembler {
                 group.getDescription(),
                 group.getCode().code(),
                 group.getMemberCount(),
-                userProfiles.stream().map(profile -> UserInGroupResourceFromEntityAssembler.toResourceFromEntity(profile.getUser(), profile.getRole())).toList()
+                userProfiles.stream().map(profile -> UserInGroupResourceFromEntityAssembler.toResourceFromEntity(profile.getUser(), profile.getRoleInGroup())).toList()
         );
     }
 }

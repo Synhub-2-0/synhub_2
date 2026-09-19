@@ -1,7 +1,6 @@
 package com.hub.synhub_backend.iam.domain.model.valueobjects;
 
-public enum Roles {
+public enum AccountRole {
     ROLE_USER,
-    ROLE_LEADER,
-    ROLE_MEMBER
+    ROLE_ADMIN
 }

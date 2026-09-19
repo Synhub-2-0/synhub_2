@@ -6,12 +6,11 @@ import com.hub.synhub_backend.groups.domain.model.commands.CancelInvitationComma
 import com.hub.synhub_backend.groups.domain.model.commands.CreateInvitationCommand;
 import com.hub.synhub_backend.groups.domain.model.commands.RejectInvitationCommand;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.services.InvitationCommandService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
-import com.hub.synhub_backend.iam.domain.model.entities.Role;
-import com.hub.synhub_backend.iam.domain.model.valueobjects.Roles;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -106,7 +105,7 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
             throw new IllegalArgumentException("User with id " + userToJoin.getId() + " is already in group with id " + group.getId());
         }
 
-        var newGroupProfile = new GroupProfile(userToJoin, group, Roles.ROLE_MEMBER);
+        var newGroupProfile = new GroupProfile(userToJoin, group, GroupRole.GROUP_MEMBER);
 
         userToJoin.getGroupProfiles().add(newGroupProfile);
         group.getUserProfiles().add(newGroupProfile);

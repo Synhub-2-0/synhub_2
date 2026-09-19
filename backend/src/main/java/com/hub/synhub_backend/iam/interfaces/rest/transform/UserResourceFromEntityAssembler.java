@@ -6,7 +6,7 @@ import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
 
 public class UserResourceFromEntityAssembler {
   public static UserResource toResourceFromEntity(User user) {
-    var roles = user.getRoles().stream()
+    var roles = user.getAccountRoles().stream()
         .map(Role::getStringName)
         .toList();
     return new UserResource(

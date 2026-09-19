@@ -4,11 +4,10 @@ import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.commands.*;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
-import com.hub.synhub_backend.iam.domain.model.entities.Role;
-import com.hub.synhub_backend.iam.domain.model.valueobjects.Roles;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -53,7 +52,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             group.setCode(GroupCode.random());
         }
 
-        var newGroupProfile = new GroupProfile(leader, group, Roles.ROLE_LEADER);
+        var newGroupProfile = new GroupProfile(leader, group, GroupRole.GROUP_LEADER);
 
         leader.getGroupProfiles().add(newGroupProfile);
         group.getUserProfiles().add(newGroupProfile);
@@ -126,7 +125,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
 
         var groupProfile = groupProfileOpt.get();
 
-        if (groupProfile.getRole() == Roles.ROLE_LEADER) {
+        if (groupProfile.getRoleInGroup() == GroupRole.GROUP_LEADER) {
             throw new IllegalArgumentException("The leader cannot be removed from the group");
         }
 

@@ -9,6 +9,7 @@ public record SignUpResource(
         String imgUrl,
         String email,
         String password,
-        List<String> roles) {
+        List<String> accountRoles
+) {
 }
 

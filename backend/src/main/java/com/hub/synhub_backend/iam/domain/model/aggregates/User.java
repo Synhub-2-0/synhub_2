@@ -52,10 +52,10 @@ public class User extends AuditableAbstractAggregateRoot<User> {
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles;
+    private Set<Role> accountRoles;
 
     public User() {
-        this.roles = new HashSet<>();
+        this.accountRoles = new HashSet<>();
     }
     public User(String username,
                 String name,
@@ -69,7 +69,7 @@ public class User extends AuditableAbstractAggregateRoot<User> {
         this.imgUrl = imgUrl;
         this.email = email;
         this.password = password;
-        this.roles = new HashSet<>();
+        this.accountRoles = new HashSet<>();
     }
 
     public User(
@@ -79,7 +79,7 @@ public class User extends AuditableAbstractAggregateRoot<User> {
             String imgUrl,
             String email,
             String password,
-            List<Role> roles) {
+            List<Role> accountRoles) {
         this(
                 username,
                 name,
@@ -87,19 +87,19 @@ public class User extends AuditableAbstractAggregateRoot<User> {
                 imgUrl,
                 email,
                 password);
-        addRoles(roles);
+        addRoles(accountRoles);
     }
 
 
     public User addRole(Role role) {
-        this.roles.add(role);
+        this.accountRoles.add(role);
         return this;
     }
 
 
     public User addRoles(List<Role> roles) {
         var validatedRoleSet = Role.validateRoleSet(roles);
-        this.roles.addAll(validatedRoleSet);
+        this.accountRoles.addAll(validatedRoleSet);
         return this;
     }
 }
