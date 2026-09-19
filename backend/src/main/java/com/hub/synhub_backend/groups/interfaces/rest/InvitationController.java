@@ -1,7 +1,9 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
 import com.hub.synhub_backend.groups.domain.model.commands.AcceptInvitationCommand;
+import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.services.InvitationCommandService;
+import com.hub.synhub_backend.groups.domain.services.InvitationQueryService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateInvitationResource;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.InvitationResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateInvitationCommandFromResourceAssembler;
@@ -18,20 +20,25 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/invitations")
 @Tag(name = "Invitations", description = "Invitation Managements Endpoints")
 public class InvitationController {
     private static final Logger logger = LoggerFactory.getLogger(InvitationController.class);
     private final InvitationCommandService invitationCommandService;
+    private final InvitationQueryService invitationQueryService;
     private final UserQueryService userQueryService;
 
     public InvitationController(
             InvitationCommandService invitationCommandService,
-            UserQueryService userQueryService
+            UserQueryService userQueryService,
+            InvitationQueryService invitationQueryService
     ) {
         this.invitationCommandService = invitationCommandService;
         this.userQueryService = userQueryService;
+        this.invitationQueryService = invitationQueryService;
     }
 
     @PostMapping()
@@ -68,9 +75,22 @@ public class InvitationController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/user")
+    @Operation(summary = "Gets invitations towards the logged user", description = "Gets invitations towards the logged user")
+    public ResponseEntity<List<InvitationResource>> getUserInvitations(@AuthenticationPrincipal UserDetails userDetails) {
+        var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
+        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var user = userOpt.get();
+        var getInvitationsByUserIdQuery = new GetInvitationsByUserIdQuery(user.getId());
+        var invitations = this.invitationQueryService.handle(getInvitationsByUserIdQuery);
+        var invitationResources = invitations.stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity).toList();
+        return ResponseEntity.ok(invitationResources);
+    }
+
     // TODO: Get Invitations By Group
 
     // TODO: Cancel an Invitation
-
-    // TODO: Get All Invitations from a User
 }
