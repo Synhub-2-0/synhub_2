@@ -31,8 +31,8 @@ public class TaskQueryServiceImpl implements TaskQueryService {
     }
 
     @Override
-    public List<Task> handle(GetAllTasksByMemberId query) {
-        return this.taskRepository.findByMember_Id(query.memberId());
+    public List<Task> handle(GetAllTasksByUserId query) {
+        return this.taskRepository.findByProfile_User_Id(query.userId());
     }
 
     @Override
@@ -43,6 +43,6 @@ public class TaskQueryServiceImpl implements TaskQueryService {
 
     @Override
     public List<Task> handle(GetAllTasksByGroupIdQuery query) {
-        return taskRepository.findByGroup_Id(query.groupId());
+        return taskRepository.findByProfile_Group_Id(query.groupId());
     }
 }

@@ -6,6 +6,6 @@ public record UpdateTaskResource(
         String title,
         String description,
         OffsetDateTime dueDate,
-        Long memberId
+        Long userId
 ) {
 }

@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.With;
-import com.hub.synhub_backend.iam.domain.model.valueobjects.Roles;
+import com.hub.synhub_backend.iam.domain.model.valueobjects.AccountRole;
 
 import java.util.List;
 
@@ -20,9 +20,9 @@ public class Role {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private Roles name;
+    private AccountRole name;
 
-    public Role(Roles name) {
+    public Role(AccountRole name) {
         this.name = name;
     }
 
@@ -31,11 +31,11 @@ public class Role {
     }
 
     public static Role getDefaultRole() {
-        return new Role(Roles.ROLE_USER);
+        return new Role(AccountRole.ROLE_USER);
     }
 
     public static Role toRoleFromName(String name) {
-        return new Role(Roles.valueOf(name));
+        return new Role(AccountRole.valueOf(name));
     }
 
     public static List<Role> validateRoleSet(List<Role> roles) {

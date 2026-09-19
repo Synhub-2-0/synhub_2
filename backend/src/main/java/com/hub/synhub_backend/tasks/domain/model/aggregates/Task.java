@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.tasks.domain.model.aggregates;
 
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NonNull;
@@ -32,13 +34,8 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
 
     @Setter
     @ManyToOne
-    @JoinColumn(name = "member_id")
-    private Member member;
-
-    @Setter
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    private Group group;
+    @JoinColumn(name = "profile_id")
+    private GroupProfile profile;
 
     @Column(nullable = false)
     private Integer timesRearranged = 0;
@@ -122,19 +119,10 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     }
 
     public void updateTask(UpdateTaskCommand command) {
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateTask] Antes: status=%s, timesRearranged=%d\n", this.status, this.timesRearranged);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        if(command.title() != null && command.title() != "") {
+        if(command.title() != null && !command.title().isEmpty()) {
             this.title = command.title();
         }
-        if(command.description() != null && command.description() != "") {
+        if(command.description() != null && !command.description().isEmpty()) {
             this.description = command.description();
         }
         if(command.dueDate() != null) {
@@ -149,12 +137,5 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
                 }
             }
         }
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateTask] Después: status=%s, timesRearranged=%d, dueDate=%s\n", this.status, this.timesRearranged, this.dueDate);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
     }
 }

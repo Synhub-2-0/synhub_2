@@ -6,6 +6,7 @@ public record CreateTaskCommand(
         String title,
         String description,
         OffsetDateTime dueDate,
-        Long memberId
+        Long userId,
+        Long groupId
 ) {
 }

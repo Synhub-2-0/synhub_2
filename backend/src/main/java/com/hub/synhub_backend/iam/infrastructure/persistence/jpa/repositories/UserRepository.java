@@ -35,19 +35,5 @@ public interface UserRepository extends JpaRepository<User, Long>
    */
   boolean existsByEmail(String email);
 
-  /**
-   * This method is responsible for finding the user by member ID.
-   * @param memberId The member ID.
-   * @return The user object.
-   */
-  Optional<User> findByMember_Id(Long memberId);
 
-  /**
-   * This method is responsible for finding the user by leader ID.
-   * @param leaderId The leader ID.
-   * @return The user object.
-   */
-  Optional<User> findByLeader_Id(Long leaderId);
-
-  List<User> findByMember_Group_Id(Long groupId);
 }
