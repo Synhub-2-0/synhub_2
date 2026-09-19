@@ -5,6 +5,6 @@ import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
 public record InvitationResource(
         Long id,
         GroupResource group,
-        Long userId
+        UserResource user
 ) {
 }

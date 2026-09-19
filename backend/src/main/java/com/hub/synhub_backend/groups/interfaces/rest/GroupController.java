@@ -110,4 +110,17 @@ public class GroupController {
 
         return ResponseEntity.ok(groupResources);
     }
+
+    @PostMapping("/join")
+    @Operation(summary = "Join the logged user to a group by code", description = "Join the logged user to a group by code")
+    public ResponseEntity<GroupResource> joinGroupByCode(@RequestParam String code) {
+        var getGroupByCodeQuery = new GetGroupByCodeQuery(code);
+        var group = this.groupQueryService.handle(getGroupByCodeQuery);
+        if (group.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group.get());
+        return ResponseEntity.ok(groupResource);
+    }
 }
