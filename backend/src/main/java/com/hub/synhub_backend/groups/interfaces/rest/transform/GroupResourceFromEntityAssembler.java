@@ -10,16 +10,7 @@ import java.util.List;
 
 public class GroupResourceFromEntityAssembler {
     public static GroupResource toResourceFromEntity(Group group) {
-        List<User> usersInGroup = new ArrayList<>();
         var userProfiles = group.getUserProfiles();
-
-        System.out.println("Users Profiles In Group: " + userProfiles);
-        
-        userProfiles.forEach(groupProfile -> {
-            usersInGroup.add(groupProfile.getUser());
-        });
-
-        System.out.println("Users In Group: " + usersInGroup);
 
         return new GroupResource(
                 group.getId(),
@@ -28,7 +19,7 @@ public class GroupResourceFromEntityAssembler {
                 group.getDescription(),
                 group.getCode().code(),
                 group.getMemberCount(),
-                usersInGroup.stream().map(UserResourceFromEntityAssembler::toResourceFromEntity).toList()
+                userProfiles.stream().map(profile -> UserInGroupResourceFromEntityAssembler.toResourceFromEntity(profile.getUser(), profile.getRole())).toList()
         );
     }
 }

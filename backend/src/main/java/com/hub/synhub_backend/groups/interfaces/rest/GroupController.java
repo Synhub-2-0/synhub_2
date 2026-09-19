@@ -92,4 +92,22 @@ public class GroupController {
 
         return ResponseEntity.ok(newGroupResource);
     }
+
+    @GetMapping("/user")
+    @Operation(summary = "Get groups by logged user", description = "Get groups by logged user")
+    public ResponseEntity<List<GroupResource>> getGroupsByUserId(@AuthenticationPrincipal UserDetails userDetails) {
+        var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
+        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var user = userOpt.get();
+        var userId = user.getId();
+
+        var getGroupsByIdQuery = new GetGroupsByUserIdQuery(userId);
+        var groups = this.groupQueryService.handle(getGroupsByIdQuery);
+        var groupResources = groups.stream().map(GroupResourceFromEntityAssembler::toResourceFromEntity).toList();
+
+        return ResponseEntity.ok(groupResources);
+    }
 }

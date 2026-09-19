@@ -9,5 +9,6 @@ public record UserResource(
         String surname,
         String imgUrl,
         String email,
-        List<String> roles) {
+        List<String> roles
+) {
 }

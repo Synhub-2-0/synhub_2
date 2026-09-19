@@ -11,6 +11,6 @@ public record GroupResource(
         String description,
         String code,
         Integer memberCount,
-        List<UserResource> users
+        List<UserInGroupResource> users
 ) {
 }
