@@ -14,6 +14,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -77,28 +78,24 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
         this.invitationRepository.delete(invitation.get());
     }
 
-    private Invitation validateAndGetInvitation(Long invitationId, Long leaderId) {
-        var invitation = this.invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new IllegalArgumentException("Invitation with id " + invitationId + " does not exist"));
-        var leader = this.userRepository.findById(leaderId)
-                .orElseThrow(() -> new IllegalArgumentException("Leader with id " + leaderId + " does not exist"));
-        if (!invitation.getGroup().getLeader().getId().equals(leader.getId())) {
-            throw new IllegalArgumentException("User with id " + leaderId + " is not the owner of the invitation");
-        }
-        return invitation;
-    }
-
     @Override
     public void handle(RejectInvitationCommand command) {
-        var invitation = validateAndGetInvitation(command.invitationId(), command.leaderId());
+        var invitation = this.invitationRepository.findById(command.invitationId())
+                .orElseThrow(() -> new IllegalArgumentException("Invitation with id " + command.invitationId() + " does not exist"));
         this.invitationRepository.delete(invitation);
     }
 
     @Override
     public void handle(AcceptInvitationCommand command) {
-        var invitation = validateAndGetInvitation(command.invitationId(), command.leaderId());
+        var invitation = this.invitationRepository.findById(command.invitationId())
+                .orElseThrow(() -> new IllegalArgumentException("Invitation with id " + command.invitationId() + " does not exist"));
 
         var userToJoin = invitation.getUser();
+
+        if (!Objects.equals(command.userId(), userToJoin.getId())) {
+            throw new IllegalArgumentException("User with id " + command.userId() + " is not the owner of the invitation.");
+        }
+
         var group = invitation.getGroup();
 
         if (this.groupProfileRepository.existsByGroup_IdAndUser_Id(group.getId(), userToJoin.getId())) {
@@ -109,11 +106,9 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
 
         userToJoin.getGroupProfiles().add(newGroupProfile);
         group.getUserProfiles().add(newGroupProfile);
-        group.setMemberCount(group.getUserProfiles().size());
+        group.setMemberCount(group.getUserProfiles().size() + 1);
         this.userRepository.save(userToJoin);
         this.groupRepository.save(group);
-        this.groupProfileRepository.save(newGroupProfile);
-
         this.invitationRepository.delete(invitation);
     }
 }

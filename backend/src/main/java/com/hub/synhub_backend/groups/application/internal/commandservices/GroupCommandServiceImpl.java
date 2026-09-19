@@ -132,10 +132,9 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         try {
             user.getGroupProfiles().remove(groupProfile);
             group.getUserProfiles().remove(groupProfile);
-            group.setMemberCount(group.getUserProfiles().size());
+            group.setMemberCount(group.getUserProfiles().size() + 1);
             userRepository.save(user);
             groupRepository.save(group);
-            groupProfileRepository.save(groupProfile);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while removing member from group: " + e.getMessage());
         }

@@ -79,6 +79,7 @@ public class GroupController {
             return ResponseEntity.badRequest().build();
         }
         var user = userOpt.get();
+
         var createGroupCommand = CreateGroupCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
 
         var newGroupOpt = this.groupCommandService.handle(createGroupCommand);
