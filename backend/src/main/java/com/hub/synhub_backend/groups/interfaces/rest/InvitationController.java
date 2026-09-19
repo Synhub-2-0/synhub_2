@@ -1,6 +1,7 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
 import com.hub.synhub_backend.groups.domain.model.commands.AcceptInvitationCommand;
+import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByGroupIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.services.InvitationCommandService;
 import com.hub.synhub_backend.groups.domain.services.InvitationQueryService;
@@ -65,12 +66,7 @@ public class InvitationController {
         var user = userOpt.get();
 
         var acceptInvitationCommand = new AcceptInvitationCommand(user.getId(), invitationId);
-
-        try {
-            this.invitationCommandService.handle(acceptInvitationCommand);
-        } catch (Error error) {
-            return ResponseEntity.internalServerError().build();
-        }
+        this.invitationCommandService.handle(acceptInvitationCommand);
 
         return ResponseEntity.ok().build();
     }
@@ -90,7 +86,12 @@ public class InvitationController {
         return ResponseEntity.ok(invitationResources);
     }
 
-    // TODO: Get Invitations By Group
-
-    // TODO: Cancel an Invitation
+    @GetMapping("/group")
+    @Operation(summary = "Gets invitations by group id", description = "Gets invitations by group id")
+    public ResponseEntity<List<InvitationResource>> getInvitationsByGroup(@RequestParam Long groupId) {
+        var getInvitationsByGroupIdQuery = new GetInvitationsByGroupIdQuery(groupId);
+        var invitations = this.invitationQueryService.handle(getInvitationsByGroupIdQuery);
+        var invitationResources = invitations.stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity).toList();
+        return ResponseEntity.ok(invitationResources);
+    }
 }

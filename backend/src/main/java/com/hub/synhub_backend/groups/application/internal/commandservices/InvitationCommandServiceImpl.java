@@ -12,6 +12,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -52,6 +53,10 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
             throw new IllegalArgumentException("User with id " + command.userId() + " already has an invitation for group with id " + command.groupId());
         }
 
+        if (this.groupProfileRepository.existsByGroup_IdAndUser_Id(command.groupId(), command.userId())) {
+            throw new IllegalArgumentException("User with id " + command.userId() + " is already in group with id " + command.groupId());
+        }
+
         var createdInvitation = new Invitation(
                 user.get(),
                 group.get()
@@ -86,6 +91,7 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
     }
 
     @Override
+    @Transactional
     public void handle(AcceptInvitationCommand command) {
         var invitation = this.invitationRepository.findById(command.invitationId())
                 .orElseThrow(() -> new IllegalArgumentException("Invitation with id " + command.invitationId() + " does not exist"));
@@ -103,12 +109,10 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
         }
 
         var newGroupProfile = new GroupProfile(userToJoin, group, GroupRole.GROUP_MEMBER);
+        this.groupProfileRepository.save(newGroupProfile);
 
-        userToJoin.getGroupProfiles().add(newGroupProfile);
-        group.getUserProfiles().add(newGroupProfile);
-        group.setMemberCount(group.getUserProfiles().size() + 1);
-        this.userRepository.save(userToJoin);
-        this.groupRepository.save(group);
+        group.setMemberCount(group.getUserProfiles().size());
         this.invitationRepository.delete(invitation);
     }
 }
+
