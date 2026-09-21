@@ -1,8 +1,10 @@
 package com.hub.synhub_backend.groups.application.internal.commandservices;
 
+import com.hub.synhub_backend.groups.domain.exceptions.LeaderCannotBeRemovedException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.commands.*;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.groups.domain.exceptions.UserNotInGroupException;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
@@ -13,8 +15,6 @@ import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFound
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 public class GroupCommandServiceImpl implements GroupCommandService {
@@ -96,41 +96,22 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     @Override
     @Transactional
     public void handle(RemoveMemberUserFromGroupCommand command) {
+        var group = groupRepository.findById(command.groupId())
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
 
-        var groupOpt = groupRepository.findById(command.groupId());
+        var user = this.userRepository.findById(command.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
 
-        if (groupOpt.isEmpty()) {
-            throw new IllegalArgumentException("Group with id " + command.groupId() + " does not exist");
-        }
-
-        var userOpt = this.userRepository.findById(command.userId());
-
-        if (userOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " does not exist");
-        }
-
-        var group = groupOpt.get();
-        var user = userOpt.get();
-
-        var groupProfileOpt = this.groupProfileRepository.findByGroup_IdAndUser_Id(command.groupId(), command.userId());
-
-        if (groupProfileOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " is not in group with id " + command.groupId());
-        }
-
-        var groupProfile = groupProfileOpt.get();
+        var groupProfile = this.groupProfileRepository.findByGroup_IdAndUser_Id(command.groupId(), command.userId())
+                .orElseThrow(() -> new UserNotInGroupException("User with id " + command.userId() + " is not in group with id " + command.groupId()));
 
         if (groupProfile.getRoleInGroup() == GroupRole.GROUP_LEADER) {
-            throw new IllegalArgumentException("The leader cannot be removed from the group");
+            throw new LeaderCannotBeRemovedException("The leader cannot be removed from the group");
         }
 
-        try {
-            user.getGroupProfiles().remove(groupProfile);
-            group.getUserProfiles().remove(groupProfile);
-            userRepository.save(user);
-            groupRepository.save(group);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error while removing member from group: " + e.getMessage());
-        }
+        user.getGroupProfiles().remove(groupProfile);
+        group.getUserProfiles().remove(groupProfile);
+        userRepository.save(user);
+        groupRepository.save(group);
     }
 }
