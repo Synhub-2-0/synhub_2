@@ -12,6 +12,7 @@ import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.Us
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -33,36 +34,28 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     }
 
     @Override
-    public Optional<Group> handle(CreateGroupCommand command) {
-
+    @Transactional
+    public Group handle(CreateGroupCommand command) {
         var leaderOpt = userRepository.findById(command.leaderId());
-
         if (leaderOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.leaderId() + " does not exist");
+            throw new ResourceNotFoundException("User with id " + command.leaderId() + " does not exist");
         }
-
         var leader = leaderOpt.get();
-
         Group group = new Group(
                 command.name(),
                 command.description(),
                 command.imgUrl(),
                 GroupCode.random()
-                );
-
+        );
         while(groupRepository.existsByCode(group.getCode())) {
             group.setCode(GroupCode.random());
         }
-
         var newGroupProfile = new GroupProfile(leader, group, GroupRole.GROUP_LEADER);
-
         leader.getGroupProfiles().add(newGroupProfile);
         group.getUserProfiles().add(newGroupProfile);
-
         this.groupRepository.save(group);
         this.userRepository.save(leader);
-
-        return Optional.of(group);
+        return group;
     }
 
     @Override

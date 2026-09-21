@@ -6,7 +6,7 @@ import com.hub.synhub_backend.groups.domain.model.commands.*;
 import java.util.Optional;
 
 public interface GroupCommandService {
-    Optional<Group> handle(CreateGroupCommand command);
+    Group handle(CreateGroupCommand command);
     Optional<Group> handle(UpdateGroupCommand command);
     void handle(DeleteGroupCommand command);
     void handle(RemoveMemberUserFromGroupCommand command);
