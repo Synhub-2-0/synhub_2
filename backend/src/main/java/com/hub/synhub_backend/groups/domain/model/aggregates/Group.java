@@ -42,15 +42,12 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
     private List<GroupProfile> userProfiles = new ArrayList<>();
 
-    private Long leaderId;
-
     public Group(String name, String description, String imgUrl, GroupCode code) {
         this.name = name;
         this.imgUrl = new ImgUrl(imgUrl);
         this.description = description;
         this.memberCount = 0;
         this.code = code;
-        this.leaderId = 0L;
     }
 
     public User getLeader() {
