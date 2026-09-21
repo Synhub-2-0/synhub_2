@@ -8,6 +8,7 @@ import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResour
 import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateGroupCommandFromResourceAssembler;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByCodeQuery;
@@ -45,11 +46,9 @@ public class GroupController {
     @Operation(summary = "Search for a group by code", description = "Search for a group by code")
     public ResponseEntity<GroupResource> searchGroupByCode(@RequestParam String code) {
         var getGroupByCodeQuery = new GetGroupByCodeQuery(code);
-        var group = this.groupQueryService.handle(getGroupByCodeQuery);
-        if (group.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group.get());
+        var group = this.groupQueryService.handle(getGroupByCodeQuery)
+                .orElseThrow(() -> new ResourceNotFoundException("Group with code " + code + " does not exist"));
+        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
         return ResponseEntity.ok(groupResource);
     }
 
@@ -57,87 +56,44 @@ public class GroupController {
     @Operation(summary = "Get group by id", description = "Get group by id")
     public ResponseEntity<GroupResource> getGroupById(@PathVariable Long groupId) {
         var getGroupByIdQuery = new GetGroupByIdQuery(groupId);
-
-        var groupOpt = this.groupQueryService.handle(getGroupByIdQuery);
-
-        if (groupOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        var group = groupOpt.get();
-
+        var group = this.groupQueryService.handle(getGroupByIdQuery)
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + groupId + " does not exist"));
         var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
-
         return ResponseEntity.ok(groupResource);
     }
 
     @PostMapping()
     @Operation(summary = "Create a new group", description = "Create a new group")
     public ResponseEntity<GroupResource> createGroup(@RequestBody CreateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
-        var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
-        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        var user = userOpt.get();
-
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createGroupCommand = CreateGroupCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
-
         var newGroupOpt = this.groupCommandService.handle(createGroupCommand);
         if (newGroupOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
         var newGroup = newGroupOpt.get();
-
         var newGroupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(newGroup);
-
         return ResponseEntity.ok(newGroupResource);
     }
 
     @GetMapping("/user")
     @Operation(summary = "Get groups by logged user", description = "Get groups by logged user")
     public ResponseEntity<List<GroupResource>> getGroupsByUserId(@AuthenticationPrincipal UserDetails userDetails) {
-        var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
-        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        var user = userOpt.get();
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var userId = user.getId();
-
         var getGroupsByIdQuery = new GetGroupsByUserIdQuery(userId);
         var groups = this.groupQueryService.handle(getGroupsByIdQuery);
         var groupResources = groups.stream().map(GroupResourceFromEntityAssembler::toResourceFromEntity).toList();
-
         return ResponseEntity.ok(groupResources);
     }
 
     @DeleteMapping("/{groupId}")
-    @Operation(summary = "Delete a group by id", description = "Delete a group by id")
     public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
-        var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
-        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        var user = userOpt.get();
-
-        var getGroupByIdQuery = new GetGroupByIdQuery(groupId);
-        var groupOpt = this.groupQueryService.handle(getGroupByIdQuery);
-        if (groupOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        var group = groupOpt.get();
-
-        var leader = group.getLeader();
-        if (leader == null || !leader.getId().equals(user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        var deleteGroupCommand = new DeleteGroupCommand(groupId);
-        this.groupCommandService.handle(deleteGroupCommand);
-
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        this.groupCommandService.handle(new DeleteGroupCommand(groupId, user.getId()));
         return ResponseEntity.noContent().build();
     }
 }

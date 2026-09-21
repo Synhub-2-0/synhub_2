@@ -9,6 +9,8 @@ import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -86,17 +88,19 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     public void handle(DeleteGroupCommand command) {
         var groupOpt = groupRepository.findById(command.groupId());
 
-        if(groupOpt.isEmpty()) {
-            throw new IllegalArgumentException("Group with id " + command.groupId() + " does not exist");
+        if (groupOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist");
         }
 
         var group = groupOpt.get();
+        var leader = group.getLeader();
 
-        try {
-            groupRepository.delete(group);
-        }catch (Exception e) {
-            throw new IllegalArgumentException("Error while deleting group: " + e.getMessage());
+        if (leader == null || !leader.getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader can delete a group");
         }
+
+        groupRepository.delete(group);
+
     }
 
     @Override
