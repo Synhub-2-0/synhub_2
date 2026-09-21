@@ -36,9 +36,6 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     @Embedded
     private ImgUrl imgUrl;
 
-    @NotNull
-    private Integer memberCount;
-
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
     private List<GroupProfile> userProfiles = new ArrayList<>();
 
@@ -46,8 +43,11 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
         this.name = name;
         this.imgUrl = new ImgUrl(imgUrl);
         this.description = description;
-        this.memberCount = 0;
         this.code = code;
+    }
+
+    public int getMemberCount() {
+        return this.userProfiles.size();
     }
 
     public User getLeader() {

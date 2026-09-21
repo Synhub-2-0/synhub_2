@@ -74,6 +74,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     }
 
     @Override
+    @Transactional
     public void handle(DeleteGroupCommand command) {
         var groupOpt = groupRepository.findById(command.groupId());
 
@@ -93,6 +94,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     }
 
     @Override
+    @Transactional
     public void handle(RemoveMemberUserFromGroupCommand command) {
 
         var groupOpt = groupRepository.findById(command.groupId());
@@ -125,7 +127,6 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         try {
             user.getGroupProfiles().remove(groupProfile);
             group.getUserProfiles().remove(groupProfile);
-            group.setMemberCount(group.getUserProfiles().size() + 1);
             userRepository.save(user);
             groupRepository.save(group);
         } catch (Exception e) {
