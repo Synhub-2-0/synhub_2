@@ -5,9 +5,7 @@ import com.hub.synhub_backend.groups.interfaces.rest.resources.InvitationResourc
 import com.hub.synhub_backend.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
 
 public class InvitationResourceFromEntityAssembler {
-    public static InvitationResource toResourceFromEntity(
-            Invitation invitation
-    ) {
+    public static InvitationResource toResourceFromEntity(Invitation invitation) {
         return new InvitationResource(
                 invitation.getId(),
                 GroupResourceFromEntityAssembler.toResourceFromEntity(invitation.getGroup()),

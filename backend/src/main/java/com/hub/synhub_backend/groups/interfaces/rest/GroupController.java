@@ -5,7 +5,9 @@ import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResource;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.UpdateGroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateGroupCommandFromResourceAssembler;
+import com.hub.synhub_backend.groups.interfaces.rest.transform.UpdateGroupCommandFromResourceAssembler;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
@@ -83,6 +85,17 @@ public class GroupController {
         var groups = this.groupQueryService.handle(getGroupsByIdQuery);
         var groupResources = groups.stream().map(GroupResourceFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(groupResources);
+    }
+
+    @PutMapping("/{groupId}")
+    @Operation(summary = "Updates group details by id")
+    public ResponseEntity<GroupResource> updateGroup(@PathVariable Long groupId, @RequestBody UpdateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var updateGroupCommand = UpdateGroupCommandFromResourceAssembler.toCommandFromResource(resource, groupId, user.getId());
+        var group = this.groupCommandService.handle(updateGroupCommand);
+        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
+        return ResponseEntity.ok(groupResource);
     }
 
     @DeleteMapping("/{groupId}")
