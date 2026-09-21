@@ -110,8 +110,6 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
 
         var newGroupProfile = new GroupProfile(userToJoin, group, GroupRole.GROUP_MEMBER);
         this.groupProfileRepository.save(newGroupProfile);
-
-        group.setMemberCount(group.getUserProfiles().size());
         this.invitationRepository.delete(invitation);
     }
 }
