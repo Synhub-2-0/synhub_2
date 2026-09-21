@@ -39,6 +39,9 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
     private List<GroupProfile> userProfiles = new ArrayList<>();
 
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    private List<Invitation> invitations = new ArrayList<>();
+
     public Group(String name, String description, String imgUrl, GroupCode code) {
         this.name = name;
         this.imgUrl = new ImgUrl(imgUrl);
