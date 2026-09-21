@@ -96,7 +96,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         var leader = group.getLeader();
 
         if (leader == null || !leader.getId().equals(command.requesterId())) {
-            throw new AccessDeniedException("Only the leader can delete a group");
+            throw new AccessDeniedException("Only the leader of a group can delete it");
         }
 
         groupRepository.delete(group);
