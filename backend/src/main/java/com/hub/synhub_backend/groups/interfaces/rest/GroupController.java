@@ -68,11 +68,7 @@ public class GroupController {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createGroupCommand = CreateGroupCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
-        var newGroupOpt = this.groupCommandService.handle(createGroupCommand);
-        if (newGroupOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        var newGroup = newGroupOpt.get();
+        var newGroup = this.groupCommandService.handle(createGroupCommand);
         var newGroupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(newGroup);
         return ResponseEntity.ok(newGroupResource);
     }
@@ -93,7 +89,7 @@ public class GroupController {
     public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        this.groupCommandService.handle(new DeleteGroupCommand(groupId, user.getId()));
+        this.groupCommandService.handle(new DeleteGroupCommand(user.getId(), groupId));
         return ResponseEntity.noContent().build();
     }
 }

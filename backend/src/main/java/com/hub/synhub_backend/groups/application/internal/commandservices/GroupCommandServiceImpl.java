@@ -59,22 +59,18 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     }
 
     @Override
-    public Optional<Group> handle(UpdateGroupCommand command) {
-        var groupOpt = groupRepository.findById(command.groupId());
+    @Transactional
+    public Group handle(UpdateGroupCommand command) {
+        var group = groupRepository.findById(command.groupId())
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
 
-        if (groupOpt.isEmpty()) {
-            throw new IllegalArgumentException("Group with id " + command.groupId() + "does not exist");
+        var leader = group.getLeader();
+        if (leader == null || !leader.getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader can update the group");
         }
 
-        var groupToUpdate = groupOpt.get();
-        groupToUpdate.updateInformation(command);
-
-        try{
-            var updatedGroup = groupRepository.save(groupToUpdate);
-            return Optional.of(updatedGroup);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error while updating group: " + e.getMessage());
-        }
+        group.updateInformation(command);
+        return groupRepository.save(group);
     }
 
     @Override
