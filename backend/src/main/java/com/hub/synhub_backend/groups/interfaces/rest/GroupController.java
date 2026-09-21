@@ -86,6 +86,7 @@ public class GroupController {
     }
 
     @DeleteMapping("/{groupId}")
+    @Operation(summary = "Deletes a group by id", description = "Deletes a group by id")
     public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
