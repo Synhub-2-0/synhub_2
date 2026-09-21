@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
+import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
@@ -110,5 +111,33 @@ public class GroupController {
         var groupResources = groups.stream().map(GroupResourceFromEntityAssembler::toResourceFromEntity).toList();
 
         return ResponseEntity.ok(groupResources);
+    }
+
+    @DeleteMapping("/{groupId}")
+    @Operation(summary = "Delete a group by id", description = "Delete a group by id")
+    public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
+        var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
+        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var user = userOpt.get();
+
+        var getGroupByIdQuery = new GetGroupByIdQuery(groupId);
+        var groupOpt = this.groupQueryService.handle(getGroupByIdQuery);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        var group = groupOpt.get();
+
+        var leader = group.getLeader();
+        if (leader == null || !leader.getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        var deleteGroupCommand = new DeleteGroupCommand(groupId);
+        this.groupCommandService.handle(deleteGroupCommand);
+
+        return ResponseEntity.noContent().build();
     }
 }
