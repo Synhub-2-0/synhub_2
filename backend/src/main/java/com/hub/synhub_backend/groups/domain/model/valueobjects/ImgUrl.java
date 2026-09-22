@@ -6,7 +6,7 @@ import jakarta.persistence.Embeddable;
 public record ImgUrl(String imgUrl) {
     public ImgUrl {
         if (imgUrl == null || imgUrl.isBlank()) {
-            throw new IllegalArgumentException("Image URL cannot be null or blank");
+            imgUrl = "";
         }
     }
 }
