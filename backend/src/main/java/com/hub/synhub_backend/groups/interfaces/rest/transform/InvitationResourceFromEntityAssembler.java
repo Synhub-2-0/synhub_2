@@ -8,7 +8,7 @@ public class InvitationResourceFromEntityAssembler {
     public static InvitationResource toResourceFromEntity(Invitation invitation) {
         return new InvitationResource(
                 invitation.getId(),
-                GroupResourceFromEntityAssembler.toResourceFromEntity(invitation.getGroup()),
+                GroupResourceReducedFromEntityAssembler.toResourceFromEntity(invitation.getGroup()),
                 UserResourceFromEntityAssembler.toResourceFromEntity(invitation.getUser())
         );
     }

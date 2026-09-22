@@ -5,8 +5,10 @@ import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResource;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResourceReduced;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.UpdateGroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateGroupCommandFromResourceAssembler;
+import com.hub.synhub_backend.groups.interfaces.rest.transform.GroupResourceReducedFromEntityAssembler;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.UpdateGroupCommandFromResourceAssembler;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
@@ -17,8 +19,6 @@ import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByCodeQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.GroupResourceFromEntityAssembler;
-import org.apache.coyote.Response;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -77,13 +77,13 @@ public class GroupController {
 
     @GetMapping("/user")
     @Operation(summary = "Get groups by logged user", description = "Get groups by logged user")
-    public ResponseEntity<List<GroupResource>> getGroupsByUserId(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<GroupResourceReduced>> getGroupsByUserId(@AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var userId = user.getId();
         var getGroupsByIdQuery = new GetGroupsByUserIdQuery(userId);
         var groups = this.groupQueryService.handle(getGroupsByIdQuery);
-        var groupResources = groups.stream().map(GroupResourceFromEntityAssembler::toResourceFromEntity).toList();
+        var groupResources = groups.stream().map(GroupResourceReducedFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(groupResources);
     }
 

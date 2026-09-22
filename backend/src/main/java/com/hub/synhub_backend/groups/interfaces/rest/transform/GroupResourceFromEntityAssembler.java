@@ -13,7 +13,6 @@ public class GroupResourceFromEntityAssembler {
                 group.getImgUrl().imgUrl(),
                 group.getDescription(),
                 group.getCode().code(),
-                group.getMemberCount(),
                 userProfiles.stream().map(profile -> UserInGroupResourceFromEntityAssembler.toResourceFromEntity(profile.getUser(), profile.getRoleInGroup())).toList()
         );
     }

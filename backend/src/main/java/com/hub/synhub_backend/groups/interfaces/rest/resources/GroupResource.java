@@ -1,7 +1,5 @@
 package com.hub.synhub_backend.groups.interfaces.rest.resources;
 
-import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
-
 import java.util.List;
 
 public record GroupResource(
@@ -10,7 +8,6 @@ public record GroupResource(
         String imgUrl,
         String description,
         String code,
-        Integer memberCount,
-        List<UserInGroupResource> users
+        List<UserInGroupResource> usersInGroup
 ) {
 }
