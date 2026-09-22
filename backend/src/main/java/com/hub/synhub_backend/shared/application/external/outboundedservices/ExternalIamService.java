@@ -22,7 +22,7 @@ public class ExternalIamService {
         }
         var user = this.iamContextFacade.fetchUserById(userId);
         if (user.isEmpty()) {
-            throw new IllegalArgumentException("User not found for userId: " + userId);
+            throw new IllegalArgumentException("User not found for requesterId: " + userId);
         }
         return user;
     }
