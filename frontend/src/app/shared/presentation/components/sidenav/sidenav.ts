@@ -1,10 +1,10 @@
 import {Component, inject, Input, signal} from '@angular/core';
 import {MatSidenav, MatSidenavContainer, MatSidenavContent} from "@angular/material/sidenav";
 import {MatButton} from '@angular/material/button';
-import {FormsModule} from '@angular/forms';import {Router, RouterLink, RouterLinkActive} from '@angular/router';
+import {FormsModule} from '@angular/forms';
+import {Router, RouterLink, RouterLinkActive} from '@angular/router';
 import {IamStore} from '../../../../iam/application/iam.store';
 import {MatIcon} from '@angular/material/icon';
-import {MatPrefix} from '@angular/material/input';
 
 @Component({
   imports: [
@@ -14,7 +14,6 @@ import {MatPrefix} from '@angular/material/input';
     MatButton,
     FormsModule,
     MatIcon,
-    MatPrefix,
     RouterLink,
     RouterLinkActive
   ],
@@ -36,6 +35,10 @@ export class Sidenav {
 
   trackEvent(event: 'open!' | 'close!') {
     this.events.update(events => [...events, event]);
+  }
+
+  routeToLink(route: string) {
+    this.router.navigateByUrl(route).then();
   }
 
   performSignOut(){

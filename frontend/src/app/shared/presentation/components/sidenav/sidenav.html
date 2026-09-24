@@ -26,14 +26,9 @@
       <ul class="sidebar-list">
         @for (option of options; track option.label) {
           <li class="sidebar-item">
-            <a
-            class="sidebar-link"
-            [routerLink]="[option.link]"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }"
-            >
-            <mat-icon class="link-icon" [fontIcon]="option.icon" />
-            <span class="link-label">{{ option.label }}</span>
+            <a class="sidebar-link" (click)="routeToLink(option.link)" routerLinkActive="active">
+              <mat-icon class="link-icon" [fontIcon]="option.icon" />
+              <span class="link-label">{{ option.label }}</span>
             </a>
           </li>
         }
