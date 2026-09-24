@@ -7,8 +7,8 @@ export class BaseForm {
 
   private errorMessageForControl(controlName: string, errorKey: string): string {
     switch (errorKey) {
-      case 'required': return `The field ${controlName} is required.`;
-      default: return `The field ${controlName} is invalid.`;
+      case 'required': return `${controlName} es requerido.`;
+      default: return `${controlName} es inválido.`;
     }
   }
 
