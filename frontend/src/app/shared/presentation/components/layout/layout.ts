@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, signal} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {IamStore} from '../../../../iam/application/iam.store';
 import {Sidenav} from '../sidenav/sidenav';
@@ -18,4 +18,10 @@ export class Layout {
   isSignedIn() {
     return this.store.isSignedIn();
   }
+
+  options = signal([
+    {link: '/home', label: 'Menú', icon: 'home'},
+    {link: '/leader', label: 'Líder', icon: 'assignment_ind'},
+    {link: '/member', label: 'Miembro', icon: 'person'}
+  ])
 }
