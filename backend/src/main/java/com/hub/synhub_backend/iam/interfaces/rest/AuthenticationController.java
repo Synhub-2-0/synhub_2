@@ -49,9 +49,6 @@ public class AuthenticationController {
     var signInCommand = SignInCommandFromResourceAssembler
         .toCommandFromResource(signInResource);
     var authenticatedUser = userCommandService.handle(signInCommand);
-    if (authenticatedUser.isEmpty()) {
-      return ResponseEntity.notFound().build();
-    }
 
     var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler
         .toResourceFromEntity(
