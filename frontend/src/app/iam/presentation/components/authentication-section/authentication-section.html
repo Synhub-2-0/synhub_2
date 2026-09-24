@@ -1,7 +1,0 @@
-@if (store.isSignedIn()) {
-  <button mat-button>Bienvenido, {{ store.currentUsername() }}</button> |
-  <button mat-button (click)="performSignOut()">Cerrar Sesión</button>
-} @else {
-  <button mat-button (click)="performSignIn()">Iniciar Sesión</button> |
-  <button mat-button (click)="performSignUp()">Registrarse</button>
-}
