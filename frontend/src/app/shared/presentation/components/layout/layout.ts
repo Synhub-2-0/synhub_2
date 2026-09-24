@@ -1,16 +1,21 @@
-import {Component, signal} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
+import {IamStore} from '../../../../iam/application/iam.store';
+import {Sidenav} from '../sidenav/sidenav';
 
 @Component({
   imports: [
-    RouterOutlet
+    RouterOutlet,
+    Sidenav
   ],
   selector: 'app-layout',
   styleUrl: './layout.css',
   templateUrl: './layout.html',
 })
 export class Layout {
-  options = signal([
+  private store = inject(IamStore);
 
-  ])
+  isSignedIn() {
+    return this.store.isSignedIn();
+  }
 }

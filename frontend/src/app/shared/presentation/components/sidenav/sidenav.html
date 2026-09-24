@@ -1,0 +1,16 @@
+<mat-sidenav-container class="container">
+  <mat-sidenav #sidenav mode="over" [(opened)]="opened"
+               (opened)="trackEvent('open!')" (closed)="trackEvent('close!')">
+    <div class="flex items-center justify-center border-b-2 border-white py-5" @fadeInOut>
+      <img src="" alt="User Profile Picture" class="h-36 w-36 rounded-full object-cover" />
+    </div>
+
+    <button mat-button>Bienvenido, {{ store.currentUsername() }}</button> |
+    <button mat-button (click)="performSignOut()">Cerrar Sesión</button>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <button mat-button (click)="sidenav.toggle()">
+      <mat-icon fontIcon="menu"/>
+    </button>
+  </mat-sidenav-content>
+</mat-sidenav-container>
