@@ -1,1 +1,42 @@
-<p>sign-in-page works!</p>
+<div class="screen">
+  <div class = "login-container">
+    <div class = "logo-container">
+      <div style="display: flex; justify-content: center;">
+        <p style="font-size: 40px; font-weight: bold; color: #4A90E2;">Syn</p>
+        <p style="font-size: 40px; font-weight: bold;">Hub</p>
+      </div>
+      <img ngSrc="assets/images/synhub_logo.png" alt="Synhub Logo" class="synhub-logo" height="1403" width="586">
+    </div>
+    <div class="login-form">
+      <div class = "form">
+        <div style="display: flex; justify-content: center;">
+          <p style="font-size: 40px; font-weight: bold;">Bienvenido a Synhub</p>
+        </div>
+        <div style="height: 40px;"></div>
+
+        <form [formGroup]="form" (submit)="performSignIn()">
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Usuario</mat-label>
+            <mat-icon matPrefix style="color: #888;">person</mat-icon>
+            <input matInput formControlName="username" placeholder="Usuario" type="text" id="username" required>
+            @if (isInvalidControl(form, 'username')) {
+              <mat-error>{{ errorMessagesForControl(form,'username')}}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Contraseña</mat-label>
+            <mat-icon matPrefix style="color: #888;">lock</mat-icon>
+            <input matInput formControlName="password" placeholder="Contraseña" type="password" id="password" required>
+            @if (isInvalidControl(form, 'password')) {
+              <mat-error>{{ errorMessagesForControl(form,'password')}}</mat-error>
+            }
+          </mat-form-field>
+          <div class="button-container">
+            <button mat-raised-button color="primary" class="custom-button-1" type="submit" [disabled]="form.invalid">Iniciar Sesión</button>
+            <button mat-raised-button color="primary" class="custom-button-2" type="button" (click)="routeToSignUp()">Registrarse</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

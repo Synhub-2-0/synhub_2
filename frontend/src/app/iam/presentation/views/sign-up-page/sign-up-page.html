@@ -1,1 +1,85 @@
-<p>sign-up-page works!</p>
+<div class="register-screen">
+  <div class="register-container">
+    <div class="register-title">
+      <p>Registro</p>
+    </div>
+    <div class="register-form">
+      <form [formGroup]="form" (submit)="performSignUp()">
+        <div class="register-form-row">
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Nombre</mat-label>
+            <mat-icon matPrefix style="color: #888;">abc</mat-icon>
+            <input matInput formControlName="name" placeholder="Nombre" type="text" id="name" name="name" required>
+            @if (isInvalidControl(form, 'name')) {
+              <mat-error>{{errorMessagesForControl(form, 'name')}}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Apellido</mat-label>
+            <mat-icon matPrefix style="color: #888;">abc</mat-icon>
+            <input matInput formControlName="surname" placeholder="Apellido" type="text" id="surname" name="surname" required>
+            @if (isInvalidControl(form, 'surname')) {
+              <mat-error>{{errorMessagesForControl(form, 'surname')}}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Usuario</mat-label>
+            <mat-icon matPrefix style="color: #888;">person</mat-icon>
+            <input matInput formControlName="username" placeholder="Usuario" type="text" id="username" name="username" required>
+            @if (isInvalidControl(form, 'username')) {
+              <mat-error>{{errorMessagesForControl(form, 'username')}}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Correo Electrónico</mat-label>
+            <mat-icon matPrefix style="color: #888;">mail</mat-icon>
+            <input matInput formControlName="email" placeholder="Correo Electrónico" type="email" id="email" name="email" required>
+            @if (isInvalidControl(form, 'email')) {
+              <mat-error>{{errorMessagesForControl(form, 'email')}}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>URL de foto de perfil</mat-label>
+            <mat-icon matPrefix style="color: #888;">link</mat-icon>
+            <input matInput formControlName="imgUrl" placeholder="URL de foto de perfil" type="text" id="imgUrl" name="imgUrl">
+            @if (isInvalidControl(form, 'imgUrl')) {
+              <mat-error>{{errorMessagesForControl(form, 'imgUrl')}}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Contraseña</mat-label>
+            <mat-icon matPrefix style="color: #888;">lock</mat-icon>
+            <input matInput formControlName="password" placeholder="Contraseña" type="password" id="password" name="password" required>
+            @if (isInvalidControl(form, 'password')) {
+              <mat-error>{{ errorMessagesForControl(form,'password')}}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-form-field appearance="fill" class="custom-form-field full-width">
+            <mat-label>Repetir Contraseña</mat-label>
+            <mat-icon matPrefix style="color: #888;">lock</mat-icon>
+            <input matInput formControlName="confirmPassword" placeholder="Confirmar Contraseña" id="confirmPassword" name="confirmPassword" required>
+            @if (isInvalidControl(form, 'confirmPassword')) {
+              <mat-error>{{ errorMessagesForControl(form,'confirmPassword')}}</mat-error>
+            } @else if (form.hasError('passwordMismatch')) {
+              <mat-error>La contraseña no coincide.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="button-container">
+          <button mat-raised-button color="primary" class="sign-up-button" type="submit" [disabled]="form.invalid">Registrarse</button>
+          <button mat-raised-button color="primary" class="sign-in-button" type="button" (click)="routeToSignIn()">Iniciar Sesión</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

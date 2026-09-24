@@ -1,0 +1,106 @@
+.register-screen{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.register-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+
+  .register-title{
+    color: black;
+    font-size: 40px;
+    font-weight: bold;
+  }
+
+  .register-form{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 24px;
+
+    .register-form-row{
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+    }
+  }
+
+  .full-width {
+    width: 100%;
+  }
+}
+
+.sign-up-button{
+  background-color: #1976d2;
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.sign-in-button{
+  background-color: #ffffff;
+  color: #000000;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.button-container{
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+.toggle-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.role-toggle-group {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  justify-content: center;
+}
+
+.role-toggle-group .mat-button-toggle {
+  font-weight: bold;
+  font-size: 16px;
+  padding: 8px 24px;
+}
+
+.role-toggle-group .mat-button-toggle-checked {
+  background-color: #1976d2;
+  color: #fff;
+}
+
+.custom-form-field .mat-form-field-suffix {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.custom-form-field .mat-form-field-suffix button[mat-icon-button] {
+  margin-left: 6px;
+}
