@@ -8,25 +8,18 @@ import {SignUpCommand} from '../domain/model/sign-up.command';
 @Injectable({providedIn: 'root'})
 export class IamStore {
   private readonly isSignedInSignal = signal<boolean>(false);
-
   private readonly currentUsernameSignal = signal<string | null>(null);
-
   private readonly currentUserIdSignal = signal<number | null>(null);
-
   private readonly usersSignal = signal<Array<User>>([]);
 
   readonly isSignedIn = this.isSignedInSignal.asReadonly();
-
-  readonly loadingUsers = signal<boolean>(false);
-
-  readonly currentUsername = this.currentUsernameSignal.asReadonly();
-
-  readonly currentUserId = this.currentUserIdSignal.asReadonly();
-
-  readonly currentToken = computed(() => this.isSignedIn() ? localStorage.getItem('token') : null);
-
   readonly users = this.usersSignal.asReadonly();
 
+  readonly currentUsername = this.currentUsernameSignal.asReadonly();
+  readonly currentUserId = this.currentUserIdSignal.asReadonly();
+  readonly currentToken = computed(() => this.isSignedIn() ? localStorage.getItem('token') : null);
+
+  readonly loadingUsers = signal<boolean>(false);
   readonly isLoadingUsers = this.loadingUsers.asReadonly();
 
   constructor(private iamApi: IamApi) {
@@ -50,7 +43,7 @@ export class IamStore {
         this.isSignedInSignal.set(false);
         this.currentUsernameSignal.set(null);
         this.currentUserIdSignal.set(null);
-        router.navigate(['/sign-in']).then();
+        router.navigate(['/auth/sign-in']).then();
       }
     });
   }
@@ -59,14 +52,14 @@ export class IamStore {
     this.iamApi.signUp(signUpCommand).subscribe({
       next: (signUpResource) => {
         console.log('Sign-up successful:', signUpResource);
-        router.navigate(['/sign-in']).then();
+        router.navigate(['/auth/sign-in']).then();
       },
       error: (err) => {
         console.error('Sign-up failed:', err);
         this.isSignedInSignal.set(false);
         this.currentUsernameSignal.set(null);
         this.currentUserIdSignal.set(null);
-        router.navigate(['/sign-up']).then();
+        router.navigate(['/auth/sign-up']).then();
       }
     });
   }
@@ -76,11 +69,11 @@ export class IamStore {
     this.isSignedInSignal.set(false);
     this.currentUsernameSignal.set(null);
     this.currentUserIdSignal.set(null);
-    router.navigate(['/sign-in']).then();
+    router.navigate(['/auth/sign-in']).then();
   }
 
   loadUsers() {
     this.loadingUsers.set(true);
-    // TODO: Implement user loading logic
+    // TODO: Implement user loading logic when profile is implemented
   }
 }
