@@ -2,7 +2,7 @@
   <mat-sidenav
     #sidenav
     class="sidenav"
-    mode="over"
+    mode="side"
     [(opened)]="opened"
     (opened)="trackEvent('open!')"
     (closed)="trackEvent('close!')"
@@ -46,7 +46,7 @@
 
   <mat-sidenav-content>
     @if (store.isSignedIn()) {
-      <button mat-button (click)="sidenav.toggle()">
+      <button mat-button (click)="sidenav.toggle()" class="toggle-btn">
         <mat-icon fontIcon="menu" />
       </button>
     }
