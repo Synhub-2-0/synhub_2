@@ -3,6 +3,8 @@ package com.hub.synhub_backend.groups.interfaces.rest;
 import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserRoleQuery;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResourceReduced;
@@ -84,6 +86,17 @@ public class GroupController {
         var getGroupsByIdQuery = new GetGroupsByUserIdQuery(userId);
         var groups = this.groupQueryService.handle(getGroupsByIdQuery);
         var groupResources = groups.stream().map(GroupResourceReducedFromEntityAssembler::toResourceFromEntity).toList();
+        return ResponseEntity.ok(groupResources);
+    }
+
+    @GetMapping("/user/role")
+    @Operation(summary = "Get groups by the logged user's role",description = "Get groups by the logged user's role")
+    public ResponseEntity<List<GroupResource>> getGroupsByUserRole(@AuthenticationPrincipal UserDetails userDetails, @RequestParam GroupRole groupRole) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getGroupsByUserRoleQuery = new GetGroupsByUserRoleQuery(user.getId(), groupRole);
+        var groups = this.groupQueryService.handle(getGroupsByUserRoleQuery);
+        var groupResources = groups.stream().map(GroupResourceFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(groupResources);
     }
 

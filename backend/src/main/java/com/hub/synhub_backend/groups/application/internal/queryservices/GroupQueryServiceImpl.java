@@ -1,10 +1,7 @@
 package com.hub.synhub_backend.groups.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByCodeQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByLeaderIdQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.*;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
@@ -57,6 +54,17 @@ public class GroupQueryServiceImpl implements GroupQueryService {
         return this.groupRepository.findById(query.groupId());
     }
 
+    @Override
+    public List<Group> handle(GetGroupsByUserRoleQuery query) {
+        var groupProfiles = this.groupProfileRepository.findByUser_Id(query.requesterId())
+                .stream()
+                .filter(profile -> profile.getRoleInGroup() == query.role());
+        List<Group> groups = new java.util.ArrayList<>(List.of());
+        groupProfiles.forEach(groupProfile -> {
+            groups.add(groupProfile.getGroup());
+        });
+        return groups;
+    }
 
 
 }
