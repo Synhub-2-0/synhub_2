@@ -1,5 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {GroupCard} from '../group-card/group-card';
+import {Group} from '../../../domain/model/group.entity';
 
 @Component({
   imports: [
@@ -10,7 +11,5 @@ import {GroupCard} from '../group-card/group-card';
   templateUrl: './group-list.html',
 })
 export class GroupList {
-  @Input() groups: {
-    // Get groups
-  }[] = [];
+  @Input() groups: Group[] = [];
 }
