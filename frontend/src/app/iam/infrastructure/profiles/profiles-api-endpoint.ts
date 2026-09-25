@@ -8,7 +8,7 @@ import {catchError, map, Observable} from 'rxjs';
 
 const profilesApiEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderProfileEndpointPath}`;
 // TODO: Temp
-const usersApiEndpointUrl = `${environment.platformProviderApiBaseUrl}/api/v1/users`;
+const usersApiEndpointUrl = `${environment.platformProviderApiBaseUrl}/users`;
 
 export class ProfilesApiEndpoint extends BaseApiEndpoint<Profile, ProfileResource, ProfileResponse, ProfilesAssembler> {
   constructor(http: HttpClient) {

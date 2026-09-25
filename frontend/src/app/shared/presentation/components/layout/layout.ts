@@ -21,7 +21,7 @@ export class Layout {
 
   options = signal([
     {link: '/home', label: 'Menú', icon: 'home'},
-    {link: '/leader', label: 'Líder', icon: 'assignment_ind'},
-    {link: '/member', label: 'Miembro', icon: 'person'}
+    {link: '/groups/leader', label: 'Líder', icon: 'assignment_ind'},
+    {link: '/groups/member', label: 'Miembro', icon: 'person'}
   ])
 }

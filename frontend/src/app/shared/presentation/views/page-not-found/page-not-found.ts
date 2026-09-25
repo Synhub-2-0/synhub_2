@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, inject, OnInit, OnDestroy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatButton} from '@angular/material/button';
 
@@ -10,7 +10,7 @@ import {MatButton} from '@angular/material/button';
   styleUrl: './page-not-found.css',
   templateUrl: './page-not-found.html',
 })
-export class PageNotFound implements OnInit {
+export class PageNotFound implements OnInit, OnDestroy {
   protected invalidPath: string = '';
   private route: ActivatedRoute = inject(ActivatedRoute);
   private router: Router = inject(Router);
@@ -20,6 +20,7 @@ export class PageNotFound implements OnInit {
     this.invalidPath = this.route.snapshot.url.map(url => url.path).join('/');
     this.startCountdown();
   }
+
 
   ngOnDestroy() {
     if (this.countdownInterval) {
