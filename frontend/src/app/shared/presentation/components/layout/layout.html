@@ -2,7 +2,7 @@
   <mat-sidenav
     #sidenav
     class="sidenav"
-    mode="side"
+    mode="over"
     [(opened)]="opened"
     (opened)="trackEvent('open!')"
     (closed)="trackEvent('close!')"
@@ -45,11 +45,23 @@
   </mat-sidenav>
 
   <mat-sidenav-content>
-    @if (store.isSignedIn()) {
-      <button mat-button (click)="sidenav.toggle()" class="toggle-btn">
-        <mat-icon fontIcon="menu" />
-      </button>
-    }
-    <router-outlet/>
+    <div class="layout-shell">
+      @if (store.isSignedIn()) {
+        <nav class="icon-rail">
+          <button mat-icon-button (click)="sidenav.toggle()">
+            <mat-icon fontIcon="menu" style="color:#fff"/>
+          </button>
+          @for(option of options; track option.label) {
+            <button mat-icon-button [routerLink]="option.link" routerLinkActive="active">
+              <mat-icon fontIcon="{{ option.icon }}" style="color:#fff"/>
+            </button>
+          }
+        </nav>
+      }
+
+      <div class="main-content">
+        <router-outlet/>
+      </div>
+    </div>
   </mat-sidenav-content>
 </mat-sidenav-container>
