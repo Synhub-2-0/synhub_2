@@ -7,5 +7,5 @@ const baseTitle = 'SynHub'
 
 export const routes: Routes = [
   { path: 'home', component: Home, title: `${baseTitle} - Home`, canActivate: [iamGuard]},
-  { path: 'auth', loadChildren: iamRoutes}
+  { path: 'auth', loadChildren: iamRoutes, title: `${baseTitle}`}
 ];
