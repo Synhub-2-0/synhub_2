@@ -1,5 +1,5 @@
 import {BaseResource, BaseResponse} from '../../shared/infrastructure/base-response';
-import {UserResource} from '../../iam/infrastructure/users.response';
+import {ProfileResource} from '../../iam/infrastructure/profiles/profiles-response';
 
 export interface GroupResource extends BaseResource {
   id: number;
@@ -11,8 +11,7 @@ export interface GroupResource extends BaseResource {
 }
 
 export interface GroupUsersResource {
-  user: UserResource;
-  //user: ProfileResource;
+  user: ProfileResource;
   roleInGroup: string;
 }
 

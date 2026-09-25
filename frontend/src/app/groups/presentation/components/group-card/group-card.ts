@@ -1,4 +1,5 @@
 import {Component, Input} from '@angular/core';
+import {Group} from '../../../domain/model/group.entity';
 
 @Component({
   imports: [],
@@ -8,5 +9,5 @@ import {Component, Input} from '@angular/core';
 })
 export class GroupCard {
   // TODO: Build group entity
-    @Input() groupInfo: {} = undefined;
+    @Input() groupInfo: Group | null = null;
 }

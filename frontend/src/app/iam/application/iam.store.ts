@@ -4,12 +4,14 @@ import {SignInCommand} from '../domain/model/sign-in.command';
 import {Router} from '@angular/router';
 import {IamApi} from '../infrastructure/iam-api';
 import {SignUpCommand} from '../domain/model/sign-up.command';
+import {Profile} from '../domain/model/profile.entity';
 
 @Injectable({providedIn: 'root'})
 export class IamStore {
   private readonly isSignedInSignal = signal<boolean>(false);
   private readonly currentUsernameSignal = signal<string | null>(null);
   private readonly currentUserIdSignal = signal<number | null>(null);
+  private readonly currentProfileSignal = signal<Profile | null>(null);
   private readonly usersSignal = signal<Array<User>>([]);
 
   readonly isSignedIn = this.isSignedInSignal.asReadonly();
@@ -17,6 +19,7 @@ export class IamStore {
 
   readonly currentUsername = this.currentUsernameSignal.asReadonly();
   readonly currentUserId = this.currentUserIdSignal.asReadonly();
+  readonly currentProfile = this.currentProfileSignal.asReadonly();
   readonly currentToken = computed(() => this.isSignedIn() ? localStorage.getItem('token') : null);
 
   readonly loadingUsers = signal<boolean>(false);
@@ -36,6 +39,17 @@ export class IamStore {
         this.isSignedInSignal.set(true);
         this.currentUsernameSignal.set(signInResource.username);
         this.currentUserIdSignal.set(signInResource.id);
+
+        this.iamApi.getProfileByUserId(signInResource.id).subscribe({
+          next: (profile) => {
+            this.currentProfileSignal.set(profile);
+          },
+          error: (err) => {
+            console.error('Failed to load profile:', err);
+            this.currentProfileSignal.set(null);
+          }
+        });
+
         router.navigate(['/home']).then();
       },
       error: (err) => {
@@ -59,6 +73,7 @@ export class IamStore {
         this.isSignedInSignal.set(false);
         this.currentUsernameSignal.set(null);
         this.currentUserIdSignal.set(null);
+        this.currentProfileSignal.set(null);
         router.navigate(['/auth/sign-up']).then();
       }
     });
@@ -69,6 +84,7 @@ export class IamStore {
     this.isSignedInSignal.set(false);
     this.currentUsernameSignal.set(null);
     this.currentUserIdSignal.set(null);
+    this.currentProfileSignal.set(null);
     router.navigate(['/auth/sign-in']).then();
   }
 
