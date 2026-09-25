@@ -1,4 +1,67 @@
-@if (isSignedIn()) {
-  <app-sidenav [options]="options()"/>
-}
-<router-outlet/>
+<mat-sidenav-container class="container">
+  <mat-sidenav
+    #sidenav
+    class="sidenav"
+    mode="over"
+    [(opened)]="opened"
+    (opened)="trackEvent('open!')"
+    (closed)="trackEvent('close!')"
+  >
+    <div class="sidenav-content">
+      <!-- Logo + username + close -->
+      <div class="sidenav-header">
+        <div class="logo">S</div>
+        <div class="username">{{ store.currentUsername() }}</div>
+        <button type="button" class="close-button" aria-label="Cerrar menú" (click)="sidenav.close()">
+          <mat-icon fontIcon="close" />
+        </button>
+      </div>
+
+      <!-- Profile picture -->
+      <div class="profile">
+        <img [src]="avatarSrc()" (error)="onAvatarError()" alt="User Profile Picture" />
+      </div>
+
+      <!-- Navigation -->
+      <ul class="sidebar-list">
+        @for (option of options; track option.label) {
+          <li class="sidebar-item">
+            <a class="sidebar-link" [routerLink]="option.link" routerLinkActive="active">
+              <mat-icon class="link-icon" [fontIcon]="option.icon" />
+              <span class="link-label">{{ option.label }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+
+      <!-- Sign out -->
+      <div class="sidenav-footer">
+        <button type="button" class="sidebar-link" (click)="performSignOut()">
+          <mat-icon class="link-icon" fontIcon="logout" />
+          <span class="link-label">Cerrar Sesión</span>
+        </button>
+      </div>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <div class="layout-shell">
+      @if (store.isSignedIn()) {
+        <nav class="icon-rail">
+          <button mat-icon-button (click)="sidenav.toggle()">
+            <mat-icon fontIcon="menu" style="color:#fff"/>
+          </button>
+          @for(option of options; track option.label) {
+            <button mat-icon-button [routerLink]="option.link" routerLinkActive="active">
+              <mat-icon fontIcon="{{ option.icon }}" style="color:#fff"/>
+            </button>
+          }
+        </nav>
+      }
+
+      <div class="main-content">
+        <router-outlet/>
+      </div>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Sidenav } from './sidenav';
+import { NoGroupLeader } from './no-group-leader';
 
-describe('Sidenav', () => {
-  let component: Sidenav;
-  let fixture: ComponentFixture<Sidenav>;
+describe('NoGroupLeader', () => {
+  let component: NoGroupLeader;
+  let fixture: ComponentFixture<NoGroupLeader>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Sidenav],
+      imports: [NoGroupLeader],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Sidenav);
+    fixture = TestBed.createComponent(NoGroupLeader);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
