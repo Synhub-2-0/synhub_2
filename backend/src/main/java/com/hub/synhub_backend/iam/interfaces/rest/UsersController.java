@@ -1,6 +1,7 @@
 package com.hub.synhub_backend.iam.interfaces.rest;
 
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.iam.domain.model.queries.GetAllUsersQuery;
@@ -10,6 +11,8 @@ import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
 import com.hub.synhub_backend.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,6 +49,14 @@ public class UsersController {
         .map(UserResourceFromEntityAssembler::toResourceFromEntity)
         .toList();
     return ResponseEntity.ok(userResources);
+  }
+
+  @GetMapping("/me")
+  public ResponseEntity<UserResource> me(@AuthenticationPrincipal UserDetails userDetails) {
+    var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+    return ResponseEntity.ok(userResource);
   }
 
   /**
