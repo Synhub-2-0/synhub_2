@@ -7,6 +7,8 @@ import {HttpClient} from '@angular/common/http';
 import {catchError, map, Observable} from 'rxjs';
 
 const profilesApiEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderProfileEndpointPath}`;
+// TODO: Temp
+const usersApiEndpointUrl = `${environment.platformProviderApiBaseUrl}/api/v1/users`;
 
 export class ProfilesApiEndpoint extends BaseApiEndpoint<Profile, ProfileResource, ProfileResponse, ProfilesAssembler> {
   constructor(http: HttpClient) {
@@ -14,7 +16,7 @@ export class ProfilesApiEndpoint extends BaseApiEndpoint<Profile, ProfileResourc
   }
 
   getByUserId(userId: number): Observable<Profile> {
-    return this.http.get<ProfileResource>(`${profilesApiEndpointUrl}/users/${userId}`).pipe(
+    return this.http.get<ProfileResource>(`${usersApiEndpointUrl}/${userId}`).pipe(
       map(resource => this.assembler.toEntityFromResource(resource)),
       catchError(this.handleError('Failed to fetch profile by the provided user'))
     );

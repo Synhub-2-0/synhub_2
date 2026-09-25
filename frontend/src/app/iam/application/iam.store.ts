@@ -39,6 +39,17 @@ export class IamStore {
         this.isSignedInSignal.set(true);
         this.currentUsernameSignal.set(signInResource.username);
         this.currentUserIdSignal.set(signInResource.id);
+
+        this.iamApi.getProfileByUserId(signInResource.id).subscribe({
+          next: (profile) => {
+            this.currentProfileSignal.set(profile);
+          },
+          error: (err) => {
+            console.error('Failed to load profile:', err);
+            this.currentProfileSignal.set(null);
+          }
+        });
+
         router.navigate(['/home']).then();
       },
       error: (err) => {
