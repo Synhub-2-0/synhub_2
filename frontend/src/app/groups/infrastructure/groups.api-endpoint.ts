@@ -21,4 +21,11 @@ export class GroupsApiEndpoint extends BaseApiEndpoint<Group, GroupResource, Gro
       catchError(this.handleError('Failed to fetch groups for the current user'))
     );
   }
+
+  getGroupsByUserGroupRole(role: string): Observable<Group[]> {
+    return this.http.get<GroupResource[]>(`${groupsEndpointUrl}/user/role?groupRole=${role}`).pipe(
+      map(resources => resources.map(resource => this.assembler.toEntityFromResource(resource))),
+      catchError(this.handleError(`Failed to fetch groups for the current user with role ${role}`))
+    );
+  }
 }
