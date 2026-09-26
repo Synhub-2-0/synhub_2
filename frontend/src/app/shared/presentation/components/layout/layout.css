@@ -23,7 +23,7 @@
 
 .main-content {
   flex: 1 1 auto;
-  min-width: 0;           // prevents flex overflow issues with router content
+  min-width: 0;
 overflow: auto;
   height: 100%;
 }

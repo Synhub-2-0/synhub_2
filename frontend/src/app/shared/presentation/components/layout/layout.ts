@@ -9,7 +9,6 @@ const DEFAULT_AVATAR = 'default-avatar.jpg';
 
 @Component({
   imports: [
-    MatButton,
     MatIcon,
     MatSidenav,
     MatSidenavContainer,
