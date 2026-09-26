@@ -1,6 +1,6 @@
 import {computed, Injectable, Signal, signal} from '@angular/core';
 import {Group} from '../domain/model/group.entity';
-import {GroupsApi} from '../infrastructure/groups-api';
+import {GroupsApi} from '../infrastructure/groups.api';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {retry} from 'rxjs';
 
