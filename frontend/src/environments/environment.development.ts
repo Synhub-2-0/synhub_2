@@ -6,5 +6,7 @@ export const environment = {
   platformProviderUserEndpointPath: '/users',
   platformProviderProfileEndpointPath: '/profiles',
   platformProviderGroupsEndpointPath: '/groups',
+  platformProviderTasksEndpointPath: '/tasks',
+  platformProviderInvitationsEndpointPath: '/invitations',
   logoProviderApiBaseUrl: 'https://img.logo.dev'
 };
