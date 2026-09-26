@@ -11,7 +11,7 @@
       <!-- Logo + username + close -->
       <div class="sidenav-header">
         <div class="logo">S</div>
-        <div class="username">{{ store.currentUsername() }}</div>
+        <div class="username">{{ store.currentProfile()?.name }}</div>
         <button type="button" class="close-button" aria-label="Cerrar menú" (click)="sidenav.close()">
           <mat-icon fontIcon="close" />
         </button>

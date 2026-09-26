@@ -2,7 +2,7 @@ import {computed, Injectable, signal} from '@angular/core';
 import {User} from '../domain/model/user.entity';
 import {SignInCommand} from '../domain/model/sign-in.command';
 import {Router} from '@angular/router';
-import {IamApi} from '../infrastructure/iam-api';
+import {IamApi} from '../infrastructure/iam.api';
 import {SignUpCommand} from '../domain/model/sign-up.command';
 import {Profile} from '../domain/model/profile.entity';
 
@@ -20,7 +20,7 @@ export class IamStore {
   readonly currentUsername = this.currentUsernameSignal.asReadonly();
   readonly currentUserId = this.currentUserIdSignal.asReadonly();
   readonly currentProfile = this.currentProfileSignal.asReadonly();
-  readonly currentToken = computed(() => this.isSignedIn() ? localStorage.getItem('token') : null);
+  readonly currentToken = computed(() => localStorage.getItem('token'));
 
   readonly loadingUsers = signal<boolean>(false);
   readonly isLoadingUsers = this.loadingUsers.asReadonly();
@@ -91,5 +91,36 @@ export class IamStore {
   loadUsers() {
     this.loadingUsers.set(true);
     // TODO: Implement user loading logic when profile is implemented
+  }
+
+  restoreSession(): Promise<void> {
+    if (!this.currentToken()) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve) => {
+      this.iamApi.autoSignIn().subscribe({
+        next: (user) => {
+          this.isSignedInSignal.set(true);
+          this.currentUsernameSignal.set(user.username);
+          this.currentUserIdSignal.set(user.id);
+
+          // load profile (optionally wait for it)
+          this.iamApi.getProfileByUserId(user.id).subscribe({
+            next: (profile) => this.currentProfileSignal.set(profile),
+            error: () => this.currentProfileSignal.set(null),
+            complete: () => resolve()
+          });
+        },
+        error: () => {
+          localStorage.removeItem('token');
+          this.isSignedInSignal.set(false);
+          this.currentUsernameSignal.set(null);
+          this.currentUserIdSignal.set(null);
+          this.currentProfileSignal.set(null);
+          resolve();
+        }
+      });
+    });
   }
 }

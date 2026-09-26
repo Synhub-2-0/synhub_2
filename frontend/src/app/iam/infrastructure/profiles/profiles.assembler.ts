@@ -1,6 +1,6 @@
 import {BaseAssembler} from '../../../shared/infrastructure/base-assembler';
 import {Profile} from '../../domain/model/profile.entity';
-import {ProfileResource, ProfileResponse} from './profiles-response';
+import {ProfileResource, ProfileResponse} from './profiles.response';
 
 export class ProfilesAssembler implements BaseAssembler<Profile, ProfileResource, ProfileResponse> {
   toEntityFromResource(resource: ProfileResource): Profile {

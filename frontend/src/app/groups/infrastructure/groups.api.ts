@@ -29,4 +29,12 @@ export class GroupsApi extends BaseApi {
   getGroupsByUser(): Observable<Group[]> {
     return this.groupsEndpoint.getGroupsByUser();
   }
+
+  getLeaderGroups(): Observable<Group[]> {
+    return this.groupsEndpoint.getGroupsByUserGroupRole('GROUP_LEADER');
+  }
+
+  getMemberGroups(): Observable<Group[]> {
+    return this.groupsEndpoint.getGroupsByUserGroupRole('GROUP_MEMBER');
+  }
 }
