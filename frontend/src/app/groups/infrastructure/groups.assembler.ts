@@ -2,9 +2,9 @@ import {BaseAssembler} from '../../shared/infrastructure/base-assembler';
 import {Group} from '../domain/model/group.entity';
 import {GroupResource, GroupUsersResource, GroupsResponse} from './groups.response';
 import {GroupUser} from '../domain/model/group-user.entity';
-import {ProfilesAssembler} from '../../iam/infrastructure/profiles/profiles-assembler';
+import {ProfilesAssembler} from '../../iam/infrastructure/profiles/profiles.assembler';
 
-export class GroupAssembler implements BaseAssembler<Group, GroupResource, GroupsResponse> {
+export class GroupsAssembler implements BaseAssembler<Group, GroupResource, GroupsResponse> {
   private profileAssembler = new ProfilesAssembler();
 
   toEntitiesFromResponse(response: GroupsResponse): Group[] {
