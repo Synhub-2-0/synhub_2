@@ -58,7 +58,14 @@ public class TaskController {
         return ResponseEntity.ok(taskResource);
     }
 
-    // TODO: Get task by id
+    @GetMapping("/{taskId}")
+    public ResponseEntity<TaskResource> getTaskById(@PathVariable Long taskId) {
+        var getTaskByIdQuery = new GetTaskByIdQuery(taskId);
+        var task = this.taskQueryService.handle(getTaskByIdQuery)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
+        return ResponseEntity.ok(taskResource);
+    }
 
     // TODO: Get task by group and status
 
