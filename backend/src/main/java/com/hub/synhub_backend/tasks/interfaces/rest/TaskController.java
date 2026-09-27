@@ -1,5 +1,10 @@
 package com.hub.synhub_backend.tasks.interfaces.rest;
 
+import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
+import com.hub.synhub_backend.iam.domain.services.UserQueryService;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.tasks.interfaces.rest.resources.CreateTaskResource;
+import com.hub.synhub_backend.tasks.interfaces.rest.transform.CreateTaskCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +21,8 @@ import com.hub.synhub_backend.tasks.interfaces.rest.resources.UpdateTaskResource
 import com.hub.synhub_backend.tasks.interfaces.rest.transform.TaskResourceFromEntityAssembler;
 import com.hub.synhub_backend.tasks.interfaces.rest.transform.UpdateTaskCommandFromResourceAssembler;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,15 +36,27 @@ public class TaskController {
 
     private final TaskQueryService taskQueryService;
     private final TaskCommandService taskCommandService;
-    private final RequestCommandService requestCommandService;
+    private final UserQueryService userQueryService;
 
-    public TaskController(TaskQueryService taskQueryService, TaskCommandService taskCommandService, RequestCommandService requestCommandService, RequestCommandService requestCommandService1) {
+    public TaskController(
+            TaskQueryService taskQueryService,
+            TaskCommandService taskCommandService,
+            RequestCommandService requestCommandService1,
+            UserQueryService userQueryService) {
         this.taskQueryService = taskQueryService;
         this.taskCommandService = taskCommandService;
-        this.requestCommandService = requestCommandService1;
+        this.userQueryService = userQueryService;
     }
 
-    // TODO: Create a task for group and user
+    @PostMapping()
+    public ResponseEntity<TaskResource> createTask(@RequestBody CreateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var createTaskCommand = CreateTaskCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
+        var task = this.taskCommandService.handle(createTaskCommand);
+        var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
+        return ResponseEntity.ok(taskResource);
+    }
 
     // TODO: Get task by id
 

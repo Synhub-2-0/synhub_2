@@ -3,12 +3,14 @@ package com.hub.synhub_backend.tasks.aplication.internal.commandservices;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.*;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
-import com.hub.synhub_backend.tasks.domain.services.TaskStatusScheduler;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -31,28 +33,23 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         this.groupProfileRepository = groupProfileRepository;
     }
 
+    @Transactional
     @Override
-    public Optional<Task> handle(CreateTaskCommand command) {
+    public Task handle(CreateTaskCommand command) {
+        var user = this.userRepository.findById(command.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
+        var group = this.groupRepository.findById(command.groupId())
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
+        if (!group.getLeader().getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("User with id " + command.requesterId() + " is not the leader of the group");
+        }
+        var profile = this.groupProfileRepository.findByGroup_IdAndUser_Id(group.getId(), user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " is not in group with id " + command.groupId()));
+
         var task = new Task(command);
-        var user = this.userRepository.findById(command.userId());
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " does not exist");
-        }
-        var group = this.groupRepository.findById(command.groupId());
-        if (group.isEmpty()) {
-            throw new IllegalArgumentException("Group with id " + command.groupId() + " does not exist");
-        }
-        var profile = this.groupProfileRepository.findByGroup_IdAndUser_Id(group.get().getId(), user.get().getId());
-        if (profile.isEmpty()) {
-            throw new IllegalArgumentException("Profile for user with id " + command.userId() + " in group with id " + command.groupId() + " not found");
-        }
-
-        profile.get().addTask(task);
-
-        this.groupProfileRepository.save(profile.get());
-        var createdTask = taskRepository.save(task);
-
-        return Optional.of(createdTask);
+        profile.addTask(task);
+        taskRepository.save(task);
+        return task;
     }
 
     @Override
