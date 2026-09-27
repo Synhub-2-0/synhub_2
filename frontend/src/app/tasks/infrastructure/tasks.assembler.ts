@@ -1,9 +1,15 @@
-import {BaseAssembler} from '../../shared/infrastructure/base-assembler';
-import {Task} from '../domain/model/task.entity';
-import {TaskResource, TasksResponse} from './tasks.response';
+import { BaseAssembler } from '../../shared/infrastructure/base-assembler';
+import { Task } from '../domain/model/task.entity';
+import { CreateTaskCommand } from '../domain/model/create-task.command';
+import { UpdateTaskCommand } from '../domain/model/update-task.command';
+import {
+  CreateTaskRequest,
+  TaskResource,
+  TasksResponse,
+  UpdateTaskRequest,
+} from './tasks.response';
 
 export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksResponse> {
-
   toEntityFromResource(resource: TaskResource): Task {
     return new Task({
       id: resource.id,
@@ -12,12 +18,14 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
       dueDate: new Date(resource.dueDate),
       createdAt: new Date(resource.createdAt),
       updatedAt: new Date(resource.updatedAt),
-      status: resource.status
-    })
+      status: resource.status,
+      group: resource.group,
+      assignedTo: resource.assignedTo,
+    });
   }
 
   toEntitiesFromResponse(response: TasksResponse): Task[] {
-    return response.tasks.map(resource => this.toEntityFromResource(resource as TaskResource))
+    return response.tasks.map((resource) => this.toEntityFromResource(resource));
   }
 
   toResourceFromEntity(entity: Task): TaskResource {
@@ -28,7 +36,29 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
       dueDate: entity.dueDate.toISOString(),
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
-      status: entity.status
+      status: entity.status,
+      group: entity.group!,
+      assignedTo: entity.assignedTo!,
     } as TaskResource;
+  }
+
+  toCreateRequestFromCommand(command: CreateTaskCommand): CreateTaskRequest {
+    return {
+      title: command.title,
+      description: command.description,
+      dueDate: command.dueDate.toISOString(),
+      userId: command.userId,
+      groupId: command.groupId,
+    };
+  }
+
+  toUpdateRequestFromCommand(command: UpdateTaskCommand): UpdateTaskRequest {
+    return {
+      requesterId: command.requesterId,
+      title: command.title,
+      description: command.description,
+      dueDate: command.dueDate.toISOString(),
+      userId: command.userId,
+    };
   }
 }
