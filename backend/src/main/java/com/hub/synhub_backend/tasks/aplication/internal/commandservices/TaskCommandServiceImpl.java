@@ -3,12 +3,14 @@ package com.hub.synhub_backend.tasks.aplication.internal.commandservices;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.*;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
-import com.hub.synhub_backend.tasks.domain.services.TaskStatusScheduler;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -31,60 +33,46 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         this.groupProfileRepository = groupProfileRepository;
     }
 
+    @Transactional
     @Override
-    public Optional<Task> handle(CreateTaskCommand command) {
+    public Task handle(CreateTaskCommand command) {
+        var user = this.userRepository.findById(command.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
+        var group = this.groupRepository.findById(command.groupId())
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
+        if (!group.getLeader().getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("User with id " + command.requesterId() + " is not the leader of the group");
+        }
+        var profile = this.groupProfileRepository.findByGroup_IdAndUser_Id(group.getId(), user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " is not in group with id " + command.groupId()));
+
         var task = new Task(command);
-        var user = this.userRepository.findById(command.userId());
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " does not exist");
-        }
-        var group = this.groupRepository.findById(command.groupId());
-        if (group.isEmpty()) {
-            throw new IllegalArgumentException("Group with id " + command.groupId() + " does not exist");
-        }
-        var profile = this.groupProfileRepository.findByGroup_IdAndUser_Id(group.get().getId(), user.get().getId());
-        if (profile.isEmpty()) {
-            throw new IllegalArgumentException("Profile for user with id " + command.userId() + " in group with id " + command.groupId() + " not found");
-        }
-
-        profile.get().addTask(task);
-
-        this.groupProfileRepository.save(profile.get());
-        var createdTask = taskRepository.save(task);
-
-        return Optional.of(createdTask);
+        profile.addTask(task);
+        taskRepository.save(task);
+        return task;
     }
 
     @Override
-    public Optional<Task> handle(UpdateTaskCommand command) {
-        var taskOpt = this.taskRepository.findById(command.taskId());
-        var newUserOpt = this.userRepository.findById(command.userId());
+    @Transactional
+    public Task handle(UpdateTaskCommand command) {
+        var task = this.taskRepository.findById(command.taskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        this.userRepository.findById(command.newUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " does not exist"));
 
-        if (taskOpt.isEmpty()) {
-            throw new IllegalArgumentException("Task with id " + command.taskId() + " does not exist");
-        }
-        if (newUserOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " does not exist");
-        }
-
-        var task = taskOpt.get();
         var currentUser = task.getProfile().getUser();
-
         var groupId = task.getProfile().getGroup().getId();
-        var group = this.groupRepository.findById(groupId);
 
-        if (group.isEmpty()) {
-            throw new IllegalArgumentException("Group with id " + groupId + " does not exist");
+        var group = this.groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + groupId + " does not exist"));
+
+        if (!group.getLeader().getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader can edit task details");
         }
 
         var currentProfile = task.getProfile();
-        var newProfileOpt = this.groupProfileRepository.findByGroup_IdAndUser_Id(groupId, command.userId());
-
-        if (newProfileOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " is not part of group with id " + groupId);
-        }
-
-        var newProfile = newProfileOpt.get();
+        var newProfile = this.groupProfileRepository.findByGroup_IdAndUser_Id(groupId, command.newUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " is not part of group with id " + groupId));
 
         if (currentProfile != null && !currentProfile.equals(newProfile)) {
             currentProfile.removeTask(task);
@@ -97,52 +85,35 @@ public class TaskCommandServiceImpl implements TaskCommandService {
             task.setProfile(newProfile);
             this.groupProfileRepository.save(newProfile);
         }
-
         task.updateTask(command);
-
-        try{
-            var updatedTask = this.taskRepository.save(task);
-            return Optional.of(updatedTask);
-        } catch (Exception e){
-            throw new IllegalArgumentException("Error updating task: " + e.getMessage());
-        }
+        return this.taskRepository.save(task);
     }
 
     @Override
+    @Transactional
     public void handle(DeleteTaskCommand command) {
-        var taskOpt = this.taskRepository.findById(command.taskId());
-        if(taskOpt.isEmpty()) {
-            throw new IllegalArgumentException("Task with id " + command.taskId() + " does not exist");
+        var task = this.taskRepository.findById(command.taskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader of the group can delete tasks");
         }
-        var task = taskOpt.get();
-        try {
-            var profile = task.getProfile();
-            if (profile != null) {
-                profile.removeTask(task);
-                this.groupProfileRepository.save(profile);
-            }
-            this.taskRepository.deleteById(task.getId());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error deleting task: " + e.getMessage());
+        var profile = task.getProfile();
+        if (profile != null) {
+            profile.removeTask(task);
+            this.groupProfileRepository.save(profile);
         }
+        this.taskRepository.deleteById(task.getId());
     }
 
     @Override
-    public Optional<Task> handle(UpdateTaskStatusCommand command) {
-        var taskId = command.taskId();
-        if(!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task with id " + taskId + " does not exist");
+    public Task handle(UpdateTaskStatusCommand command) {
+        var taskToUpdate = this.taskRepository.findById(command.taskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        if (!(taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId()) || taskToUpdate.getProfile().getUser().getId().equals(command.requesterId()))) {
+            throw new AccessDeniedException("Only the leader or the assigned member can update the task status");
         }
-
-        var taskToUpdate = this.taskRepository.findById(taskId).get();
-
-        try{
-            taskToUpdate.updateStatus(command);
-            var updatedTask = this.taskRepository.save(taskToUpdate);
-            return Optional.of(updatedTask);
-        } catch (Exception e){
-            throw new IllegalArgumentException("Error updating task status: " + e.getMessage());
-        }
+        taskToUpdate.updateStatus(command);
+        return this.taskRepository.save(taskToUpdate);
     }
 
     @Override

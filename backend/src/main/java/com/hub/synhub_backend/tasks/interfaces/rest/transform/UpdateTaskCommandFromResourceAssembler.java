@@ -4,8 +4,9 @@ import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskCommand;
 import com.hub.synhub_backend.tasks.interfaces.rest.resources.UpdateTaskResource;
 
 public class UpdateTaskCommandFromResourceAssembler {
-    public static UpdateTaskCommand toCommandFromResource(UpdateTaskResource resource, Long taskId) {
+    public static UpdateTaskCommand toCommandFromResource(UpdateTaskResource resource, Long taskId, Long requesterId) {
         return new UpdateTaskCommand(
+                requesterId,
                 taskId,
                 resource.title(),
                 resource.description(),

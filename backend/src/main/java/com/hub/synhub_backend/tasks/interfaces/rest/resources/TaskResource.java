@@ -1,6 +1,9 @@
 package com.hub.synhub_backend.tasks.interfaces.rest.resources;
 
 
+import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResourceReduced;
+import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
+
 public record TaskResource(
         Long id,
         String title,
@@ -8,6 +11,8 @@ public record TaskResource(
         String dueDate,
         String createdAt,
         String updatedAt,
-        String status
+        String status,
+        GroupResourceReduced group,
+        UserResource assignedTo
 ) {
 }

@@ -56,15 +56,8 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     }
 
     public void updateStatus(UpdateTaskStatusCommand command) {
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateStatus] Antes: status=%s, timesRearranged=%d\n", this.status, this.timesRearranged);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
 
-        var commandStatus = TaskStatus.valueOf(command.status());
+        var commandStatus = command.status();
 
         if(this.status == TaskStatus.IN_PROGRESS && commandStatus == TaskStatus.COMPLETED) {
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -76,46 +69,12 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
             }
         } else if(this.status == TaskStatus.COMPLETED && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("Task rearranged from COMPLETED to IN_PROGRESS. Times rearranged: %d. Task title: %s\n", timesRearranged, "Task tile: " + this.title);
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
         } else if (this.status == TaskStatus.ON_HOLD && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("Task rearranged from ON_HOLD to IN_PROGRESS. Times rearranged: %d. Task title: %s\n", timesRearranged, "Task tile: " + this.title);
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
         } else if (this.status == TaskStatus.EXPIRED && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("Task rearranged from EXPIRED to IN_PROGRESS. Times rearranged: %d. Task title: %s\n", timesRearranged, "Task tile: " + this.title);
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
         }
-        this.status = TaskStatus.valueOf(command.status());
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateTask] Después: status=%s, timesRearranged=%d, dueDate=%s\n", this.status, this.timesRearranged, this.dueDate);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
+        this.status = command.status();
     }
 
     public void updateTask(UpdateTaskCommand command) {
