@@ -57,7 +57,7 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
 
     public void updateStatus(UpdateTaskStatusCommand command) {
 
-        var commandStatus = TaskStatus.valueOf(command.status());
+        var commandStatus = command.status();
 
         if(this.status == TaskStatus.IN_PROGRESS && commandStatus == TaskStatus.COMPLETED) {
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -74,7 +74,7 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         } else if (this.status == TaskStatus.EXPIRED && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
         }
-        this.status = TaskStatus.valueOf(command.status());
+        this.status = command.status();
     }
 
     public void updateTask(UpdateTaskCommand command) {

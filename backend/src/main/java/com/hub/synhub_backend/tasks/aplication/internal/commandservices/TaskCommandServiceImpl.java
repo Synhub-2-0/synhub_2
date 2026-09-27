@@ -106,21 +106,14 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     }
 
     @Override
-    public Optional<Task> handle(UpdateTaskStatusCommand command) {
-        var taskId = command.taskId();
-        if(!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task with id " + taskId + " does not exist");
+    public Task handle(UpdateTaskStatusCommand command) {
+        var taskToUpdate = this.taskRepository.findById(command.taskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        if (!(taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId()) || taskToUpdate.getProfile().getUser().getId().equals(command.requesterId()))) {
+            throw new AccessDeniedException("Only the leader or the assigned member can update the task status");
         }
-
-        var taskToUpdate = this.taskRepository.findById(taskId).get();
-
-        try{
-            taskToUpdate.updateStatus(command);
-            var updatedTask = this.taskRepository.save(taskToUpdate);
-            return Optional.of(updatedTask);
-        } catch (Exception e){
-            throw new IllegalArgumentException("Error updating task status: " + e.getMessage());
-        }
+        taskToUpdate.updateStatus(command);
+        return this.taskRepository.save(taskToUpdate);
     }
 
     @Override

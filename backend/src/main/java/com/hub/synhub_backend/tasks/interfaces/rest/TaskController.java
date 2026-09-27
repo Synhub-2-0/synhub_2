@@ -104,6 +104,14 @@ public class TaskController {
         return ResponseEntity.ok(taskResource);
     }
 
-    // TODO: Update task status
+    @PutMapping("/{taskId}/status")
+    public ResponseEntity<TaskResource> updateTaskStatus(@PathVariable Long taskId, @RequestParam TaskStatus status, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var updateTaskStatusCommand = new UpdateTaskStatusCommand(user.getId(), taskId, status);
+        var task = this.taskCommandService.handle(updateTaskStatusCommand);
+        var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
+        return ResponseEntity.ok(taskResource);
+    }
 
 }
