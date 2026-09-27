@@ -37,64 +37,17 @@ public class TaskController {
         this.requestCommandService = requestCommandService1;
     }
 
-    @GetMapping("/{taskId}")
-    @Operation(summary = "Get a task by id", description = "Get a task by id")
-    public ResponseEntity<TaskResource> getTaskById(@PathVariable Long taskId) {
-        var getTaskByIdQuery = new GetTaskByIdQuery(taskId);
-        var task = this.taskQueryService.handle(getTaskByIdQuery);
+    // TODO: Create a task for group and user
 
-        if (task.isEmpty()) return ResponseEntity.notFound().build();
+    // TODO: Get task by id
 
-        var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task.get());
-        return ResponseEntity.ok(taskResource);
-    }
+    // TODO: Get task by group and status
 
-    @GetMapping("/status/{status}")
-    @Operation(summary = "Get all tasks by status", description = "Get all tasks by status")
-    public ResponseEntity<List<TaskResource>> getAllTasksByStatus(@PathVariable String status) {
-        var getAllTasksByStatusQuery = new GetAllTaskByStatusQuery(status);
-        var tasks = taskQueryService.handle(getAllTasksByStatusQuery);
-        var taskResources = tasks.stream()
-                .map(TaskResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(taskResources);
-    }
+    // TODO: Update task status
 
-    @PutMapping("/{taskId}/status/{status}")
-    @Operation(summary = "Update task status", description = "Update task status")
-    public ResponseEntity<TaskResource> updateTaskStatus(@PathVariable Long taskId, @PathVariable String status) {
-        var updateTaskStatusCommand = new UpdateTaskStatusCommand(taskId, status);
-        var task = this.taskCommandService.handle(updateTaskStatusCommand);
-        if (task.isEmpty()) return ResponseEntity.badRequest().build();
+    // TODO: Update task details
 
-        var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task.get());
-        return ResponseEntity.ok(taskResource);
-    }
-
-    @PutMapping("/{taskId}")
-    @Operation(summary = "Update task", description = "Update task")
-    public ResponseEntity<TaskResource> updateTask(@PathVariable Long taskId, @RequestBody UpdateTaskResource resource) {
-        var updateTaskCommand = UpdateTaskCommandFromResourceAssembler.toCommandFromResource(resource, taskId);
-        var task = taskCommandService.handle(updateTaskCommand);
-
-        if (task.isEmpty()) return ResponseEntity.badRequest().build();
-
-        var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task.get());
-        return ResponseEntity.ok(taskResource);
-    }
-
-    @DeleteMapping("/{taskId}")
-    @Operation(summary = "Delete a task by id", description = "Delete a task by id")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
-        var deleteRequestsCommand = new DeleteAllRequestsByTaskIdCommand(taskId);
-        this.requestCommandService.handle(deleteRequestsCommand);
-
-        var deleteTaskCommand = new DeleteTaskCommand(taskId);
-        this.taskCommandService.handle(deleteTaskCommand);
-
-
-        return ResponseEntity.noContent().build();
-    }
+    // TODO: Delete a task
 
     // TODO: Get all Tasks from a Group Id
 
