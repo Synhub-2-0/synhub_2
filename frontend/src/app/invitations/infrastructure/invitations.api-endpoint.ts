@@ -31,15 +31,23 @@ export class InvitationsApiEndpoint extends BaseApiEndpoint<Invitation, Invitati
   }
 
   getInvitationsByGroupId(groupId: number): Observable<Invitation[]> {
-    return this.http.get<InvitationResource[]>(`${this.endpointUrl}/group?groupId=${groupId}`).pipe(
-      map(resources => resources.map(resource => this.assembler.toEntityFromResource(resource))),
+    return this.http.get<InvitationsResponse | InvitationResource[]>(`${this.endpointUrl}/group?groupId=${groupId}`).pipe(
+      map(response => {
+        if (Array.isArray(response))
+          return response.map(resource => this.assembler.toEntityFromResource(resource));
+        return this.assembler.toEntitiesFromResponse(response as InvitationsResponse);
+      }),
       catchError(this.handleError(`Failed to fetch invitations for group with ID ${groupId}`))
     );
   }
 
   getInvitationsByAuthenticatedUser(): Observable<Invitation[]> {
-    return this.http.get<InvitationResource[]>(`${this.endpointUrl}/user`).pipe(
-      map(resources => resources.map(resource => this.assembler.toEntityFromResource(resource))),
+    return this.http.get<InvitationsResponse | InvitationResource[]>(`${this.endpointUrl}/user`).pipe(
+      map(response => {
+        if (Array.isArray(response))
+          return response.map(resource => this.assembler.toEntityFromResource(resource));
+        return this.assembler.toEntitiesFromResponse(response as InvitationsResponse);
+      }),
       catchError(this.handleError('Failed to fetch invitations for authenticated user'))
     );
   }

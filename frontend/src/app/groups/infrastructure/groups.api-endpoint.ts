@@ -5,8 +5,6 @@ import {GroupsAssembler} from './groups.assembler';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
 import {catchError, map, Observable} from 'rxjs';
-import {Profile} from '../../iam/domain/model/profile.entity';
-import {ProfileResource} from '../../iam/infrastructure/profiles/profiles.response';
 
 const groupsEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderGroupsEndpointPath}`;
 
@@ -23,8 +21,12 @@ export class GroupsApiEndpoint extends BaseApiEndpoint<Group, GroupResource, Gro
   }
 
   getGroupsByUserGroupRole(role: string): Observable<Group[]> {
-    return this.http.get<GroupResource[]>(`${groupsEndpointUrl}/user/role?groupRole=${role}`).pipe(
-      map(resources => resources.map(resource => this.assembler.toEntityFromResource(resource))),
+    return this.http.get<GroupsResponse | GroupResource[]>(`${groupsEndpointUrl}/user/role?groupRole=${role}`).pipe(
+      map(response => {
+        if (Array.isArray(response))
+          return response.map(resource => this.assembler.toEntityFromResource(resource));
+        return this.assembler.toEntitiesFromResponse(response as GroupsResponse);
+      }),
       catchError(this.handleError(`Failed to fetch groups for the current user with role ${role}`))
     );
   }
