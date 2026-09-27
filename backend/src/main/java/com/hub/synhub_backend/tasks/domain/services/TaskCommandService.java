@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface TaskCommandService {
     Task handle(CreateTaskCommand command);
-    Optional<Task> handle(UpdateTaskCommand command);
+    Task handle(UpdateTaskCommand command);
     void handle(DeleteTaskCommand command);
     Optional<Task> handle(UpdateTaskStatusCommand command);
     void handle(DeleteTasksByUserIdAndGroupIdCommand command);

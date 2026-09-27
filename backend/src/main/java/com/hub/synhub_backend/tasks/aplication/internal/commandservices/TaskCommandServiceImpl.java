@@ -12,7 +12,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.management.monitor.CounterMonitorMBean;
 import java.util.Optional;
 
 @Service
@@ -54,35 +53,26 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     }
 
     @Override
-    public Optional<Task> handle(UpdateTaskCommand command) {
-        var taskOpt = this.taskRepository.findById(command.taskId());
-        var newUserOpt = this.userRepository.findById(command.userId());
+    @Transactional
+    public Task handle(UpdateTaskCommand command) {
+        var task = this.taskRepository.findById(command.taskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        this.userRepository.findById(command.newUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " does not exist"));
 
-        if (taskOpt.isEmpty()) {
-            throw new IllegalArgumentException("Task with id " + command.taskId() + " does not exist");
-        }
-        if (newUserOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " does not exist");
-        }
-
-        var task = taskOpt.get();
         var currentUser = task.getProfile().getUser();
-
         var groupId = task.getProfile().getGroup().getId();
-        var group = this.groupRepository.findById(groupId);
 
-        if (group.isEmpty()) {
-            throw new IllegalArgumentException("Group with id " + groupId + " does not exist");
+        var group = this.groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + groupId + " does not exist"));
+
+        if (!group.getLeader().getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader can edit task details");
         }
 
         var currentProfile = task.getProfile();
-        var newProfileOpt = this.groupProfileRepository.findByGroup_IdAndUser_Id(groupId, command.userId());
-
-        if (newProfileOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " is not part of group with id " + groupId);
-        }
-
-        var newProfile = newProfileOpt.get();
+        var newProfile = this.groupProfileRepository.findByGroup_IdAndUser_Id(groupId, command.newUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " is not part of group with id " + groupId));
 
         if (currentProfile != null && !currentProfile.equals(newProfile)) {
             currentProfile.removeTask(task);
@@ -95,15 +85,8 @@ public class TaskCommandServiceImpl implements TaskCommandService {
             task.setProfile(newProfile);
             this.groupProfileRepository.save(newProfile);
         }
-
         task.updateTask(command);
-
-        try{
-            var updatedTask = this.taskRepository.save(task);
-            return Optional.of(updatedTask);
-        } catch (Exception e){
-            throw new IllegalArgumentException("Error updating task: " + e.getMessage());
-        }
+        return this.taskRepository.save(task);
     }
 
     @Override
