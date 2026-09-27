@@ -3,6 +3,8 @@ package com.hub.synhub_backend.tasks.interfaces.rest;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.tasks.domain.model.queries.GetTasksByGroupIdAndStatus;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.interfaces.rest.resources.CreateTaskResource;
 import com.hub.synhub_backend.tasks.interfaces.rest.transform.CreateTaskCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,14 +69,18 @@ public class TaskController {
         return ResponseEntity.ok(taskResource);
     }
 
-    // TODO: Get task by group and status
+    @GetMapping("/group/{groupId}")
+    public ResponseEntity<List<TaskResource>> getByGroup(@PathVariable Long groupId, @RequestParam(required = false) TaskStatus status) {
+        var getTasksByGroupIdAndStatusQuery = new GetTasksByGroupIdAndStatus(groupId, status);
+        var tasks = this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery);
+        var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
+        return ResponseEntity.ok(taskResources);
+    }
 
     // TODO: Update task status
 
     // TODO: Update task details
 
     // TODO: Delete a task
-
-    // TODO: Get all Tasks from a Group Id
 
 }

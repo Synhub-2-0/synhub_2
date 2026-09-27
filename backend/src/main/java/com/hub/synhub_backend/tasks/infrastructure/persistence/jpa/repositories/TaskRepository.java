@@ -15,4 +15,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findAllByStatusAndDueDateBefore(TaskStatus status, OffsetDateTime dueDate);
     List<Task> findByProfile_User_Id(Long profileUserId);
     List<Task> findByProfile_Group_Id(Long profileGroupId);
+    List<Task> findByProfile_Group_IdAndStatus(Long profileGroupId, TaskStatus status);
 }
