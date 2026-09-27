@@ -4,6 +4,7 @@ import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTasksByGroupIdAndStatus;
+import com.hub.synhub_backend.tasks.domain.model.queries.GetTasksByGroupIdAndUserIdQuery;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.interfaces.rest.resources.CreateTaskResource;
 import com.hub.synhub_backend.tasks.interfaces.rest.transform.CreateTaskCommandFromResourceAssembler;
@@ -43,7 +44,6 @@ public class TaskController {
     public TaskController(
             TaskQueryService taskQueryService,
             TaskCommandService taskCommandService,
-            RequestCommandService requestCommandService1,
             UserQueryService userQueryService) {
         this.taskQueryService = taskQueryService;
         this.taskCommandService = taskCommandService;
@@ -73,6 +73,14 @@ public class TaskController {
     public ResponseEntity<List<TaskResource>> getByGroup(@PathVariable Long groupId, @RequestParam(required = false) TaskStatus status) {
         var getTasksByGroupIdAndStatusQuery = new GetTasksByGroupIdAndStatus(groupId, status);
         var tasks = this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery);
+        var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
+        return ResponseEntity.ok(taskResources);
+    }
+
+    @GetMapping("/group/{groupId}/user/{userId}")
+    public ResponseEntity<List<TaskResource>> getTaskByGroupIdAndUserId(@PathVariable Long groupId, @PathVariable Long userId) {
+        var getTasksByGroupIdAndUserIdQuery = new GetTasksByGroupIdAndUserIdQuery(groupId, userId);
+        var tasks = this.taskQueryService.handle(getTasksByGroupIdAndUserIdQuery);
         var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(taskResources);
     }

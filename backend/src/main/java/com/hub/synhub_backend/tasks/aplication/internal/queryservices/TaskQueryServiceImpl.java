@@ -53,4 +53,9 @@ public class TaskQueryServiceImpl implements TaskQueryService {
         }
         return taskRepository.findByProfile_Group_IdAndStatus(query.groupId(), query.status());
     }
+
+    @Override
+    public List<Task> handle(GetTasksByGroupIdAndUserIdQuery query) {
+        return taskRepository.findByProfile_Group_IdAndProfile_User_Id(query.groupId(), query.userId());
+    }
 }
