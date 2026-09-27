@@ -85,10 +85,17 @@ public class TaskController {
         return ResponseEntity.ok(taskResources);
     }
 
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<Void> deleteTaskById(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var deleteTaskByIdCommand = new DeleteTaskCommand(user.getId(), taskId);
+        this.taskCommandService.handle(deleteTaskByIdCommand);
+        return ResponseEntity.noContent().build();
+    }
+
     // TODO: Update task status
 
     // TODO: Update task details
-
-    // TODO: Delete a task
 
 }

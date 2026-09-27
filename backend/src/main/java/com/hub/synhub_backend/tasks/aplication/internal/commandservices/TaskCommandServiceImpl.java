@@ -12,6 +12,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.management.monitor.CounterMonitorMBean;
 import java.util.Optional;
 
 @Service
@@ -106,22 +107,19 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     }
 
     @Override
+    @Transactional
     public void handle(DeleteTaskCommand command) {
-        var taskOpt = this.taskRepository.findById(command.taskId());
-        if(taskOpt.isEmpty()) {
-            throw new IllegalArgumentException("Task with id " + command.taskId() + " does not exist");
+        var task = this.taskRepository.findById(command.taskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader of the group can delete tasks");
         }
-        var task = taskOpt.get();
-        try {
-            var profile = task.getProfile();
-            if (profile != null) {
-                profile.removeTask(task);
-                this.groupProfileRepository.save(profile);
-            }
-            this.taskRepository.deleteById(task.getId());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error deleting task: " + e.getMessage());
+        var profile = task.getProfile();
+        if (profile != null) {
+            profile.removeTask(task);
+            this.groupProfileRepository.save(profile);
         }
+        this.taskRepository.deleteById(task.getId());
     }
 
     @Override
