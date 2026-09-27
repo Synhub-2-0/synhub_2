@@ -3,6 +3,8 @@ import {Group} from '../domain/model/group.entity';
 import {GroupResource, GroupUsersResource, GroupsResponse} from './groups.response';
 import {GroupUser} from '../domain/model/group-user.entity';
 import {ProfilesAssembler} from '../../iam/infrastructure/profiles/profiles.assembler';
+import {CreateGroupCommand} from '../domain/model/create-group.command';
+import {CreateGroupRequest} from './create-group.request';
 
 export class GroupsAssembler implements BaseAssembler<Group, GroupResource, GroupsResponse> {
   private profileAssembler = new ProfilesAssembler();
@@ -38,5 +40,13 @@ export class GroupsAssembler implements BaseAssembler<Group, GroupResource, Grou
       code: entity.code,
       usersInGroup: entity.usersInGroup
     } as GroupResource;
+  }
+
+  toRequestFromCreateCommand(command: CreateGroupCommand): CreateGroupRequest {
+    return {
+      name: command.name,
+      description: command.description,
+      imgUrl: command.imgUrl
+    } as CreateGroupRequest;
   }
 }

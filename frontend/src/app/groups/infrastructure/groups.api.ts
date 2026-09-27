@@ -4,6 +4,7 @@ import {GroupsApiEndpoint} from './groups.api-endpoint';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {Group} from '../domain/model/group.entity';
+import {CreateGroupCommand} from '../domain/model/create-group.command';
 
 @Injectable({providedIn: 'root'})
 export class GroupsApi extends BaseApi {
@@ -18,8 +19,8 @@ export class GroupsApi extends BaseApi {
     return this.groupsEndpoint.getById(id);
   }
 
-  createGroup(group: Group): Observable<Group> {
-    return this.groupsEndpoint.create(group);
+  createGroup(createGroupCommand: CreateGroupCommand): Observable<Group> {
+    return this.groupsEndpoint.createGroup(createGroupCommand);
   }
 
   updateGroup(group: Group): Observable<Group> {
