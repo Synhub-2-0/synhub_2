@@ -39,4 +39,15 @@ export class GroupsApiEndpoint extends BaseApiEndpoint<Group, GroupResource, Gro
       catchError(this.handleError(`Failed to fetch groups for the current user with role ${role}`))
     );
   }
+
+  /*
+   * TODO: Reactivar cuando el backend exponga este endpoint.
+   *
+   * searchByCode(code: string): Observable<Group> {
+   *   return this.http.get<GroupResource>(`${groupsEndpointUrl}/search?code=${encodeURIComponent(code)}`).pipe(
+   *     map(resource => this.assembler.toEntityFromResource(resource)),
+   *     catchError(this.handleError('Failed to search group by code')),
+   *   );
+   * }
+   */
 }

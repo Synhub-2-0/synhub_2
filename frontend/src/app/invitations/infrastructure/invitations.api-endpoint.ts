@@ -24,6 +24,17 @@ export class InvitationsApiEndpoint extends BaseApiEndpoint<Invitation, Invitati
     );
   }
 
+  /*
+   * TODO: Reactivar cuando el backend permita solicitar la unión a un grupo.
+   *
+   * inviteUserToGroup(groupId: number, userId: number): Observable<Invitation> {
+   *   return this.http.post<InvitationResource>(this.endpointUrl, { groupId, userId }).pipe(
+   *     map(resource => this.assembler.toEntityFromResource(resource)),
+   *     catchError(this.handleError('Failed to request group invitation')),
+   *   );
+   * }
+   */
+
   acceptInvitation(invitationId: number): Observable<void> {
     return this.http.post<void>(`${this.endpointUrl}/accept?invitationId=${invitationId}`, {}).pipe(
       catchError(this.handleError(`Failed to accept invitation with id ${invitationId}`))

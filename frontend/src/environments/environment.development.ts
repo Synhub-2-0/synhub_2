@@ -4,7 +4,7 @@ export const environment = {
   platformProviderSignInEndpointPath: '/authentication/sign-in',
   platformProviderSignUpEndpointPath: '/authentication/sign-up',
   platformProviderUserEndpointPath: '/users',
-  platformProviderProfileEndpointPath: '/profiles',
+  platformProviderProfileEndpointPath: '/users',
   platformProviderGroupsEndpointPath: '/groups',
   platformProviderTasksEndpointPath: '/tasks',
   platformProviderInvitationsEndpointPath: '/invitations',

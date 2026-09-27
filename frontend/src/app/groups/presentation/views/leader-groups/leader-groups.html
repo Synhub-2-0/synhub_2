@@ -1,1 +1,28 @@
-<p>leader-groups works!</p>
+<div class="mx-auto flex max-w-7xl flex-col gap-8 p-6 lg:p-10">
+  <header class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center">
+    <div><h1 class="text-2xl font-extrabold">Grupos Liderados</h1><p class="mt-1 text-sm text-slate-500">Administra tus equipos de trabajo.</p></div>
+    <button type="button" (click)="toggleCreateModal()" class="rounded-2xl bg-[#4A90E2] px-5 py-2.5 text-sm font-bold text-white">{{ showCreateModal() ? 'Cerrar' : 'Nuevo Grupo' }}</button>
+  </header>
+  @if (showCreateModal()) {
+    <form id="create-group" (ngSubmit)="onCreateGroup()" class="flex flex-col gap-4 rounded-3xl border bg-white p-6 shadow-sm">
+      <input name="name" [(ngModel)]="name" required placeholder="Nombre del equipo" class="rounded-xl border px-4 py-3" />
+      <input name="imgUrl" [(ngModel)]="imgUrl" placeholder="URL de imagen (opcional)" class="rounded-xl border px-4 py-3" />
+      <textarea name="description" [(ngModel)]="description" required placeholder="Descripción" class="rounded-xl border px-4 py-3"></textarea>
+      <button type="submit" class="self-end rounded-xl bg-[#0f172a] px-5 py-2 text-sm font-bold text-white">Guardar Grupo</button>
+    </form>
+  }
+  @if (groupsStore.loading()) {
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      @for (placeholder of [1, 2, 3]; track placeholder) {
+        <div class="animate-pulse overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+          <div class="h-40 bg-slate-200"></div>
+          <div class="space-y-3 p-5"><div class="h-5 w-2/3 rounded bg-slate-200"></div><div class="h-4 w-full rounded bg-slate-100"></div><div class="h-4 w-4/5 rounded bg-slate-100"></div></div>
+        </div>
+      }
+    </div>
+  } @else if (groupsStore.leaderGroups().length) {
+    <app-group-list [groups]="groupsStore.leaderGroups()" [isLeader]="true"></app-group-list>
+  } @else {
+    <app-no-group-leader (createRequested)="toggleCreateModal()"></app-no-group-leader>
+  }
+</div>

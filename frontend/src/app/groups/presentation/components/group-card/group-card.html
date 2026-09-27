@@ -1,1 +1,26 @@
-<p>group-card works!</p>
+<article (click)="openGroupDetails()"
+  class="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-150 hover:-translate-y-0.5 hover:border-[#4A90E2]/50 hover:shadow-md">
+  <div class="relative h-40 overflow-hidden bg-slate-100">
+    <img [src]="group.imgUrl || fallbackImage" [alt]="group.name"
+      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+    <span class="absolute right-4 top-4 rounded-lg bg-white/90 px-2.5 py-1 font-mono text-xs font-semibold text-slate-700 shadow-sm backdrop-blur">
+      #{{ group.code }}
+    </span>
+  </div>
+  <div class="flex flex-1 flex-col p-5">
+    <h3 class="truncate text-lg font-semibold tracking-tight text-slate-900">{{ group.name }}</h3>
+    <p class="mt-1 line-clamp-2 min-h-10 text-sm leading-5 text-slate-500">
+      {{ group.description || 'Sin descripción disponible.' }}
+    </p>
+    <div class="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+      <span class="text-xs font-medium text-slate-500">
+        <mat-icon class="mr-1 align-middle text-base">group</mat-icon>{{ memberCount }} integrantes
+      </span>
+      <button type="button" (click)="openGroupTasks($event)"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-[#1A4E85] hover:text-white">
+        <mat-icon class="text-base">task_alt</mat-icon>
+        {{ isLeader ? 'Gestionar tareas' : 'Mis tareas' }}
+      </button>
+    </div>
+  </div>
+</article>

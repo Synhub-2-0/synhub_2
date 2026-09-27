@@ -1,0 +1,16 @@
+@if (tasks.length === 0) {
+  <div class="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center flex flex-col items-center gap-3">
+    <mat-icon class="text-slate-300 scale-150">assignment_late</mat-icon>
+    <h3 class="text-lg font-bold text-slate-700 mt-2">No hay tareas para mostrar</h3>
+    <p class="text-sm text-slate-500 max-w-md">No se encontraron tareas registradas bajo este filtro en el grupo actual.</p>
+  </div>
+} @else {
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    @for (task of tasks; track task.id) {
+      <app-task-card [task]="task" [isLeader]="isLeader"
+        (deleteRequested)="deleteTask.emit($event)"
+        (statusChangeRequested)="changeStatus.emit($event)">
+      </app-task-card>
+    }
+  </section>
+}

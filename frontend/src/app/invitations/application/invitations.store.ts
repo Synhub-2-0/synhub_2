@@ -43,6 +43,25 @@ export class InvitationsStore {
       });
   }
 
+  /*
+   * TODO: Reactivar cuando el backend permita solicitar la unión a un grupo.
+   *
+   * requestInvitation(groupId: number, userId: number): void {
+   *   this.loadingSignal.set(true);
+   *   this.errorSignal.set(null);
+   *   this.invitationsApi.inviteUserToGroup(groupId, userId).pipe(retry(2)).subscribe({
+   *     next: invitation => {
+   *       this.invitationsSignal.update(invitations => [...invitations, invitation]);
+   *       this.loadingSignal.set(false);
+   *     },
+   *     error: err => {
+   *       this.errorSignal.set(this.formatError(err, 'Failed to request group invitation'));
+   *       this.loadingSignal.set(false);
+   *     },
+   *   });
+   * }
+   */
+
   acceptInvitation(id: number): void {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);

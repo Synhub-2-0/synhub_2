@@ -1,4 +1,5 @@
-<p>group-list works!</p>
-@for (group of groups; track group) {
-  <app-group-card [groupInfo]="group"></app-group-card>
-}
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+  @for (group of groups; track group.id) {
+    <app-group-card [group]="group" [isLeader]="isLeader"></app-group-card>
+  }
+</div>

@@ -1,14 +1,21 @@
-import {HttpInterceptorFn} from '@angular/common/http';
-import {IamStore} from '../application/iam.store';
-import {inject} from '@angular/core';
+import { HttpInterceptorFn } from '@angular/common/http';
 
-export const iamInterceptor: HttpInterceptorFn = (
-  request, next) => {
-  const store = inject(IamStore);
-  const token = store.currentToken();
-  const handledRequest = token
-    ? request.clone({headers: request.headers
-        .set('Authorization', `Bearer ${token}`)})
-    : request;
-  return next(handledRequest);
-}
+export const iamInterceptor: HttpInterceptorFn = (request, next) => {
+  if (
+    request.url.includes('/authentication/sign-in') ||
+    request.url.includes('/authentication/sign-up')
+  ) {
+    return next(request);
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token || token === 'undefined' || token === 'null') {
+    return next(request);
+  }
+
+  return next(request.clone({
+    setHeaders: {
+      Authorization: `Bearer ${token}`,
+    },
+  }));
+};

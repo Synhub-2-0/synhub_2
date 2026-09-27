@@ -1,58 +1,44 @@
-import {Component, computed, inject, signal} from '@angular/core';
-import {Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
-import {IamStore} from '../../../../iam/application/iam.store';
-import {MatButton, MatIconButton} from '@angular/material/button';
-import {MatIcon} from '@angular/material/icon';
-import {MatSidenav, MatSidenavContainer, MatSidenavContent} from '@angular/material/sidenav';
-
-const DEFAULT_AVATAR = 'default-avatar.jpg';
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
+import { IamStore } from '../../../../iam/application/iam.store';
 
 @Component({
-  imports: [
-    MatIcon,
-    MatSidenav,
-    MatSidenavContainer,
-    MatSidenavContent,
-    RouterLinkActive,
-    RouterOutlet,
-    RouterLink,
-    MatIconButton
-  ],
   selector: 'app-layout',
-  styleUrl: './layout.css',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
   templateUrl: './layout.html',
+  styleUrl: './layout.css',
 })
-export class Layout {
-  private router = inject(Router);
-  protected store = inject(IamStore);
+export class Layout implements OnInit {
+  readonly iamStore = inject(IamStore);
+  private readonly router = inject(Router);
+  readonly sidebarOpen = signal(true);
+  readonly isAuthRoute = signal(true);
 
-  protected pfpUrl = signal<string | null>(null);
-  private failedUrl = signal<string | null>(null);
-
-  events = signal<('open!' | 'close!')[]>([]);
-  opened = signal(false);
-
-  trackEvent(event: 'open!' | 'close!') {
-    this.events.update(events => [...events, event]);
+  ngOnInit(): void {
+    this.checkRoute(this.router.url);
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(event => this.checkRoute(event.urlAfterRedirects));
   }
 
-  protected avatarSrc = computed(() => {
-    const url = this.pfpUrl();
-    return url && url !== this.failedUrl() ? url : DEFAULT_AVATAR;
-  });
-
-  protected onAvatarError() {
-    const url = this.pfpUrl();
-    if (url) this.failedUrl.set(url);
+  private checkRoute(url: string): void {
+    this.isAuthRoute.set(url.startsWith('/auth') || url === '/');
   }
 
-  performSignOut(){
-    this.store.signOut(this.router);
+  toggleSidebar(): void {
+    this.sidebarOpen.update(value => !value);
   }
 
-  options = [
-    {link: '/home', label: 'Menú', icon: 'home'},
-    {link: '/groups/leader', label: 'Líder', icon: 'assignment_ind'},
-    {link: '/groups/member', label: 'Miembro', icon: 'person'}
-  ];
+  get userInitial(): string {
+    const name = this.iamStore.currentProfile()?.name || this.iamStore.currentUsername() || 'S';
+    return name.charAt(0).toUpperCase();
+  }
+
+  onSignOut(): void {
+    this.iamStore.signOut(this.router);
+  }
 }

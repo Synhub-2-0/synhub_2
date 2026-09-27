@@ -1,0 +1,83 @@
+<article (click)="openDetails()"
+  class="flex cursor-pointer flex-col justify-between gap-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#b8daff] hover:shadow-md">
+  <div class="flex flex-col gap-4">
+    <header class="flex items-start justify-between gap-3">
+      <div class="flex items-center gap-3.5 min-w-0">
+        @if (task.assignedTo?.imgUrl) {
+          <img [src]="task.assignedTo?.imgUrl" [alt]="task.assignedTo?.name"
+            class="h-11 w-11 rounded-full border border-slate-200 object-cover shadow-sm shrink-0" />
+        } @else {
+          <span class="grid h-11 w-11 place-items-center rounded-full bg-[#1A4E85] font-bold text-white text-sm shadow-sm shrink-0">{{ initials }}</span>
+        }
+        <div class="min-w-0">
+          @if (task.assignedTo) {
+            <p class="text-xs font-semibold text-slate-500 truncate">
+              {{ task.assignedTo.name }} {{ task.assignedTo.surname }}
+              <span class="text-slate-400 font-normal">(&#64;{{ task.assignedTo.username }})</span>
+            </p>
+          }
+          <h3 class="text-lg font-extrabold text-slate-800 truncate">{{ task.title }}</h3>
+        </div>
+      </div>
+      <span class="rounded-xl border px-3 py-1 text-xs font-bold shrink-0" [ngClass]="statusBadgeClass">{{ statusLabel }}</span>
+    </header>
+    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4 min-h-[84px]">
+      @if (task.description) {
+        <p class="text-sm text-slate-700 line-clamp-3 leading-relaxed">{{ task.description }}</p>
+      } @else {
+        <p class="text-sm text-slate-400 italic">Sin descripción registrada.</p>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-3 pt-1">
+    <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+      <div class="h-full w-full transition-all" [ngClass]="progressClass"></div>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 font-medium">
+      <span>Vence: {{ task.dueDate | date:'dd/MM/yyyy HH:mm' }}</span>
+      <span class="font-semibold text-slate-700">{{ remainingTimeLabel }}</span>
+    </div>
+
+    @if (isLeader) {
+      <footer class="mt-2 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+        @if (task.status === 'COMPLETED') {
+          <button type="button" (click)="onChangeStatus($event, 'DONE')"
+            class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-2 text-xs font-bold text-white transition">
+            <mat-icon class="scale-75">verified</mat-icon> Aprobar (Done)
+          </button>
+        } @else { <span></span> }
+        <div class="flex items-center gap-2">
+          <button type="button" (click)="onEdit($event)"
+            class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-slate-100 hover:bg-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 transition">
+            <mat-icon class="scale-75">edit</mat-icon> Editar
+          </button>
+          <button type="button" (click)="onDelete($event)"
+            class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-red-50 hover:bg-red-100 px-3.5 py-2 text-xs font-bold text-red-600 transition">
+            <mat-icon class="scale-75">delete</mat-icon> Eliminar
+          </button>
+        </div>
+      </footer>
+    }
+
+    @if (!isLeader && (task.status === 'IN_PROGRESS' || task.status === 'ON_HOLD')) {
+      <footer class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-slate-100">
+        @if (task.status === 'IN_PROGRESS') {
+          <button type="button" (click)="onChangeStatus($event, 'ON_HOLD')"
+            class="flex items-center justify-center gap-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 px-4 py-2.5 text-xs font-bold transition cursor-pointer">
+            <mat-icon class="scale-75">pause_circle</mat-icon> Poner en Espera
+          </button>
+        } @else {
+          <button type="button" (click)="onChangeStatus($event, 'IN_PROGRESS')"
+            class="flex items-center justify-center gap-1.5 rounded-xl bg-[#e0efff] hover:bg-[#cde4ff] text-[#1A4E85] px-4 py-2.5 text-xs font-bold transition cursor-pointer">
+            <mat-icon class="scale-75">play_circle</mat-icon> Reanudar Tarea
+          </button>
+        }
+        <button type="button" (click)="onChangeStatus($event, 'COMPLETED')"
+          class="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition cursor-pointer">
+          <mat-icon class="scale-75">check_circle</mat-icon> Marcar Completada
+        </button>
+      </footer>
+    }
+  </div>
+</article>

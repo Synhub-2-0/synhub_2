@@ -1,17 +1,39 @@
-import {Component, signal} from '@angular/core';
-import {GroupList} from '../../components/group-list/group-list';
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { GroupsStore } from '../../../application/groups.store';
+import { GroupList } from '../../components/group-list/group-list';
+import { NoGroupMember } from '../../components/no-group-member/no-group-member';
+import { InvitationsStore } from '../../../../invitations/application/invitations.store';
 
 @Component({
-  imports: [
-    GroupList
-  ],
   selector: 'app-member-groups',
-  styleUrl: './member-groups.css',
+  standalone: true,
+  imports: [CommonModule, MatIconModule, GroupList, NoGroupMember],
   templateUrl: './member-groups.html',
+  styleUrl: './member-groups.css',
 })
-export class MemberGroups {
-  // TODO: Add group endpoint filtered for members
-  groups = signal([
+export class MemberGroups implements OnInit {
+  readonly groupsStore = inject(GroupsStore);
+  readonly invitationsStore = inject(InvitationsStore);
+  readonly showJoinPanel = signal(false);
 
-  ])
+  ngOnInit(): void {
+    this.groupsStore.loadGroups();
+  }
+
+  toggleJoinPanel(): void {
+    this.showJoinPanel.update(value => !value);
+  }
+
+  acceptInvitation(invitationId: number): void {
+    this.invitationsStore.acceptInvitation(invitationId);
+    this.showJoinPanel.set(false);
+    this.groupsStore.loadGroups();
+  }
+
+  /*
+   * TODO: Reactivar cuando el backend exponga la búsqueda de grupos por código
+   * y el flujo de solicitud para unirse a un grupo.
+   */
 }

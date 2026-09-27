@@ -10,7 +10,7 @@ export class GroupsAssembler implements BaseAssembler<Group, GroupResource, Grou
   private profileAssembler = new ProfilesAssembler();
 
   toEntitiesFromResponse(response: GroupsResponse): Group[] {
-    return response.groups.map(resource => this.toEntityFromResource(resource as GroupResource))
+    return (response?.groups ?? []).map(resource => this.toEntityFromResource(resource as GroupResource));
   }
 
   toEntityFromResource(resource: GroupResource): Group {
@@ -20,8 +20,8 @@ export class GroupsAssembler implements BaseAssembler<Group, GroupResource, Grou
       imgUrl: resource.imgUrl,
       description: resource.description,
       code: resource.code,
-      usersInGroup: resource.usersInGroup.map(gu => this.toGroupUserFromResource(gu))
-    })
+      usersInGroup: (resource.usersInGroup ?? []).map(gu => this.toGroupUserFromResource(gu))
+    });
   }
 
   toGroupUserFromResource(resource: GroupUsersResource): GroupUser {
