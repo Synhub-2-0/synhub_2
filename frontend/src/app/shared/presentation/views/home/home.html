@@ -1,28 +1,104 @@
-<div class="mx-auto flex max-w-6xl flex-col gap-8 p-6 lg:p-10">
-  <header class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+<div class="mx-auto flex max-w-7xl flex-col gap-8 p-6 lg:p-10">
+  <header class="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
     <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Panel Principal</span>
     <h1 class="mt-1 text-2xl font-extrabold text-slate-900">Hola, {{ iamStore.currentProfile()?.name || iamStore.currentUsername() || 'Bienvenido' }}</h1>
-    <p class="mt-1 text-sm text-slate-500">Accede rápidamente a tus equipos y supervisa tus entregas en SynHub.</p>
-    <p class="mt-4 text-2xl font-extrabold text-slate-900">{{ groupsStore.groupCount() }} <span class="text-xs font-bold uppercase text-slate-400">Grupos</span></p>
+    <p class="mt-1 text-sm text-slate-500">Accede rápidamente a tus equipos y supervisa tus entregas en tiempo real.</p>
+    <div class="mt-6 flex items-center gap-6 border-t pt-4">
+      <div>
+        <p class="text-2xl font-extrabold text-slate-900">{{ groupsStore.groupCount() }}</p>
+        <span class="text-xs font-bold uppercase text-slate-400">Grupos Totales</span>
+      </div>
+    </div>
   </header>
   <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
-    <div class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-      <mat-icon class="text-[#1A4E85]">person</mat-icon>
-      <h2 class="mt-3 text-lg font-extrabold">Espacio de Miembro</h2>
-      <p class="mt-1 text-sm text-slate-500">Consulta tus grupos y actualiza tus tareas.</p>
+    <div class="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-sm transition-all hover:shadow-md">
+      <div class="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#1A4E85]">
+        <mat-icon>person</mat-icon>
+      </div>
+      <h2 class="mt-4 text-lg font-extrabold text-slate-900">Espacio de Miembro</h2>
+      <p class="mt-1 text-sm text-slate-500">Consulta tus grupos asignados y actualiza tus tareas pendientes.</p>
       <div class="mt-6 grid grid-cols-2 gap-3 border-t pt-4">
-        <a routerLink="/groups/member" class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold">Mis Grupos</a>
-        <a routerLink="/tasks/member" class="rounded-xl bg-[#0f172a] px-4 py-2.5 text-center text-xs font-bold text-white">Mis Tareas</a>
+        <a routerLink="/groups/member" class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold text-slate-700 hover:bg-slate-200">Mis Grupos</a>
+        <a routerLink="/tasks/member" class="rounded-xl bg-[#0f172a] px-4 py-2.5 text-center text-xs font-bold text-white hover:bg-slate-800">Mis Tareas</a>
       </div>
     </div>
-    <div class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-      <mat-icon>admin_panel_settings</mat-icon>
-      <h2 class="mt-3 text-lg font-extrabold">Espacio de Líder</h2>
-      <p class="mt-1 text-sm text-slate-500">Administra grupos y asigna tareas al equipo.</p>
+    <div class="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-sm transition-all hover:shadow-md">
+      <div class="grid h-10 w-10 place-items-center rounded-xl bg-sky-50 text-[#4A90E2]">
+        <mat-icon>admin_panel_settings</mat-icon>
+      </div>
+      <h2 class="mt-4 text-lg font-extrabold text-slate-900">Espacio de Líder</h2>
+      <p class="mt-1 text-sm text-slate-500">Administra equipos de trabajo y asigna nuevas actividades.</p>
       <div class="mt-6 grid grid-cols-2 gap-3 border-t pt-4">
-        <a routerLink="/groups/leader" class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold">Mis Grupos</a>
-        <a routerLink="/tasks/leader" class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-center text-xs font-bold text-white">Gestionar Tareas</a>
+        <a routerLink="/groups/leader" class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold text-slate-700 hover:bg-slate-200">Mis Grupos</a>
+        <a routerLink="/tasks/leader" class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-center text-xs font-bold text-white hover:bg-blue-600">Gestionar Tareas</a>
       </div>
     </div>
+  </section>
+
+  <section class="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-sm">
+    <div class="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Flujo de Trabajo</span>
+        <h2 class="text-xl font-extrabold text-slate-900">Tablero Kanban de Tareas</h2>
+      </div>
+      @if (groupsStore.groups().length > 0) {
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+          @for (group of groupsStore.groups(); track group.id) {
+            <button
+              type="button"
+              (click)="selectGroup(group.id)"
+              [class]="selectedGroupId() === group.id ? 'bg-[#0f172a] text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+              class="whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all">
+              {{ group.name }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    @if (groupsStore.groups().length === 0) {
+      <div class="py-12 text-center text-sm text-slate-400">No hay grupos disponibles para mostrar en el tablero.</div>
+    } @else {
+      <div class="mt-6 flex gap-6 overflow-x-auto pb-4">
+        @for (col of columns; track col.status) {
+          <div class="flex w-80 shrink-0 flex-col rounded-2xl border border-slate-200/60 bg-slate-50/70 p-4">
+            <div class="flex items-center justify-between border-b border-slate-200/60 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span [class]="col.dotClass + ' h-2.5 w-2.5 rounded-full'"></span>
+                <h3 class="text-sm font-bold text-slate-800">{{ col.title }}</h3>
+              </div>
+              <span class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-extrabold text-slate-600">
+                {{ tasksByStatus()[col.status].length }}
+              </span>
+            </div>
+            <div class="mt-4 flex min-h-[320px] max-h-[500px] flex-col gap-3 overflow-y-auto pr-1">
+              @for (task of tasksByStatus()[col.status]; track task.id) {
+                <div class="group rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
+                  <h4 class="text-sm font-bold text-slate-900 transition-colors group-hover:text-[#4A90E2]">{{ task.title }}</h4>
+                  <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{{ task.description }}</p>
+                  <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400">
+                    <span class="font-medium">Vence: {{ task.dueDate | date:'dd/MM/yyyy' }}</span>
+                    <select
+                      [value]="task.status"
+                      (change)="onChangeTaskStatus(task.id, $any($event.target).value)"
+                      class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-600">
+                      <option value="IN_PROGRESS">En progreso</option>
+                      <option value="ON_HOLD">En espera</option>
+                      <option value="COMPLETED">Completada</option>
+                      <option value="DONE">Terminada</option>
+                      <option value="EXPIRED">Vencida</option>
+                    </select>
+                  </div>
+                </div>
+              } @empty {
+                <div class="grid h-40 place-items-center rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">
+                  No hay tareas en este estado.
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
   </section>
 </div>
