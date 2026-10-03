@@ -65,4 +65,8 @@ export class IamApi extends BaseApi {
   getProfileByUserId(userId: number): Observable<Profile> {
     return this.profilesEndpoint.getByUserId(userId);
   }
+
+  getProfileByUsername(username: string): Observable<Profile> {
+    return this.profilesEndpoint.getByUsername(username);
+  }
 }

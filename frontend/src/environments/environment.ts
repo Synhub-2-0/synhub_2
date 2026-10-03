@@ -8,5 +8,6 @@ export const environment = {
   platformProviderGroupsEndpointPath: '/groups',
   platformProviderTasksEndpointPath: '/tasks',
   platformProviderInvitationsEndpointPath: '/invitations',
+  platformProviderRequestsEndpointPath: '/requests',
   logoProviderApiBaseUrl: 'https://img.logo.dev'
 };

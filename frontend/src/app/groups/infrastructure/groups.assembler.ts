@@ -20,8 +20,12 @@ export class GroupsAssembler implements BaseAssembler<Group, GroupResource, Grou
       imgUrl: resource.imgUrl,
       description: resource.description,
       code: resource.code,
-      usersInGroup: (resource.usersInGroup ?? []).map(gu => this.toGroupUserFromResource(gu))
+      memberCount: resource.memberCount ?? 0
     });
+  }
+
+  toGroupUsersFromResources(resources: GroupUsersResource[]): GroupUser[] {
+    return (resources ?? []).map(resource => this.toGroupUserFromResource(resource));
   }
 
   toGroupUserFromResource(resource: GroupUsersResource): GroupUser {
@@ -38,7 +42,7 @@ export class GroupsAssembler implements BaseAssembler<Group, GroupResource, Grou
       imgUrl: entity.imgUrl,
       description: entity.description,
       code: entity.code,
-      usersInGroup: entity.usersInGroup
+      memberCount: entity.memberCount
     } as GroupResource;
   }
 
