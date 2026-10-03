@@ -21,8 +21,6 @@ public interface IamContextFacade {
   Long createUser(String username, String name, String surname, String imgUrl, String email, String password, List<String> roleNames);
   Long fetchUserIdByUsername(String username);
   String fetchUsernameByUserId(Long userId);
-  Optional<User> fetchUserByMemberId(Long memberId);
-  Optional<User> fetchUserByLeaderId(Long leaderId);
   Optional<User> fetchUserById(Long userId);
   List<User> fetchUsersByGroupId(Long groupId);
 }

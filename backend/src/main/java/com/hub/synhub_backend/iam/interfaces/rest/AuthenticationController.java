@@ -49,9 +49,6 @@ public class AuthenticationController {
     var signInCommand = SignInCommandFromResourceAssembler
         .toCommandFromResource(signInResource);
     var authenticatedUser = userCommandService.handle(signInCommand);
-    if (authenticatedUser.isEmpty()) {
-      return ResponseEntity.notFound().build();
-    }
 
     var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler
         .toResourceFromEntity(
@@ -71,24 +68,6 @@ public class AuthenticationController {
     var user = userCommandService.handle(signUpCommand);
     if (user.isEmpty()) {
       return ResponseEntity.badRequest().build();
-    }
-
-    var role = user.get().getRoles().stream().findFirst().get().getName().toString();
-
-    if(role.equals("ROLE_LEADER")){
-      var createUserLeaderCommand = CreateUserLeaderCommandFromResourceAssembler.toCommandFromResource(user.get().getId());
-      user = userCommandService.handle(createUserLeaderCommand);
-      if (user.isEmpty()) {
-        return ResponseEntity.badRequest().build();
-      }
-    }
-
-    if(role.equals("ROLE_MEMBER")){
-      var createuserMemberCommand = CreateUserMemberCommandFromResourceAssembler.toCommandFromResource(user.get().getId());
-      user = userCommandService.handle(createuserMemberCommand);
-      if (user.isEmpty()) {
-        return ResponseEntity.badRequest().build();
-      }
     }
 
     var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user.get());

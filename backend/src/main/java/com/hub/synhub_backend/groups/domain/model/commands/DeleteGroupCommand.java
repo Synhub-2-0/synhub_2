@@ -1,4 +1,7 @@
 package com.hub.synhub_backend.groups.domain.model.commands;
 
-public record DeleteGroupCommand(Long leaderId) {
+public record DeleteGroupCommand(
+        Long requesterId,
+        Long groupId
+) {
 }

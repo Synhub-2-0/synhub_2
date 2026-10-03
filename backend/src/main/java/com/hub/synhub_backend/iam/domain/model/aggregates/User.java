@@ -1,15 +1,13 @@
 package com.hub.synhub_backend.iam.domain.model.aggregates;
 
-import io.micrometer.common.lang.Nullable;
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import com.hub.synhub_backend.groups.domain.model.aggregates.Leader;
 import com.hub.synhub_backend.iam.domain.model.entities.Role;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
-import com.hub.synhub_backend.tasks.domain.model.aggregates.Member;
 
 import java.util.HashSet;
 import java.util.List;
@@ -45,27 +43,19 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     @Size(max = 120)
     private String password;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Getter
+    private List<GroupProfile> groupProfiles;
+
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles;
-
-    @Nullable
-    @Setter
-    @OneToOne
-    @JoinColumn(name = "leader_id")
-    private Leader leader;
-
-    @Nullable
-    @Setter
-    @OneToOne
-    @JoinColumn(name = "member_id")
-    private Member member;
+    private Set<Role> accountRoles;
 
     public User() {
-        this.roles = new HashSet<>();
+        this.accountRoles = new HashSet<>();
     }
     public User(String username,
                 String name,
@@ -79,7 +69,7 @@ public class User extends AuditableAbstractAggregateRoot<User> {
         this.imgUrl = imgUrl;
         this.email = email;
         this.password = password;
-        this.roles = new HashSet<>();
+        this.accountRoles = new HashSet<>();
     }
 
     public User(
@@ -89,7 +79,7 @@ public class User extends AuditableAbstractAggregateRoot<User> {
             String imgUrl,
             String email,
             String password,
-            List<Role> roles) {
+            List<Role> accountRoles) {
         this(
                 username,
                 name,
@@ -97,19 +87,19 @@ public class User extends AuditableAbstractAggregateRoot<User> {
                 imgUrl,
                 email,
                 password);
-        addRoles(roles);
+        addRoles(accountRoles);
     }
 
 
     public User addRole(Role role) {
-        this.roles.add(role);
+        this.accountRoles.add(role);
         return this;
     }
 
 
     public User addRoles(List<Role> roles) {
         var validatedRoleSet = Role.validateRoleSet(roles);
-        this.roles.addAll(validatedRoleSet);
+        this.accountRoles.addAll(validatedRoleSet);
         return this;
     }
 }

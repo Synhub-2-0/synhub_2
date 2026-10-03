@@ -10,8 +10,11 @@ import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
-    List<Task> findByMember_Id(Long memberId);
+    List<Task> findByProfile_Id(Long profileId);
     List<Task> findByStatus(TaskStatus status);
-    List<Task> findByGroup_Id(Long groupId);
     List<Task> findAllByStatusAndDueDateBefore(TaskStatus status, OffsetDateTime dueDate);
+    List<Task> findByProfile_User_Id(Long profileUserId);
+    List<Task> findByProfile_Group_Id(Long profileGroupId);
+    List<Task> findByProfile_Group_IdAndProfile_User_Id(Long profileGroupId, Long profileUserId);
+    List<Task> findByProfile_Group_IdAndStatus(Long profileGroupId, TaskStatus status);
 }

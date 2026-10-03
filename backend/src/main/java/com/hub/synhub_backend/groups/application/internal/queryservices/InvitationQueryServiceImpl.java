@@ -1,7 +1,7 @@
 package com.hub.synhub_backend.groups.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Invitation;
-import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationByMemberIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByGroupIdQuery;
 import com.hub.synhub_backend.groups.domain.services.InvitationQueryService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
@@ -20,8 +20,8 @@ public class InvitationQueryServiceImpl implements InvitationQueryService {
     }
 
     @Override
-    public Optional<Invitation> handle(GetInvitationByMemberIdQuery query) {
-        return this.invitationRepository.findByMember_Id(query.memberId());
+    public List<Invitation> handle(GetInvitationsByUserIdQuery query) {
+        return this.invitationRepository.findByUser_Id(query.userId());
     }
 
     @Override

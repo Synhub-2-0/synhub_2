@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.tasks.domain.model.aggregates;
 
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NonNull;
@@ -32,13 +34,8 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
 
     @Setter
     @ManyToOne
-    @JoinColumn(name = "member_id")
-    private Member member;
-
-    @Setter
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    private Group group;
+    @JoinColumn(name = "profile_id")
+    private GroupProfile profile;
 
     @Column(nullable = false)
     private Integer timesRearranged = 0;
@@ -59,15 +56,8 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     }
 
     public void updateStatus(UpdateTaskStatusCommand command) {
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateStatus] Antes: status=%s, timesRearranged=%d\n", this.status, this.timesRearranged);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
 
-        var commandStatus = TaskStatus.valueOf(command.status());
+        var commandStatus = command.status();
 
         if(this.status == TaskStatus.IN_PROGRESS && commandStatus == TaskStatus.COMPLETED) {
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -79,62 +69,19 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
             }
         } else if(this.status == TaskStatus.COMPLETED && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("Task rearranged from COMPLETED to IN_PROGRESS. Times rearranged: %d. Task title: %s\n", timesRearranged, "Task tile: " + this.title);
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
         } else if (this.status == TaskStatus.ON_HOLD && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("Task rearranged from ON_HOLD to IN_PROGRESS. Times rearranged: %d. Task title: %s\n", timesRearranged, "Task tile: " + this.title);
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
         } else if (this.status == TaskStatus.EXPIRED && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("Task rearranged from EXPIRED to IN_PROGRESS. Times rearranged: %d. Task title: %s\n", timesRearranged, "Task tile: " + this.title);
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
-            //System.out.printf("===============================================================================\n");
         }
-        this.status = TaskStatus.valueOf(command.status());
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateTask] Después: status=%s, timesRearranged=%d, dueDate=%s\n", this.status, this.timesRearranged, this.dueDate);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
+        this.status = command.status();
     }
 
     public void updateTask(UpdateTaskCommand command) {
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateTask] Antes: status=%s, timesRearranged=%d\n", this.status, this.timesRearranged);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        if(command.title() != null && command.title() != "") {
+        if(command.title() != null && !command.title().isEmpty()) {
             this.title = command.title();
         }
-        if(command.description() != null && command.description() != "") {
+        if(command.description() != null && !command.description().isEmpty()) {
             this.description = command.description();
         }
         if(command.dueDate() != null) {
@@ -149,12 +96,5 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
                 }
             }
         }
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("[updateTask] Después: status=%s, timesRearranged=%d, dueDate=%s\n", this.status, this.timesRearranged, this.dueDate);
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
-        //System.out.printf("===============================================================================\n");
     }
 }

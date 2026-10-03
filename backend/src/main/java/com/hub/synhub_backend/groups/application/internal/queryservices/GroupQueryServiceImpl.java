@@ -1,31 +1,32 @@
 package com.hub.synhub_backend.groups.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByCodeQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByLeaderIdQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByMemberIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.*;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
+import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
-import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.ListResourceBundle;
 import java.util.Optional;
 
 @Service
 public class GroupQueryServiceImpl implements GroupQueryService {
     private final GroupRepository groupRepository;
-    private final MemberRepository memberRepository;
+    private final GroupProfileRepository groupProfileRepository;
 
-    public GroupQueryServiceImpl(GroupRepository groupRepository, MemberRepository memberRepository) {
+    public GroupQueryServiceImpl(
+            GroupRepository groupRepository,
+            GroupProfileRepository groupProfileRepository) {
         this.groupRepository = groupRepository;
-        this.memberRepository = memberRepository;
+        this.groupProfileRepository = groupProfileRepository;
     }
 
     @Override
-    public Optional<Group> handle(GetGroupByLeaderIdQuery query) {
-        return this.groupRepository.findByLeader_Id(query.leaderId());
+    public List<Group> handle(GetGroupsByLeaderIdQuery query) {
+        return this.groupRepository.findByLeaderId(query.leaderId());
     }
 
     @Override
@@ -39,17 +40,13 @@ public class GroupQueryServiceImpl implements GroupQueryService {
     }
 
     @Override
-    public Optional<Group> handle(GetGroupByMemberIdQuery query) {
-        var member = this.memberRepository.findById(query.memberId());
-        var group = member.get().getGroup();
-        if(group == null) {
-            return Optional.empty();
-        }
-        var groupId = group.getId();
-
-        var groupSearched = this.groupRepository.findById(groupId);
-
-        return groupSearched;
+    public List<Group> handle(GetGroupsByUserIdQuery query) {
+        var groupProfiles = this.groupProfileRepository.findByUser_Id(query.userId());
+        List<Group> groups = new java.util.ArrayList<>(List.of());
+        groupProfiles.forEach(groupProfile -> {
+            groups.add(groupProfile.getGroup());
+        });
+        return groups;
     }
 
     @Override
@@ -57,6 +54,17 @@ public class GroupQueryServiceImpl implements GroupQueryService {
         return this.groupRepository.findById(query.groupId());
     }
 
+    @Override
+    public List<Group> handle(GetGroupsByUserRoleQuery query) {
+        var groupProfiles = this.groupProfileRepository.findByUser_Id(query.requesterId())
+                .stream()
+                .filter(profile -> profile.getRoleInGroup() == query.role());
+        List<Group> groups = new java.util.ArrayList<>(List.of());
+        groupProfiles.forEach(groupProfile -> {
+            groups.add(groupProfile.getGroup());
+        });
+        return groups;
+    }
 
 
 }

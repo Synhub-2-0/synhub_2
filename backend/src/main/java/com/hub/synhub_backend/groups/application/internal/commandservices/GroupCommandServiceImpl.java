@@ -1,135 +1,117 @@
 package com.hub.synhub_backend.groups.application.internal.commandservices;
 
+import com.hub.synhub_backend.groups.domain.exceptions.LeaderCannotBeRemovedException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
-import com.hub.synhub_backend.groups.domain.model.aggregates.Leader;
 import com.hub.synhub_backend.groups.domain.model.commands.*;
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.groups.domain.exceptions.UserNotInGroupException;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
+import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.LeaderRepository;
-import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.MemberRepository;
+import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class GroupCommandServiceImpl implements GroupCommandService {
 
     private final GroupRepository groupRepository;
-    private final LeaderRepository leaderRepository;
-    private final MemberRepository memberRepository;
+    private final UserRepository userRepository;
+    private final GroupProfileRepository groupProfileRepository;
 
-    public GroupCommandServiceImpl(GroupRepository groupRepository, LeaderRepository leaderRepository, MemberRepository memberRepository) {
+    public GroupCommandServiceImpl(
+            GroupRepository groupRepository,
+            UserRepository userRepository,
+            GroupProfileRepository groupProfileRepository
+    ) {
         this.groupRepository = groupRepository;
-        this.leaderRepository = leaderRepository;
-        this.memberRepository = memberRepository;
+        this.userRepository = userRepository;
+        this.groupProfileRepository = groupProfileRepository;
     }
 
-
     @Override
-    public Optional<Group> handle(CreateGroupCommand command) {
-
-        Leader leader = leaderRepository.findById(command.leaderId()).get();
-
+    @Transactional
+    public Group handle(CreateGroupCommand command) {
+        var leaderOpt = userRepository.findById(command.leaderId());
+        if (leaderOpt.isEmpty()) {
+            throw new ResourceNotFoundException("User with id " + command.leaderId() + " does not exist");
+        }
+        var leader = leaderOpt.get();
         Group group = new Group(
                 command.name(),
                 command.description(),
                 command.imgUrl(),
-                leader,
                 GroupCode.random()
-                );
-        while( groupRepository.existsByCode(group.getCode())) {
+        );
+        while(groupRepository.existsByCode(group.getCode())) {
             group.setCode(GroupCode.random());
         }
-
-        groupRepository.save(group);
-
-        return Optional.of(group);
+        var newGroupProfile = new GroupProfile(leader, group, GroupRole.GROUP_LEADER);
+        leader.getGroupProfiles().add(newGroupProfile);
+        group.getUserProfiles().add(newGroupProfile);
+        this.groupRepository.save(group);
+        this.userRepository.save(leader);
+        return group;
     }
 
     @Override
-    public Optional<Group> handle(UpdateGroupCommand command) {
-        var group = groupRepository.findByLeader_Id(command.leaderId()).get();
-        var groupId = group.getId();
-        if(!this.groupRepository.existsById(groupId)) {
-            throw new IllegalArgumentException("Group with id " + groupId + " does not exist");
-        }
-
-        var groupToUpdate = groupRepository.findById(groupId).get();
-        groupToUpdate.updateInformation(command);
-
-        try{
-            var updatedGroup = groupRepository.save(groupToUpdate);
-            return Optional.of(updatedGroup);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error while updating group: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void handle(DeleteGroupCommand command) {
-
-        var groupId = groupRepository.findByLeader_Id(command.leaderId()).get().getId();
-
-        var group = groupRepository.findById(groupId);
-
-        if(!this.groupRepository.existsById(groupId)) {
-            throw new IllegalArgumentException("Group with id " + groupId + " does not exist");
-        }
-        try {
-            groupRepository.delete(group.get());
-        }catch (Exception e) {
-            throw new IllegalArgumentException("Error while deleting group: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void handle(RemoveMemberFromGroupCommand command) {
-        var groupId = groupRepository.findByLeader_Id(command.leaderId())
-                .orElseThrow(() -> new IllegalArgumentException("Group not found for leader"))
-                .getId();
-
-        var group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group with id " + groupId + " does not exist"));
-
-        var member = memberRepository.findById(command.memberId())
-                .orElseThrow(() -> new IllegalArgumentException("Member with id " + command.memberId() + " does not exist"));
-
-        if (!group.getMembers().contains(member)) {
-            throw new IllegalArgumentException("Member with id " + command.memberId() + " does not exist in group with id " + groupId);
-        }
-
-        try {
-            group.getMembers().remove(member);
-            member.setGroup(null);
-            group.setMemberCount(group.getMembers().size());
-            memberRepository.save(member);
-            groupRepository.save(group);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error while removing member from group: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void handle(LeaveGroupCommand command) {
+    @Transactional
+    public Group handle(UpdateGroupCommand command) {
         var group = groupRepository.findById(command.groupId())
-                .orElseThrow(() -> new IllegalArgumentException("Group not found for member"));
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
 
-        var member = memberRepository.findById(command.memberId())
-                .orElseThrow(() -> new IllegalArgumentException("Member with id " + command.memberId() + " does not exist"));
-
-        if (!group.getMembers().contains(member)) {
-            throw new IllegalArgumentException("Member with id " + command.memberId() + " does not exist in group with id " + group.getId());
+        var leader = group.getLeader();
+        if (leader == null || !leader.getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader can update the group");
         }
 
-        try {
-            group.getMembers().remove(member);
-            member.setGroup(null);
-            group.setMemberCount(group.getMembers().size());
-            memberRepository.save(member);
-            groupRepository.save(group);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error while removing member from group: " + e.getMessage());
+        group.updateInformation(command);
+        return groupRepository.save(group);
+    }
+
+    @Override
+    @Transactional
+    public void handle(DeleteGroupCommand command) {
+        var groupOpt = groupRepository.findById(command.groupId());
+
+        if (groupOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist");
         }
+
+        var group = groupOpt.get();
+        var leader = group.getLeader();
+
+        if (leader == null || !leader.getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader of a group can delete it");
+        }
+
+        groupRepository.delete(group);
+
+    }
+
+    @Override
+    @Transactional
+    public void handle(RemoveMemberUserFromGroupCommand command) {
+        var group = groupRepository.findById(command.groupId())
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
+
+        var user = this.userRepository.findById(command.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
+
+        var groupProfile = this.groupProfileRepository.findByGroup_IdAndUser_Id(command.groupId(), command.userId())
+                .orElseThrow(() -> new UserNotInGroupException("User with id " + command.userId() + " is not in group with id " + command.groupId()));
+
+        if (groupProfile.getRoleInGroup() == GroupRole.GROUP_LEADER) {
+            throw new LeaderCannotBeRemovedException("The leader cannot be removed from the group");
+        }
+
+        user.getGroupProfiles().remove(groupProfile);
+        group.getUserProfiles().remove(groupProfile);
+        userRepository.save(user);
+        groupRepository.save(group);
     }
 }

@@ -26,7 +26,7 @@ public interface TaskQueryService {
      * @param query
      * @return
      */
-    List<Task> handle(GetAllTasksByMemberId query);
+    List<Task> handle(GetAllTasksByUserId query);
 
     /**
      * Retrieves tasks by their status.
@@ -41,4 +41,6 @@ public interface TaskQueryService {
      * @return
      */
     List<Task> handle(GetAllTasksByGroupIdQuery query);
+    List<Task> handle(GetTasksByGroupIdAndStatus query);
+    List<Task> handle(GetTasksByGroupIdAndUserIdQuery query);
 }

@@ -103,35 +103,6 @@ public class IamContextFacadeImpl implements IamContextFacade {
         return result.get().getUsername();
     }
 
-    /**
-     * Fetches the user by its id.
-     * @param memberId The id of the user.
-     * @return An Optional containing the user if found, otherwise empty.
-     */
-    public Optional<User> fetchUserByMemberId(Long memberId) {
-        if (memberId == null || memberId <= 0) {
-            return Optional.empty();
-        }
-        var getUserByMemberIdQuery = new GetUserByMemberId(memberId);
-        var result = userQueryService.handle(getUserByMemberIdQuery);
-        if (result.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(result.get());
-    }
-
-    public Optional<User> fetchUserByLeaderId(Long leaderId) {
-        if (leaderId == null || leaderId <= 0) {
-            return Optional.empty();
-        }
-        var getUserByLeaderIdQuery = new GetUserByLeaderId(leaderId);
-        var result = userQueryService.handle(getUserByLeaderIdQuery);
-        if (result.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(result.get());
-    }
-
     @Override
     public Optional<User> fetchUserById(Long userId) {
         if( userId == null || userId <= 0) {

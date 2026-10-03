@@ -1,117 +1,122 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
+import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserRoleQuery;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
+import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResource;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResourceReduced;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.UpdateGroupResource;
+import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateGroupCommandFromResourceAssembler;
+import com.hub.synhub_backend.groups.interfaces.rest.transform.GroupResourceReducedFromEntityAssembler;
+import com.hub.synhub_backend.groups.interfaces.rest.transform.UpdateGroupCommandFromResourceAssembler;
+import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
+import com.hub.synhub_backend.iam.domain.services.UserQueryService;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByCodeQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByLeaderIdQuery;
-import com.hub.synhub_backend.groups.domain.model.queries.GetLeaderByUsernameQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
-import com.hub.synhub_backend.groups.domain.services.LeaderQueryService;
-import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupMemberResource;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResource;
-import com.hub.synhub_backend.groups.interfaces.rest.transform.GroupMemberResourceFromEntityAssembler;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.GroupResourceFromEntityAssembler;
-import com.hub.synhub_backend.shared.application.external.outboundedservices.ExternalMemberService;
-import com.hub.synhub_backend.tasks.domain.model.queries.GetAllTasksByGroupIdQuery;
-import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
-import com.hub.synhub_backend.tasks.interfaces.rest.resources.TaskResource;
-import com.hub.synhub_backend.tasks.interfaces.rest.transform.TaskResourceFromEntityAssembler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/v1/groups")
 @Tag(name = "Groups", description = "Group management API")
 public class GroupController {
     private final GroupQueryService groupQueryService;
-    private final ExternalMemberService externalMemberService;
-    private final TaskQueryService taskQueryService;
-    private final LeaderQueryService leaderQueryService;
+    private final GroupCommandService groupCommandService;
+    private final UserQueryService userQueryService;
 
-    public GroupController(GroupQueryService groupQueryService, ExternalMemberService externalMemberService, TaskQueryService taskQueryService, LeaderQueryService leaderQueryService) {
+    public GroupController(
+            GroupQueryService groupQueryService,
+            UserQueryService userQueryService,
+            GroupCommandService groupCommandService
+            ) {
         this.groupQueryService = groupQueryService;
-        this.externalMemberService = externalMemberService;
-        this.taskQueryService = taskQueryService;
-        this.leaderQueryService = leaderQueryService;
+        this.userQueryService = userQueryService;
+        this.groupCommandService = groupCommandService;
     }
 
     @GetMapping("/search")
     @Operation(summary = "Search for a group by code", description = "Search for a group by code")
     public ResponseEntity<GroupResource> searchGroupByCode(@RequestParam String code) {
         var getGroupByCodeQuery = new GetGroupByCodeQuery(code);
-        var group = this.groupQueryService.handle(getGroupByCodeQuery);
-        if (group.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group.get());
+        var group = this.groupQueryService.handle(getGroupByCodeQuery)
+                .orElseThrow(() -> new ResourceNotFoundException("Group with code " + code + " does not exist"));
+        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
         return ResponseEntity.ok(groupResource);
     }
 
-
-
-    @GetMapping("/members")
-    @Operation(summary = "Get all group members", description = "Retrieve all members of a group")
-    public ResponseEntity<List<GroupMemberResource>> getAllMembersByGroupId(@AuthenticationPrincipal UserDetails userDetails) {
-        String username = userDetails.getUsername();
-
-        var getLeaderByUsernameQuery = new GetLeaderByUsernameQuery(username);
-
-        var leader = this.leaderQueryService.handle(getLeaderByUsernameQuery);
-
-        if (leader.isEmpty()) return ResponseEntity.notFound().build();
-
-        var getGroupByLeaderIdQuery = new GetGroupByLeaderIdQuery(leader.get().getId());
-
-        var group = this.groupQueryService.handle(getGroupByLeaderIdQuery);
-
-        if (group.isEmpty()) return ResponseEntity.notFound().build();
-
-        Long groupId = group.get().getId();
-
-        var members = externalMemberService.getMembersByGroupId(groupId);
-
-        var memberResources = members.stream()
-                .map(GroupMemberResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(memberResources);
+    @GetMapping("/{groupId}")
+    @Operation(summary = "Get group by id", description = "Get group by id")
+    public ResponseEntity<GroupResource> getGroupById(@PathVariable Long groupId) {
+        var getGroupByIdQuery = new GetGroupByIdQuery(groupId);
+        var group = this.groupQueryService.handle(getGroupByIdQuery)
+                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + groupId + " does not exist"));
+        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
+        return ResponseEntity.ok(groupResource);
     }
 
-    @GetMapping("/tasks")
-    @Operation(summary = "Get all tasks by group ID", description = "Retrieve all tasks associated with a specific group ID")
-    public ResponseEntity<List<TaskResource>> getAllTasksByGroupId(@AuthenticationPrincipal UserDetails userDetails) {
-        String username = userDetails.getUsername();
+    @PostMapping()
+    @Operation(summary = "Create a new group", description = "Create a new group")
+    public ResponseEntity<GroupResource> createGroup(@RequestBody CreateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var createGroupCommand = CreateGroupCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
+        var newGroup = this.groupCommandService.handle(createGroupCommand);
+        var newGroupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(newGroup);
+        return ResponseEntity.ok(newGroupResource);
+    }
 
-        var getLeaderByUsernameQuery = new GetLeaderByUsernameQuery(username);
+    @GetMapping("/user")
+    @Operation(summary = "Get groups by logged user", description = "Get groups by logged user")
+    public ResponseEntity<List<GroupResourceReduced>> getGroupsByUserId(@AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var userId = user.getId();
+        var getGroupsByIdQuery = new GetGroupsByUserIdQuery(userId);
+        var groups = this.groupQueryService.handle(getGroupsByIdQuery);
+        var groupResources = groups.stream().map(GroupResourceReducedFromEntityAssembler::toResourceFromEntity).toList();
+        return ResponseEntity.ok(groupResources);
+    }
 
-        var leader = this.leaderQueryService.handle(getLeaderByUsernameQuery);
+    @GetMapping("/user/role")
+    @Operation(summary = "Get groups by the logged user's role",description = "Get groups by the logged user's role")
+    public ResponseEntity<List<GroupResource>> getGroupsByUserRole(@AuthenticationPrincipal UserDetails userDetails, @RequestParam GroupRole groupRole) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getGroupsByUserRoleQuery = new GetGroupsByUserRoleQuery(user.getId(), groupRole);
+        var groups = this.groupQueryService.handle(getGroupsByUserRoleQuery);
+        var groupResources = groups.stream().map(GroupResourceFromEntityAssembler::toResourceFromEntity).toList();
+        return ResponseEntity.ok(groupResources);
+    }
 
-        if (leader.isEmpty()) return ResponseEntity.notFound().build();
+    @PutMapping("/{groupId}")
+    @Operation(summary = "Updates group details by id")
+    public ResponseEntity<GroupResource> updateGroup(@PathVariable Long groupId, @RequestBody UpdateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var updateGroupCommand = UpdateGroupCommandFromResourceAssembler.toCommandFromResource(resource, groupId, user.getId());
+        var group = this.groupCommandService.handle(updateGroupCommand);
+        var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
+        return ResponseEntity.ok(groupResource);
+    }
 
-        var getGroupByLeaderIdQuery = new GetGroupByLeaderIdQuery(leader.get().getId());
-
-        var group = this.groupQueryService.handle(getGroupByLeaderIdQuery);
-
-        if (group.isEmpty()) return ResponseEntity.notFound().build();
-
-        Long groupId = group.get().getId();
-
-        var getAllTasksByGroupIdQuery = new GetAllTasksByGroupIdQuery(groupId);
-
-        var tasks = taskQueryService.handle(getAllTasksByGroupIdQuery);
-
-        var taskResources = tasks.stream()
-                .map(TaskResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(taskResources);
+    @DeleteMapping("/{groupId}")
+    @Operation(summary = "Deletes a group by id", description = "Deletes a group by id")
+    public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        this.groupCommandService.handle(new DeleteGroupCommand(user.getId(), groupId));
+        return ResponseEntity.noContent().build();
     }
 }
