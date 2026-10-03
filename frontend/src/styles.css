@@ -49,3 +49,8 @@ a {
   transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease,
     box-shadow 150ms ease, transform 150ms ease;
 }
+
+/* Los tooltips de Material usan la misma tipografía que el resto de la app */
+:root {
+  --mat-tooltip-supporting-text-font: var(--font-sans, system-ui, sans-serif);
+}

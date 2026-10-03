@@ -21,6 +21,11 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
       status: resource.status,
       group: resource.group,
       assignedTo: resource.assignedTo,
+      difficulty: resource.difficulty,
+      context: resource.context,
+      urgency: resource.urgency,
+      labels: resource.labels,
+      aiAccepted: resource.aiAccepted,
     });
   }
 
@@ -49,6 +54,11 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
       dueDate: command.dueDate.toISOString(),
       userId: command.userId,
       groupId: command.groupId,
+      difficulty: command.difficulty,
+      context: command.context,
+      urgency: command.urgency,
+      labels: command.labels,
+      aiAccepted: command.aiAccepted,
     };
   }
 

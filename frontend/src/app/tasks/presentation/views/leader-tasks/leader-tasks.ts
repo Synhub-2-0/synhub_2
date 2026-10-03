@@ -6,11 +6,12 @@ import { TasksStore } from '../../../application/tasks.store';
 import { GroupsStore } from '../../../../groups/application/groups.store';
 import { TaskStatus } from '../../../domain/model/task.entity';
 import { TaskList } from '../../components/task-list/task-list';
+import { AiReportCard } from '../../../../ai/presentation/components/ai-report-card/ai-report-card';
 
 @Component({
   selector: 'app-leader-tasks',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule, TaskList],
+  imports: [CommonModule, RouterLink, MatIconModule, TaskList, AiReportCard],
   templateUrl: './leader-tasks.html',
   styleUrl: './leader-tasks.css',
 })

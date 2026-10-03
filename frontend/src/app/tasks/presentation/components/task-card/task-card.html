@@ -31,6 +31,19 @@
         <p class="text-sm text-slate-400 italic">Sin descripción registrada.</p>
       }
     </div>
+    @if (task.difficulty || task.context || task.urgency) {
+      <div class="flex flex-wrap gap-1.5">
+        @if (task.difficulty) {
+          <span [matTooltip]="difficultyScale[task.difficulty]" class="cursor-help rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">Dificultad {{ task.difficulty }}/5</span>
+        }
+        @if (task.context) {
+          <span matTooltip="Área técnica principal de la tarea" class="cursor-help rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ task.context }}</span>
+        }
+        @if (task.urgency) {
+          <span matTooltip="Urgencia estimada" class="cursor-help rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{{ task.urgency }}</span>
+        }
+      </div>
+    }
   </div>
 
   <div class="flex flex-col gap-3 pt-1">
