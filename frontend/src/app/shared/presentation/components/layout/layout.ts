@@ -1,27 +1,44 @@
-import {Component, inject, signal} from '@angular/core';
-import {RouterOutlet} from '@angular/router';
-import {IamStore} from '../../../../iam/application/iam.store';
-import {Sidenav} from '../sidenav/sidenav';
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
+import { IamStore } from '../../../../iam/application/iam.store';
 
 @Component({
-  imports: [
-    RouterOutlet,
-    Sidenav
-  ],
   selector: 'app-layout',
-  styleUrl: './layout.css',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
   templateUrl: './layout.html',
+  styleUrl: './layout.css',
 })
-export class Layout {
-  private store = inject(IamStore);
+export class Layout implements OnInit {
+  readonly iamStore = inject(IamStore);
+  private readonly router = inject(Router);
+  readonly sidebarOpen = signal(true);
+  readonly isAuthRoute = signal(true);
 
-  isSignedIn() {
-    return this.store.isSignedIn();
+  ngOnInit(): void {
+    this.checkRoute(this.router.url);
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(event => this.checkRoute(event.urlAfterRedirects));
   }
 
-  options = signal([
-    {link: '/home', label: 'Menú', icon: 'home'},
-    {link: '/leader', label: 'Líder', icon: 'assignment_ind'},
-    {link: '/member', label: 'Miembro', icon: 'person'}
-  ])
+  private checkRoute(url: string): void {
+    this.isAuthRoute.set(url.startsWith('/auth') || url === '/');
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen.update(value => !value);
+  }
+
+  get userInitial(): string {
+    const name = this.iamStore.currentProfile()?.name || this.iamStore.currentUsername() || 'S';
+    return name.charAt(0).toUpperCase();
+  }
+
+  onSignOut(): void {
+    this.iamStore.signOut(this.router);
+  }
 }

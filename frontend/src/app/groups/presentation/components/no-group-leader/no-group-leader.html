@@ -1,0 +1,14 @@
+<section class="mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-dashed border-slate-300 bg-white px-8 py-14 text-center shadow-sm">
+  <div class="grid h-16 w-16 place-items-center rounded-2xl bg-[#e0efff] text-[#1A4E85]">
+    <mat-icon class="text-3xl">groups</mat-icon>
+  </div>
+  <h2 class="mt-5 text-xl font-semibold tracking-tight text-slate-900">Aún no lideras ningún grupo</h2>
+  <p class="mt-2 max-w-sm text-sm leading-6 text-slate-500">
+    Crea tu primer espacio de trabajo para organizar a tu equipo y asignar tareas.
+  </p>
+  <button type="button" (click)="createRequested.emit()"
+    class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#4A90E2] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-[#357abd]">
+    <mat-icon class="text-lg">add</mat-icon>
+    Crear mi primer grupo
+  </button>
+</section>

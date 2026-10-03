@@ -1,0 +1,34 @@
+<div class="mx-auto flex max-w-7xl flex-col gap-8 p-6 lg:p-10">
+  <button type="button" (click)="goBack()" class="self-start text-xs font-bold text-slate-500">← Volver</button>
+  @if (groupsStore.loading()) {
+    <div class="py-20 text-center text-sm text-slate-500">Cargando grupo...</div>
+  } @else if (group(); as grp) {
+    <section class="rounded-3xl border bg-white p-6 shadow-sm">
+      @if (!isEditing()) {
+        <div class="flex items-center justify-between gap-4">
+          <div><h1 class="text-2xl font-extrabold">{{ grp.name }} <span class="text-sm text-[#1A4E85]">#{{ grp.code }}</span></h1><p class="mt-2 text-sm text-slate-500">{{ grp.description }}</p></div>
+          @if (isLeaderView()) { <button type="button" (click)="startEdit()" class="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold">Editar</button> }
+        </div>
+      } @else {
+        <form (ngSubmit)="saveEdit()" class="flex flex-col gap-3">
+          <input name="editName" [(ngModel)]="editName" required class="rounded-xl border px-4 py-2" />
+          <input name="editImgUrl" [(ngModel)]="editImgUrl" class="rounded-xl border px-4 py-2" />
+          <textarea name="editDescription" [(ngModel)]="editDescription" required class="rounded-xl border px-4 py-2"></textarea>
+          <button type="submit" class="self-end rounded-xl bg-[#0f172a] px-4 py-2 text-xs font-bold text-white">Guardar</button>
+        </form>
+      }
+    </section>
+    <section class="rounded-3xl border bg-white p-6 shadow-sm">
+      <h2 class="font-extrabold">Integrantes ({{ members().length }})</h2>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        @for (member of members(); track member.id) {
+          <div class="rounded-xl bg-slate-50 p-3 text-sm font-bold">{{ member.name }} {{ member.surname }}</div>
+        }
+      </div>
+    </section>
+    <section>
+      <h2 class="mb-4 text-lg font-extrabold">Tareas del Grupo</h2>
+      <app-task-list [tasks]="tasksStore.tasks()" [isLeader]="isLeaderView()" (changeStatus)="onChangeTaskStatus($event)" (deleteTask)="onDeleteTask($event)"></app-task-list>
+    </section>
+  }
+</div>

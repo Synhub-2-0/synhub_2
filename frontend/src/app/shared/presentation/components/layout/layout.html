@@ -1,4 +1,52 @@
-@if (isSignedIn()) {
-  <app-sidenav [options]="options()"/>
+@if (isAuthRoute()) {
+  <main class="min-h-screen w-full bg-[#f8fafc]"><router-outlet></router-outlet></main>
+} @else {
+  <div class="flex h-screen w-full overflow-hidden bg-[#f8fafc] text-slate-800">
+    <aside [class]="sidebarOpen() ? 'w-64' : 'w-20'"
+      class="flex shrink-0 flex-col justify-between border-r border-slate-800 bg-[#0f172a] text-slate-300 transition-all duration-200">
+      <div class="flex flex-col gap-6 p-4">
+        <div class="flex items-center justify-between px-2 pt-1">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#4A90E2] font-extrabold text-white">S</div>
+            @if (sidebarOpen()) { <span class="truncate text-lg font-extrabold tracking-tight text-white">SynHub</span> }
+          </div>
+          <button type="button" (click)="toggleSidebar()" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">
+            <mat-icon>{{ sidebarOpen() ? 'menu_open' : 'menu' }}</mat-icon>
+          </button>
+        </div>
+        <div class="flex items-center gap-3 rounded-2xl border border-slate-700/50 bg-slate-800/50 p-2.5">
+          @if (iamStore.currentProfile()?.imgUrl) {
+            <img [src]="iamStore.currentProfile()?.imgUrl" alt="Avatar" class="h-10 w-10 shrink-0 rounded-xl object-cover" />
+          } @else {
+            <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#1A4E85] font-bold text-white">{{ userInitial }}</div>
+          }
+          @if (sidebarOpen()) {
+            <div class="min-w-0">
+              <p class="truncate text-sm font-bold text-white">{{ iamStore.currentProfile()?.name || iamStore.currentUsername() || 'Usuario' }}</p>
+              <p class="truncate text-[11px] text-slate-400">&#64;{{ iamStore.currentUsername() || 'synhub' }}</p>
+            </div>
+          }
+        </div>
+        <nav class="flex flex-col gap-5">
+          <a routerLink="/home" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800">
+            <mat-icon>home</mat-icon> @if (sidebarOpen()) { <span>Inicio</span> }
+          </a>
+          <div class="flex flex-col gap-1">
+            @if (sidebarOpen()) { <span class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Espacio Miembro</span> }
+            <a routerLink="/groups/member" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800"><mat-icon>groups</mat-icon> @if (sidebarOpen()) { <span>Mis Grupos</span> }</a>
+            <a routerLink="/tasks/member" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800"><mat-icon>task_alt</mat-icon> @if (sidebarOpen()) { <span>Mis Tareas</span> }</a>
+          </div>
+          <div class="flex flex-col gap-1">
+            @if (sidebarOpen()) { <span class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Espacio Líder</span> }
+            <a routerLink="/groups/leader" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800"><mat-icon>admin_panel_settings</mat-icon> @if (sidebarOpen()) { <span>Grupos Liderados</span> }</a>
+            <a routerLink="/tasks/leader" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800"><mat-icon>assignment</mat-icon> @if (sidebarOpen()) { <span>Gestión de Tareas</span> }</a>
+          </div>
+        </nav>
+      </div>
+      <div class="border-t border-slate-800 p-4">
+        <button type="button" (click)="onSignOut()" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 hover:bg-red-500/10 hover:text-red-400"><mat-icon>logout</mat-icon> @if (sidebarOpen()) { <span>Cerrar Sesión</span> }</button>
+      </div>
+    </aside>
+    <main class="h-full flex-1 overflow-y-auto"><router-outlet></router-outlet></main>
+  </div>
 }
-<router-outlet/>

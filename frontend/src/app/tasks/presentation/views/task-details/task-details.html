@@ -1,0 +1,42 @@
+<div class="w-full h-full p-4 lg:p-8 bg-[#f8fafc] min-h-screen">
+  @if (tasksStore.loading()) {
+    <div class="py-16 flex flex-col items-center justify-center gap-3">
+      <mat-icon fontIcon="cached" class="animate-spin text-4xl text-[#4A90E2]"></mat-icon>
+      <span class="text-sm text-slate-500 font-medium">Cargando detalle de la tarea...</span>
+    </div>
+  } @else if (tasksStore.selectedTask(); as task) {
+    <article class="max-w-3xl mx-auto bg-white rounded-3xl border border-gray-200 p-6 lg:p-8 shadow-sm flex flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <button type="button" (click)="goBack()" class="inline-flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-[#1A4E85] cursor-pointer">
+          <mat-icon>arrow_back</mat-icon> Volver
+        </button>
+        <span class="rounded-xl bg-[#e0efff] text-[#1A4E85] px-4 py-1.5 text-xs font-bold">{{ task.status }}</span>
+      </div>
+      <div>
+        <h1 class="text-2xl lg:text-3xl font-extrabold text-slate-800">{{ task.title }}</h1>
+        @if (task.group) {
+          <p class="text-xs font-bold text-[#4A90E2] mt-1">Grupo: {{ task.group.name }} (#{{ task.group.code }})</p>
+        }
+      </div>
+      @if (task.assignedTo) {
+        <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+          @if (task.assignedTo.imgUrl) {
+            <img [src]="task.assignedTo.imgUrl" [alt]="task.assignedTo.name" class="h-12 w-12 rounded-full object-cover border border-slate-200" />
+          }
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase">Asignado a</p>
+            <p class="text-sm font-bold text-slate-800">{{ task.assignedTo.name }} {{ task.assignedTo.surname }} (&#64;{{ task.assignedTo.username }})</p>
+            <p class="text-xs text-slate-500">{{ task.assignedTo.email }}</p>
+          </div>
+        </div>
+      }
+      <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5 min-h-[140px] text-slate-700 text-sm leading-relaxed">
+        {{ task.description || 'Sin descripción disponible.' }}
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
+        <div><span class="font-bold text-slate-700 block">Fecha de creación:</span>{{ task.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+        <div><span class="font-bold text-slate-700 block">Fecha límite de entrega:</span>{{ task.dueDate | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+    </article>
+  }
+</div>
