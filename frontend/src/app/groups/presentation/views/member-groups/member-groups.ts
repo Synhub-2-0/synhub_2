@@ -18,6 +18,10 @@ export class MemberGroups implements OnInit {
   readonly invitationsStore = inject(InvitationsStore);
   readonly showJoinPanel = signal(false);
 
+  get invitations(): ReturnType<InvitationsStore['invitations']> {
+    return this.invitationsStore.invitations();
+  }
+
   ngOnInit(): void {
     this.groupsStore.loadGroups();
     this.invitationsStore.loadInvitations();
