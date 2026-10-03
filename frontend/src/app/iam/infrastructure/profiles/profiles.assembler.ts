@@ -11,6 +11,7 @@ export class ProfilesAssembler implements BaseAssembler<Profile, ProfileResource
       email: resource.email,
       imgUrl: resource.imgUrl,
       userId: resource.userId,
+      username: resource.username,
     })
   }
 
@@ -22,6 +23,7 @@ export class ProfilesAssembler implements BaseAssembler<Profile, ProfileResource
       email: entity.email,
       imgUrl: entity.imgUrl,
       userId: entity.userId,
+      username: entity.username,
     } as ProfileResource;
   }
 

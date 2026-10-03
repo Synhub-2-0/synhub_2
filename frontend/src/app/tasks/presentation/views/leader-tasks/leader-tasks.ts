@@ -62,9 +62,6 @@ export class LeaderTasks implements OnInit {
     const groups = this.groupsStore.leaderGroups();
     if (groups.length > 0) {
       this.selectGroup(groups[0].id);
-    } else {
-      // Fallback directo al Grupo 1
-      this.selectGroup(1);
     }
   }
 

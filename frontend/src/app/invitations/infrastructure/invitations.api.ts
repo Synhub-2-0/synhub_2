@@ -2,6 +2,9 @@ import {Injectable} from '@angular/core';
 import {BaseApi} from '../../shared/infrastructure/base-api';
 import {InvitationsApiEndpoint} from './invitations.api-endpoint';
 import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
+import {Invitation} from '../domain/model/invitation.entity';
+import {CreateInvitationCommand} from '../domain/model/create-invitation.command';
 
 @Injectable({providedIn: 'root'})
 export class InvitationsApi extends BaseApi {
@@ -12,8 +15,8 @@ export class InvitationsApi extends BaseApi {
     this.invitationsEndpoint = new InvitationsApiEndpoint(http);
   }
 
-  createInvitation(invitation: any) {
-    return this.invitationsEndpoint.create(invitation);
+  createInvitation(command: CreateInvitationCommand): Observable<Invitation> {
+    return this.invitationsEndpoint.createInvitation(command);
   }
 
   /*

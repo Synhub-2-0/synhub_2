@@ -1,20 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { HttpClient } from '@angular/common/http';
 import { TasksStore } from '../../../application/tasks.store';
 import { GroupsStore } from '../../../../groups/application/groups.store';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { CreateTaskCommand } from '../../../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../../../domain/model/update-task.command';
-import { Task, TaskUser } from '../../../domain/model/task.entity';
-import { environment } from '../../../../../environments/environment';
-
-interface GroupDetailsResponse {
-  usersInGroup: { user: TaskUser; roleInGroup: string }[];
-}
+import { Task } from '../../../domain/model/task.entity';
 
 @Component({
   selector: 'app-task-form',
@@ -26,7 +20,6 @@ interface GroupDetailsResponse {
 export class TaskForm implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
   readonly tasksStore = inject(TasksStore);
   readonly groupsStore = inject(GroupsStore);
   readonly iamStore = inject(IamStore);
@@ -38,8 +31,10 @@ export class TaskForm implements OnInit {
   dueDateTime = '';
   groupId: number | null = null;
   userId: number | null = null;
-  readonly members = signal<TaskUser[]>([]);
-  readonly loadingMembers = signal(false);
+  private readonly activeGroupId = signal<number | null>(null);
+  // Every member of the group can be assigned a task, the leader included (listed first).
+  readonly members = computed(() => [...(this.groupsStore.membersByGroup()[this.activeGroupId() ?? 0] ?? [])]
+    .sort((a, b) => Number(b.roleInGroup === 'GROUP_LEADER') - Number(a.roleInGroup === 'GROUP_LEADER')));
 
   constructor() {
     effect(() => {
@@ -47,7 +42,7 @@ export class TaskForm implements OnInit {
       if (this.isEditMode && task?.id === this.taskId) this.populateForm(task);
     });
     effect(() => {
-      const firstGroup = this.groupsStore.groups()[0];
+      const firstGroup = this.groupsStore.leaderGroups()[0];
       if (!this.isEditMode && !this.groupId && firstGroup) {
         this.groupId = firstGroup.id;
         this.loadGroupMembers(firstGroup.id);
@@ -58,7 +53,7 @@ export class TaskForm implements OnInit {
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     const queryGroupId = this.route.snapshot.queryParamMap.get('groupId');
-    this.groupId = queryGroupId ? Number(queryGroupId) : this.groupsStore.groups()[0]?.id ?? null;
+    this.groupId = queryGroupId ? Number(queryGroupId) : this.groupsStore.leaderGroups()[0]?.id ?? null;
 
     if (idParam) {
       this.isEditMode = true;
@@ -82,27 +77,18 @@ export class TaskForm implements OnInit {
     if (this.groupId) this.loadGroupMembers(this.groupId);
   }
 
-  onGroupChange(groupId: number): void {
-    this.groupId = Number(groupId);
+  onGroupChange(groupId: number | string | null): void {
+    const parsedGroupId = Number(groupId);
+    if (!Number.isFinite(parsedGroupId)) return;
+
+    this.groupId = parsedGroupId;
     this.userId = null;
     this.loadGroupMembers(this.groupId);
   }
 
   loadGroupMembers(groupId: number): void {
-    this.loadingMembers.set(true);
-    const url = `${environment.platformProviderApiBaseUrl}${environment.platformProviderGroupsEndpointPath}/${groupId}`;
-    this.http.get<GroupDetailsResponse>(url).subscribe({
-      next: (group) => {
-        this.members.set((group.usersInGroup ?? [])
-          .filter((entry) => entry.roleInGroup === 'GROUP_MEMBER')
-          .map((entry) => entry.user));
-        this.loadingMembers.set(false);
-      },
-      error: () => {
-        this.members.set([]);
-        this.loadingMembers.set(false);
-      },
-    });
+    this.activeGroupId.set(groupId);
+    this.groupsStore.loadGroupMembers(groupId);
   }
 
   save(): void {

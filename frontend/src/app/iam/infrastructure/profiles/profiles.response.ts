@@ -7,6 +7,7 @@ export interface ProfileResource extends BaseResource {
   email: string;
   imgUrl: string;
   userId: number;
+  username?: string;
 }
 
 export interface ProfileResponse extends BaseResponse {

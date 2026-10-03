@@ -20,6 +20,7 @@ export class MemberGroups implements OnInit {
 
   ngOnInit(): void {
     this.groupsStore.loadGroups();
+    this.invitationsStore.loadInvitations();
   }
 
   toggleJoinPanel(): void {
@@ -27,9 +28,14 @@ export class MemberGroups implements OnInit {
   }
 
   acceptInvitation(invitationId: number): void {
-    this.invitationsStore.acceptInvitation(invitationId);
-    this.showJoinPanel.set(false);
-    this.groupsStore.loadGroups();
+    this.invitationsStore.acceptInvitation(invitationId, () => {
+      this.showJoinPanel.set(false);
+      this.groupsStore.loadGroups();
+    });
+  }
+
+  declineInvitation(invitationId: number): void {
+    this.invitationsStore.declineInvitation(invitationId);
   }
 
   /*

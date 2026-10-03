@@ -7,6 +7,7 @@ export class Profile implements BaseEntity {
   private _email: string;
   private _imgUrl: string;
   private _userId: number;
+  private _username: string;
 
   constructor(
     props:{
@@ -16,6 +17,7 @@ export class Profile implements BaseEntity {
       email: string,
       imgUrl: string,
       userId: number,
+      username?: string,
     }) {
     this._id = props.id;
     this._name = props.name;
@@ -23,6 +25,7 @@ export class Profile implements BaseEntity {
     this._email = props.email;
     this._imgUrl = props.imgUrl;
     this._userId = props.userId;
+    this._username = props.username ?? '';
   }
 
   get id(): number { return this._id; }
@@ -31,6 +34,7 @@ export class Profile implements BaseEntity {
   get email(): string { return this._email; }
   get imgUrl(): string { return this._imgUrl; }
   get userId(): number { return this._userId; }
+  get username(): string { return this._username; }
 
   set id(value: number) { this._id = value; }
   set name(value: string) { this._name = value; }
@@ -38,4 +42,5 @@ export class Profile implements BaseEntity {
   set email(value: string) { this._email = value; }
   set imgUrl(value: string) { this._imgUrl = value; }
   set userId(value: number) { this._userId = value; }
+  set username(value: string) { this._username = value; }
 }

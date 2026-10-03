@@ -21,7 +21,7 @@ export class UsersApiEndpoint extends BaseApiEndpoint<User, UserResource, UsersR
   }
 
   getByUsername(username: string): Observable<User> {
-    return this.http.get<UserResource>(`${usersApiEndpointUrl}/${username}`).pipe(
+    return this.http.get<UserResource>(`${usersApiEndpointUrl}/username?username=${encodeURIComponent(username)}`).pipe(
       map(resource => this.assembler.toEntityFromResource(resource)),
       catchError(this.handleError('Failed to fetch user by username'))
     );

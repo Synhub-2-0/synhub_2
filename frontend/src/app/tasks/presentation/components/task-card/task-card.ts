@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
+import { RequestsStore } from '../../../../requests/application/requests.store';
 
 @Component({
   selector: 'app-task-card',
@@ -11,13 +12,24 @@ import { Task, TaskStatus } from '../../../domain/model/task.entity';
   templateUrl: './task-card.html',
   styleUrl: './task-card.css',
 })
-export class TaskCard {
+export class TaskCard implements OnInit {
+  readonly requestsStore = inject(RequestsStore);
+  readonly showSubmitForm = signal(false);
+  readonly submissionMessage = signal('');
+
   @Input({ required: true }) task!: Task;
   @Input() isLeader = false;
   @Output() deleteRequested = new EventEmitter<number>();
   @Output() statusChangeRequested = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 
   constructor(private readonly router: Router) {}
+
+  ngOnInit(): void {
+    // A COMPLETED task of the member may already have a submission waiting for the leader.
+    if (!this.isLeader && this.task.status === 'COMPLETED') {
+      this.requestsStore.loadTaskRequests(this.task.id);
+    }
+  }
 
   get initials(): string {
     const name = this.task.assignedTo?.name ?? '';
@@ -79,6 +91,29 @@ export class TaskCard {
   onDelete(event: Event): void {
     event.stopPropagation();
     this.deleteRequested.emit(this.task.id);
+  }
+
+  onReviewSubmission(event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/validations'], { queryParams: { groupId: this.task.group?.id } }).then();
+  }
+
+  toggleSubmitForm(event: Event): void {
+    event.stopPropagation();
+    this.requestsStore.clearError();
+    this.showSubmitForm.update((value) => !value);
+  }
+
+  onSubmissionInput(event: Event): void {
+    this.submissionMessage.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  onSubmit(event: Event): void {
+    event.stopPropagation();
+    this.requestsStore.submitTask(this.task.id, this.submissionMessage().trim(), () => {
+      this.showSubmitForm.set(false);
+      this.submissionMessage.set('');
+    });
   }
 
   onChangeStatus(event: Event, status: TaskStatus): void {

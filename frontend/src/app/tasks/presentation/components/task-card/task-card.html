@@ -42,9 +42,9 @@
     @if (isLeader) {
       <footer class="mt-2 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
         @if (task.status === 'COMPLETED') {
-          <button type="button" (click)="onChangeStatus($event, 'DONE')"
-            class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-2 text-xs font-bold text-white transition">
-            <mat-icon class="scale-75">verified</mat-icon> Aprobar (Done)
+          <button type="button" (click)="onReviewSubmission($event)"
+            class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-[#4A90E2] hover:bg-blue-600 px-3.5 py-2 text-xs font-bold text-white transition">
+            <mat-icon class="scale-75">fact_check</mat-icon> Revisar entrega
           </button>
         } @else { <span></span> }
         <div class="flex items-center gap-2">
@@ -57,6 +57,33 @@
             <mat-icon class="scale-75">delete</mat-icon> Eliminar
           </button>
         </div>
+      </footer>
+    }
+
+    @if (!isLeader && task.status === 'COMPLETED') {
+      <footer (click)="$event.stopPropagation()" class="mt-2 flex flex-col gap-2.5 pt-3 border-t border-slate-100">
+        @if (requestsStore.isUnderReview(task.id)) {
+          <span class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800">
+            <mat-icon class="scale-75">hourglass_top</mat-icon> En revisión por el líder
+          </span>
+        } @else if (showSubmitForm()) {
+          <textarea rows="3" [value]="submissionMessage()" (input)="onSubmissionInput($event)" placeholder="Mensaje para el líder (opcional)"
+            class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]"></textarea>
+          @if (requestsStore.error()) {
+            <div class="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-medium text-red-600">{{ requestsStore.error() }}</div>
+          }
+          <div class="grid grid-cols-2 gap-2.5">
+            <button type="button" (click)="toggleSubmitForm($event)"
+              class="rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">Cancelar</button>
+            <button type="button" (click)="onSubmit($event)" [disabled]="requestsStore.processing()"
+              class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-600 disabled:opacity-50 cursor-pointer">Enviar</button>
+          </div>
+        } @else {
+          <button type="button" (click)="toggleSubmitForm($event)"
+            class="flex items-center justify-center gap-1.5 rounded-xl bg-[#4A90E2] hover:bg-blue-600 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition cursor-pointer">
+            <mat-icon class="scale-75">send</mat-icon> Enviar entrega
+          </button>
+        }
       </footer>
     }
 

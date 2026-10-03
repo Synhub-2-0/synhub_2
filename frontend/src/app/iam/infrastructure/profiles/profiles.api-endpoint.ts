@@ -21,4 +21,11 @@ export class ProfilesApiEndpoint extends BaseApiEndpoint<Profile, ProfileResourc
       catchError(this.handleError('Failed to fetch profile by the provided user'))
     );
   }
+
+  getByUsername(username: string): Observable<Profile> {
+    return this.http.get<ProfileResource>(`${usersApiEndpointUrl}/username?username=${encodeURIComponent(username)}`).pipe(
+      map(resource => this.assembler.toEntityFromResource(resource)),
+      catchError(this.handleError('Failed to fetch profile by the provided username'))
+    );
+  }
 }

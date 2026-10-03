@@ -4,11 +4,17 @@
       <h1 class="text-2xl lg:text-3xl font-extrabold text-slate-800">Mis Tareas Asignadas</h1>
       <p class="text-sm text-slate-500 mt-1">Consulta tus entregas pendientes y actualiza el estado de tu progreso.</p>
     </div>
-    @if (groupsStore.groups().length > 1) {
+    @if (groupsStore.memberGroups().length > 1) {
       <div class="flex items-center gap-2 overflow-x-auto pb-1">
-        @for (group of groupsStore.groups(); track group.id) {
+        @for (group of groupsStore.memberGroups(); track group.id) {
           <button type="button" (click)="selectGroup(group.id)"
-            [class]="selectedGroupId() === group.id ? 'bg-[#1A4E85] text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition cursor-pointer' : 'bg-white text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-xl text-xs border border-slate-200 transition cursor-pointer'">
+            [class]="selectedGroupId() === group.id ? 'bg-[#1A4E85] text-white font-bold pl-2 pr-4 py-1.5 rounded-xl text-xs shadow-sm transition cursor-pointer flex items-center gap-2 shrink-0' : 'bg-white text-slate-600 hover:bg-slate-100 pl-2 pr-4 py-1.5 rounded-xl text-xs border border-slate-200 transition cursor-pointer flex items-center gap-2 shrink-0'">
+            @if (group.imgUrl) {
+              <img [src]="group.imgUrl" [alt]="group.name" (error)="$any($event.target).style.display = 'none'"
+                class="h-7 w-7 shrink-0 rounded-lg border border-white/40 object-cover">
+            } @else {
+              <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-200 text-[11px] font-extrabold uppercase text-slate-600">{{ group.name.charAt(0) }}</span>
+            }
             {{ group.name }}
           </button>
         }
