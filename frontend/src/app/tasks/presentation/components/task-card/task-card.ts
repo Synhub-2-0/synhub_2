@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
 import { RequestsStore } from '../../../../requests/application/requests.store';
+import { DIFFICULTY_SCALE } from '../../../../ai/domain/model/task-classification.entity';
 
 @Component({
   selector: 'app-task-card',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, MatTooltipModule],
   templateUrl: './task-card.html',
   styleUrl: './task-card.css',
 })
@@ -22,6 +24,8 @@ export class TaskCard implements OnInit {
   @Input() showGroup = false;
   @Output() deleteRequested = new EventEmitter<number>();
   @Output() statusChangeRequested = new EventEmitter<{ taskId: number; status: TaskStatus }>();
+
+  readonly difficultyScale = DIFFICULTY_SCALE;
 
   constructor(private readonly router: Router) {}
 

@@ -42,6 +42,52 @@
       <input type="datetime-local" name="dueDateTime" [(ngModel)]="dueDateTime" required
         class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
     </div>
+    @if (!isEditMode) {
+      <div class="flex flex-col gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4">
+        <button type="button" (click)="suggest()" [disabled]="!title.trim() || aiStore.classifying()"
+          class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-indigo-200 bg-white px-4 py-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50">
+          <mat-icon class="scale-90">auto_awesome</mat-icon>
+          {{ aiStore.classifying() ? 'Analizando…' : 'Sugerir con IA' }}
+        </button>
+        @if (aiStore.error()) {
+          <p class="text-xs text-red-600">{{ aiStore.error() }}</p>
+        }
+        @if (aiStore.classification(); as suggestion) {
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="block cursor-help" [matTooltip]="suggestion.rationale" matTooltipPosition="above">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Dificultad</span>
+              <select name="difficulty" [(ngModel)]="difficulty"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+                @for (d of difficulties; track d) { <option [ngValue]="d">{{ d }}</option> }
+              </select>
+              @if (difficulty) { <span class="mt-1 block text-[11px] text-slate-500">{{ difficultyScale[difficulty] }}</span> }
+            </label>
+            <label class="block cursor-help" [matTooltip]="suggestion.rationale" matTooltipPosition="above">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Contexto</span>
+              <select name="context" [(ngModel)]="context"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+                @for (c of contexts; track c) { <option [ngValue]="c">{{ c }}</option> }
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Urgencia</span>
+              <select name="urgency" [(ngModel)]="urgency"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+                @for (u of urgencies; track u) { <option [ngValue]="u">{{ u }}</option> }
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Etiquetas</span>
+              <input type="text" name="labels" [(ngModel)]="labels" placeholder="separadas por coma"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
+            </label>
+          </div>
+          <p class="flex items-start gap-1.5 text-xs text-slate-500">
+            <mat-icon class="-mt-0.5 scale-75 text-indigo-400">info</mat-icon> {{ suggestion.rationale }}
+          </p>
+        }
+      </div>
+    }
     <div class="mt-2 grid grid-cols-2 gap-3 border-t pt-5">
       <button type="button" (click)="cancel()"
         class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">

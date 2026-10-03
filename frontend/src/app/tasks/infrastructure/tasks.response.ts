@@ -31,6 +31,11 @@ export interface TaskResource extends BaseResource {
   status: TaskStatus;
   group: TaskGroupReducedResource;
   assignedTo: TaskUserResource;
+  difficulty?: number | null;
+  context?: string | null;
+  urgency?: string | null;
+  labels?: string | null;
+  aiAccepted?: boolean | null;
 }
 
 export interface TasksResponse {
@@ -43,6 +48,11 @@ export interface CreateTaskRequest {
   dueDate: string;
   userId: number;
   groupId: number;
+  difficulty?: number;
+  context?: string;
+  urgency?: string;
+  labels?: string;
+  aiAccepted?: boolean;
 }
 
 export interface UpdateTaskRequest {

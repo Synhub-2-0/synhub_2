@@ -32,6 +32,11 @@ export class Task implements BaseEntity {
   private _status: TaskStatus;
   private _group?: TaskGroup;
   private _assignedTo?: TaskUser;
+  private _difficulty?: number;
+  private _context?: string;
+  private _urgency?: string;
+  private _labels?: string;
+  private _aiAccepted?: boolean;
 
   constructor(props: {
     id: number;
@@ -43,6 +48,11 @@ export class Task implements BaseEntity {
     status: TaskStatus | string;
     group?: TaskGroup;
     assignedTo?: TaskUser;
+    difficulty?: number | null;
+    context?: string | null;
+    urgency?: string | null;
+    labels?: string | null;
+    aiAccepted?: boolean | null;
   }) {
     this._id = props.id;
     this._title = props.title;
@@ -53,6 +63,11 @@ export class Task implements BaseEntity {
     this._status = props.status as TaskStatus;
     this._group = props.group;
     this._assignedTo = props.assignedTo;
+    this._difficulty = props.difficulty ?? undefined;
+    this._context = props.context ?? undefined;
+    this._urgency = props.urgency ?? undefined;
+    this._labels = props.labels ?? undefined;
+    this._aiAccepted = props.aiAccepted ?? undefined;
   }
 
   get id(): number {
@@ -81,6 +96,23 @@ export class Task implements BaseEntity {
   }
   get assignedTo(): TaskUser | undefined {
     return this._assignedTo;
+  }
+
+  get difficulty(): number | undefined {
+    return this._difficulty;
+  }
+  get context(): string | undefined {
+    return this._context;
+  }
+  get urgency(): string | undefined {
+    return this._urgency;
+  }
+  /** Etiquetas separadas por coma */
+  get labels(): string | undefined {
+    return this._labels;
+  }
+  get aiAccepted(): boolean | undefined {
+    return this._aiAccepted;
   }
 
   set id(value: number) {
