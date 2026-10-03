@@ -72,7 +72,7 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
         var requester = this.userRepository.findById(command.requesterId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.requesterId() + " does not exist"));
 
-        if (!(invitation.getUser().getId().equals(requester.getId()) || invitation.getUser().getId().equals(invitation.getGroup().getLeader().getId()))) {
+        if (!(invitation.getUser().getId().equals(requester.getId()) || requester.getId().equals(invitation.getGroup().getLeader().getId()))) {
             throw new AccessDeniedException("Member with id " + command.requesterId() + " is not the receiver nor the owner of the invitation");
         }
         this.invitationRepository.delete(invitation);
