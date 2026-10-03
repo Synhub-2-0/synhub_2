@@ -101,7 +101,7 @@ public class WebSecurityConfiguration {
         .sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             authorizeRequests -> authorizeRequests.requestMatchers(
-                "/api/v1/authentication/**", "/v3/api-docs/**", "/swagger-ui.html",
+                "/api/v1/authentication/**", "/actuator/health", "/v3/api-docs/**", "/swagger-ui.html",
                 "/swagger-ui/**", "/swagger-resources/**", "/webjars/**")
                 .permitAll()
                 .anyRequest()

@@ -1,0 +1,52 @@
+name: Deploy
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # OIDC hacia AWS, sin claves guardadas
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: synhub-backend
+  CLUSTER: synhub
+  SERVICE: synhub-backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - run: ./mvnw -B -DskipTests package   # los tests corren en CI.yml
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}:latest
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
+
+      # La infraestructura se enciende/apaga a demanda: si el servicio no existe, solo queda la imagen lista.
+      - name: Redeploy si el servicio está encendido
+        run: |
+          status=$(aws ecs describe-services --cluster $CLUSTER --services $SERVICE --query 'services[0].status' --output text 2>/dev/null || true)
+          if [ "$status" = "ACTIVE" ]; then
+            aws ecs update-service --cluster $CLUSTER --service $SERVICE --force-new-deployment >/dev/null
+            aws ecs wait services-stable --cluster $CLUSTER --services $SERVICE
+          else
+            echo "Servicio apagado: imagen publicada, se usará en el próximo 'make up'."
+          fi
