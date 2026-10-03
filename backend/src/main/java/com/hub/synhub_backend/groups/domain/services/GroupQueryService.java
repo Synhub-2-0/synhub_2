@@ -1,6 +1,7 @@
 package com.hub.synhub_backend.groups.domain.services;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.queries.*;
 
 import java.util.List;
@@ -12,4 +13,5 @@ public interface GroupQueryService {
     List<Group> handle(GetGroupsByUserIdQuery query);
     Optional<Group> handle(GetGroupByIdQuery query);
     List<Group> handle(GetGroupsByUserRoleQuery query);
+    List<GroupProfile> handle(GetGroupMembersByGroupIdQuery query);
 }
