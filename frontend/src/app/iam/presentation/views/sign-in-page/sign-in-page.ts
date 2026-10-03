@@ -6,7 +6,6 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {SignInCommand} from '../../../domain/model/sign-in.command';
 import {MatError, MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatIcon} from '@angular/material/icon';
-import {MatButton} from '@angular/material/button';
 
 @Component({
   imports: [
@@ -15,8 +14,7 @@ import {MatButton} from '@angular/material/button';
     MatLabel,
     MatIcon,
     MatError,
-    MatInput,
-    MatButton
+    MatInput
   ],
   selector: 'app-sign-in-page',
   styleUrl: './sign-in-page.css',

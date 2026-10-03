@@ -40,6 +40,7 @@
             @if (sidebarOpen()) { <span class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Espacio Líder</span> }
             <a routerLink="/groups/leader" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800"><mat-icon>admin_panel_settings</mat-icon> @if (sidebarOpen()) { <span>Grupos Liderados</span> }</a>
             <a routerLink="/tasks/leader" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800"><mat-icon>assignment</mat-icon> @if (sidebarOpen()) { <span>Gestión de Tareas</span> }</a>
+            <a routerLink="/validations" routerLinkActive="bg-[#4A90E2] text-white" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-slate-800"><mat-icon>fact_check</mat-icon> @if (sidebarOpen()) { <span>Validaciones</span> }</a>
           </div>
         </nav>
       </div>
@@ -50,3 +51,4 @@
     <main class="h-full flex-1 overflow-y-auto"><router-outlet></router-outlet></main>
   </div>
 }
+<app-toast-container />

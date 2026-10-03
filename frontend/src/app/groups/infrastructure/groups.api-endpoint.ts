@@ -1,11 +1,12 @@
 import {BaseApiEndpoint} from '../../shared/infrastructure/base-api-endpoint';
 import {Group} from '../domain/model/group.entity';
-import {GroupResource, GroupsResponse} from './groups.response';
+import {GroupResource, GroupsResponse, GroupUsersResource} from './groups.response';
 import {GroupsAssembler} from './groups.assembler';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
 import {catchError, map, Observable} from 'rxjs';
 import {CreateGroupCommand} from '../domain/model/create-group.command';
+import {GroupUser} from '../domain/model/group-user.entity';
 
 const groupsEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderGroupsEndpointPath}`;
 
@@ -19,6 +20,13 @@ export class GroupsApiEndpoint extends BaseApiEndpoint<Group, GroupResource, Gro
     return this.http.post<GroupResource>(groupsEndpointUrl, createGroupRequest).pipe(
       map(resource => this.assembler.toEntityFromResource(resource)),
       catchError(this.handleError('Failed to create group'))
+    );
+  }
+
+  getGroupMembers(groupId: number): Observable<GroupUser[]> {
+    return this.http.get<GroupUsersResource[]>(`${groupsEndpointUrl}/${groupId}/members`).pipe(
+      map(resources => this.assembler.toGroupUsersFromResources(resources)),
+      catchError(this.handleError(`Failed to fetch members of group with id ${groupId}`))
     );
   }
 

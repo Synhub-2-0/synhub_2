@@ -1,10 +1,11 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Profile } from '../domain/model/profile.entity';
 import { SignInCommand } from '../domain/model/sign-in.command';
 import { SignUpCommand } from '../domain/model/sign-up.command';
 import { User } from '../domain/model/user.entity';
 import { IamApi } from '../infrastructure/iam.api';
+import { ToastStore } from '../../shared/application/toast.store';
 
 @Injectable({ providedIn: 'root' })
 export class IamStore {
@@ -25,6 +26,8 @@ export class IamStore {
   readonly currentToken = this.currentTokenSignal.asReadonly();
   readonly loadingUsers = signal(false);
   readonly isLoadingUsers = this.loadingUsers.asReadonly();
+
+  private readonly toastStore = inject(ToastStore);
 
   constructor(private readonly iamApi: IamApi) {}
 
@@ -50,6 +53,7 @@ export class IamStore {
       },
       error: err => {
         console.error('Sign-in failed:', err);
+        this.toastStore.error(err.message);
         this.clearSession();
         router.navigate(['/auth/sign-in']).then();
       },
@@ -58,9 +62,11 @@ export class IamStore {
 
   signUp(command: SignUpCommand, router: Router): void {
     this.iamApi.signUp(command).subscribe({
-      next: () => router.navigate(['/auth/sign-in']).then(),
+      // The new account is signed in right away with the credentials just registered.
+      next: () => this.signIn(new SignInCommand({ username: command.username, password: command.password }), router),
       error: err => {
         console.error('Sign-up failed:', err);
+        this.toastStore.error(err.message);
         this.clearSession();
         router.navigate(['/auth/sign-up']).then();
       },

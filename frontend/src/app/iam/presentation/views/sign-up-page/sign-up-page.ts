@@ -14,7 +14,6 @@ import {
 import {SignUpCommand} from '../../../domain/model/sign-up.command';
 import {MatError, MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatIcon} from '@angular/material/icon';
-import {MatButton} from '@angular/material/button';
 
 @Component({
   imports: [
@@ -23,8 +22,7 @@ import {MatButton} from '@angular/material/button';
     MatInput,
     MatLabel,
     MatIcon,
-    MatError,
-    MatButton
+    MatError
   ],
   selector: 'app-sign-up-page',
   styleUrl: './sign-up-page.css',
@@ -66,6 +64,7 @@ export class SignUpPage extends BaseForm {
   routeToSignIn() {
     this.router.navigateByUrl('/auth/sign-in').then();
   }
+
 }
 
 export const passwordMatchValidator: ValidatorFn = (group: AbstractControl)

@@ -18,8 +18,13 @@ export class MemberGroups implements OnInit {
   readonly invitationsStore = inject(InvitationsStore);
   readonly showJoinPanel = signal(false);
 
+  get invitations(): ReturnType<InvitationsStore['invitations']> {
+    return this.invitationsStore.invitations();
+  }
+
   ngOnInit(): void {
     this.groupsStore.loadGroups();
+    this.invitationsStore.loadInvitations();
   }
 
   toggleJoinPanel(): void {
@@ -27,9 +32,14 @@ export class MemberGroups implements OnInit {
   }
 
   acceptInvitation(invitationId: number): void {
-    this.invitationsStore.acceptInvitation(invitationId);
-    this.showJoinPanel.set(false);
-    this.groupsStore.loadGroups();
+    this.invitationsStore.acceptInvitation(invitationId, () => {
+      this.showJoinPanel.set(false);
+      this.groupsStore.loadGroups();
+    });
+  }
+
+  declineInvitation(invitationId: number): void {
+    this.invitationsStore.declineInvitation(invitationId);
   }
 
   /*

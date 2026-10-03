@@ -1,49 +1,102 @@
-<div class="w-full h-full p-4 lg:p-8 bg-[#f8fafc] min-h-screen">
-  <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-200 p-6 lg:p-8">
-    <h1 class="text-2xl font-extrabold text-slate-800 mb-1">{{ isEditMode ? 'Editar Tarea' : 'Crear Nueva Tarea' }}</h1>
-    <p class="text-xs text-slate-500 mb-6">Completa los detalles de la actividad y asígnala a un miembro del equipo.</p>
-    <form (ngSubmit)="save()" class="flex flex-col gap-5">
-      @if (!isEditMode && groupsStore.groups().length > 1) {
-        <div>
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Grupo</label>
-          <select name="groupId" [ngModel]="groupId" (ngModelChange)="onGroupChange($event)"
-            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#4A90E2]">
-            @for (group of groupsStore.groups(); track group.id) { <option [ngValue]="group.id">{{ group.name }}</option> }
-          </select>
-        </div>
-      }
+<div class="mx-auto flex max-w-2xl flex-col gap-8 p-6 lg:p-10">
+  <header class="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
+    <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Gestión de Tareas</span>
+    <h1 class="mt-1 text-2xl font-extrabold text-slate-900">{{ isEditMode ? 'Editar Tarea' : 'Crear Nueva Tarea' }}</h1>
+    <p class="mt-1 text-sm text-slate-500">Completa los detalles de la actividad y asígnala a un integrante del equipo.</p>
+  </header>
+
+  <form (ngSubmit)="save()" class="flex flex-col gap-5 rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
+    @if (!isEditMode && groupsStore.leaderGroups().length > 1) {
       <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Título de la tarea</label>
-        <input type="text" name="title" [(ngModel)]="title" required placeholder="Ej: Implementar integración de endpoints"
-          class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#4A90E2]" />
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Descripción</label>
-        <textarea name="description" [(ngModel)]="description" rows="4" placeholder="Describe los entregables y criterios..."
-          class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#4A90E2]"></textarea>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Asignar a integrante</label>
-        <select name="userId" [(ngModel)]="userId" required
-          class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#4A90E2]">
-          <option [ngValue]="null" disabled>Selecciona un integrante del grupo</option>
-          @for (member of members(); track member.id) {
-            <option [ngValue]="member.id">{{ member.name }} {{ member.surname }} (&#64;{{ member.username }})</option>
-          }
+        <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Grupo</label>
+        <select name="groupId" [ngModel]="groupId" (ngModelChange)="onGroupChange($any($event))"
+          class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+          @for (group of groupsStore.leaderGroups(); track group.id) { <option [ngValue]="group.id">{{ group.name }}</option> }
         </select>
       </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Fecha y hora de entrega</label>
-        <input type="datetime-local" name="dueDateTime" [(ngModel)]="dueDateTime" required
-          class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 outline-none focus:border-[#4A90E2]" />
-      </div>
-      <div class="mt-4 flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-        <button type="button" (click)="cancel()" class="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Cancelar</button>
-        <button type="submit" [disabled]="!title.trim() || !dueDateTime || !userId || tasksStore.loading()"
-          class="rounded-xl bg-[#4A90E2] hover:bg-[#357abd] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition cursor-pointer disabled:opacity-50">
-          {{ isEditMode ? 'Guardar Cambios' : 'Crear Tarea' }}
+    }
+    <div>
+      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Título de la tarea</label>
+      <input type="text" name="title" [(ngModel)]="title" required placeholder="Ej: Implementar integración de endpoints"
+        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Descripción</label>
+      <textarea name="description" [(ngModel)]="description" rows="4" placeholder="Describe los entregables y criterios..."
+        class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]"></textarea>
+    </div>
+    <div>
+      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Asignar a integrante</label>
+      <select name="userId" [(ngModel)]="userId" required
+        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+        <option [ngValue]="null" disabled>Selecciona un integrante del grupo</option>
+        @for (entry of members(); track entry.user.id) {
+          <option [ngValue]="entry.user.id">
+            {{ entry.user.name }} {{ entry.user.surname }} (&#64;{{ entry.user.username }}){{ entry.roleInGroup === 'GROUP_LEADER' ? ' · Líder' : '' }}
+          </option>
+        }
+      </select>
+    </div>
+    <div>
+      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Fecha y hora de entrega</label>
+      <input type="datetime-local" name="dueDateTime" [(ngModel)]="dueDateTime" required
+        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
+    </div>
+    @if (!isEditMode) {
+      <div class="flex flex-col gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4">
+        <button type="button" (click)="suggest()" [disabled]="!title.trim() || aiStore.classifying()"
+          class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-indigo-200 bg-white px-4 py-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50">
+          <mat-icon class="scale-90">auto_awesome</mat-icon>
+          {{ aiStore.classifying() ? 'Analizando…' : 'Sugerir con IA' }}
         </button>
+        @if (aiStore.error()) {
+          <p class="text-xs text-red-600">{{ aiStore.error() }}</p>
+        }
+        @if (aiStore.classification(); as suggestion) {
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="block cursor-help" [matTooltip]="suggestion.rationale" matTooltipPosition="above">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Dificultad</span>
+              <select name="difficulty" [(ngModel)]="difficulty"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+                @for (d of difficulties; track d) { <option [ngValue]="d">{{ d }}</option> }
+              </select>
+              @if (difficulty) { <span class="mt-1 block text-[11px] text-slate-500">{{ difficultyScale[difficulty] }}</span> }
+            </label>
+            <label class="block cursor-help" [matTooltip]="suggestion.rationale" matTooltipPosition="above">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Contexto</span>
+              <select name="context" [(ngModel)]="context"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+                @for (c of contexts; track c) { <option [ngValue]="c">{{ c }}</option> }
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Urgencia</span>
+              <select name="urgency" [(ngModel)]="urgency"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
+                @for (u of urgencies; track u) { <option [ngValue]="u">{{ u }}</option> }
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Etiquetas</span>
+              <input type="text" name="labels" [(ngModel)]="labels" placeholder="separadas por coma"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
+            </label>
+          </div>
+          <p class="flex items-start gap-1.5 text-xs text-slate-500">
+            <mat-icon class="-mt-0.5 scale-75 text-indigo-400">info</mat-icon> {{ suggestion.rationale }}
+          </p>
+        }
       </div>
-    </form>
-  </div>
+    }
+    <div class="mt-2 grid grid-cols-2 gap-3 border-t pt-5">
+      <button type="button" (click)="cancel()"
+        class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
+        Cancelar
+      </button>
+      <button type="submit" [disabled]="!title.trim() || !dueDateTime || !userId || tasksStore.loading()"
+        class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#4A90E2]">
+        {{ isEditMode ? 'Guardar Cambios' : 'Crear Tarea' }}
+      </button>
+    </div>
+  </form>
 </div>

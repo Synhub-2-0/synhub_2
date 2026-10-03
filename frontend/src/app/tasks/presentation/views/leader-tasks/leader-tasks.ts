@@ -6,11 +6,12 @@ import { TasksStore } from '../../../application/tasks.store';
 import { GroupsStore } from '../../../../groups/application/groups.store';
 import { TaskStatus } from '../../../domain/model/task.entity';
 import { TaskList } from '../../components/task-list/task-list';
+import { AiReportCard } from '../../../../ai/presentation/components/ai-report-card/ai-report-card';
 
 @Component({
   selector: 'app-leader-tasks',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule, TaskList],
+  imports: [CommonModule, RouterLink, MatIconModule, TaskList, AiReportCard],
   templateUrl: './leader-tasks.html',
   styleUrl: './leader-tasks.css',
 })
@@ -62,9 +63,6 @@ export class LeaderTasks implements OnInit {
     const groups = this.groupsStore.leaderGroups();
     if (groups.length > 0) {
       this.selectGroup(groups[0].id);
-    } else {
-      // Fallback directo al Grupo 1
-      this.selectGroup(1);
     }
   }
 

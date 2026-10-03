@@ -5,18 +5,13 @@ import { RouterLink } from '@angular/router';
 import { GroupsStore } from '../../../../groups/application/groups.store';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { TasksStore } from '../../../../tasks/application/tasks.store';
-import { Task, TaskStatus } from '../../../../tasks/domain/model/task.entity';
-
-interface KanbanColumn {
-  status: TaskStatus;
-  title: string;
-  dotClass: string;
-}
+import { TaskStatus } from '../../../../tasks/domain/model/task.entity';
+import { TaskBoard } from '../../../../tasks/presentation/components/task-board/task-board';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule],
+  imports: [CommonModule, RouterLink, MatIconModule, TaskBoard],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
@@ -27,33 +22,7 @@ export class Home implements OnInit {
 
   readonly selectedGroupId = signal<number | null>(null);
 
-  readonly columns: KanbanColumn[] = [
-    { status: 'IN_PROGRESS', title: 'En progreso', dotClass: 'bg-blue-500' },
-    { status: 'ON_HOLD', title: 'En espera', dotClass: 'bg-amber-500' },
-    { status: 'COMPLETED', title: 'Completadas', dotClass: 'bg-emerald-500' },
-    { status: 'DONE', title: 'Terminadas', dotClass: 'bg-purple-500' },
-    { status: 'EXPIRED', title: 'Vencidas', dotClass: 'bg-rose-500' },
-  ];
-
-  readonly tasksByStatus = computed(() => {
-    const tasks = this.tasksStore.tasks();
-    const taskMap: Record<TaskStatus, Task[]> = {
-      IN_PROGRESS: [],
-      ON_HOLD: [],
-      COMPLETED: [],
-      DONE: [],
-      EXPIRED: [],
-    };
-
-    for (const task of tasks) {
-      const tasksForStatus = taskMap[task.status];
-      if (tasksForStatus) {
-        tasksForStatus.push(task);
-      }
-    }
-
-    return taskMap;
-  });
+  readonly isLeaderOfSelectedGroup = computed(() => this.groupsStore.leaderGroups().some((group) => group.id === this.selectedGroupId()));
 
   private readonly autoSelectGroupEffect = effect(() => {
     const groups = this.groupsStore.groups();

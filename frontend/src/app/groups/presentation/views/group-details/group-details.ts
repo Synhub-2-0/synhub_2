@@ -8,11 +8,14 @@ import { Group } from '../../../domain/model/group.entity';
 import { TaskStatus } from '../../../../tasks/domain/model/task.entity';
 import { TasksStore } from '../../../../tasks/application/tasks.store';
 import { TaskList } from '../../../../tasks/presentation/components/task-list/task-list';
+import { TaskBoard } from '../../../../tasks/presentation/components/task-board/task-board';
+import { IamStore } from '../../../../iam/application/iam.store';
+import { InvitationsStore } from '../../../../invitations/application/invitations.store';
 
 @Component({
   selector: 'app-group-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, TaskList],
+  imports: [CommonModule, FormsModule, MatIconModule, TaskList, TaskBoard],
   templateUrl: './group-details.html',
   styleUrl: './group-details.css',
 })
@@ -21,22 +24,27 @@ export class GroupDetails implements OnInit {
   private readonly router = inject(Router);
   readonly groupsStore = inject(GroupsStore);
   readonly tasksStore = inject(TasksStore);
+  readonly invitationsStore = inject(InvitationsStore);
+  readonly iamStore = inject(IamStore);
   readonly groupId = signal(0);
   readonly isLeaderView = signal(false);
   readonly isEditing = signal(false);
   editName = '';
   editDescription = '';
   editImgUrl = '';
+  inviteUsername = '';
 
   readonly group = computed<Group | undefined>(() => {
     const groups = this.groupsStore.groups();
     return this.groupId() ? groups.find(group => group.id === this.groupId()) : groups[0];
   });
 
-  readonly leader = computed(() => this.group()?.usersInGroup.find(user => user.roleInGroup === 'GROUP_LEADER')?.user);
-  readonly members = computed(() => this.group()?.usersInGroup
+  // Members are a separate resource (GET /groups/{id}/members), cached by group in the store.
+  private readonly groupMembers = computed(() => this.groupsStore.membersByGroup()[this.groupId()] ?? []);
+  readonly leader = computed(() => this.groupMembers().find(user => user.roleInGroup === 'GROUP_LEADER')?.user);
+  readonly members = computed(() => this.groupMembers()
     .filter(user => user.roleInGroup === 'GROUP_MEMBER')
-    .map(user => user.user) ?? []);
+    .map(user => user.user));
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.queryParamMap.get('id'));
@@ -45,8 +53,23 @@ export class GroupDetails implements OnInit {
     const selectedId = id || this.groupsStore.groups()[0]?.id;
     if (selectedId) {
       this.groupId.set(selectedId);
+      this.groupsStore.loadGroupMembers(selectedId);
       this.tasksStore.loadTasksByGroup(selectedId);
+      if (this.isLeaderView()) {
+        this.invitationsStore.clearError();
+        this.invitationsStore.loadGroupInvitations(selectedId);
+      }
     }
+  }
+
+  inviteUser(): void {
+    const username = this.inviteUsername.trim();
+    if (!username || !this.groupId()) return;
+    this.invitationsStore.inviteByUsername(username, this.groupId(), () => this.inviteUsername = '');
+  }
+
+  cancelInvitation(invitationId: number): void {
+    this.invitationsStore.declineInvitation(invitationId);
   }
 
   startEdit(): void {
@@ -69,7 +92,7 @@ export class GroupDetails implements OnInit {
       description: this.editDescription.trim(),
       imgUrl: this.editImgUrl.trim(),
       code: group.code,
-      usersInGroup: group.usersInGroup,
+      memberCount: group.memberCount,
     }), this.router);
     this.isEditing.set(false);
   }

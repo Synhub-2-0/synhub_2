@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GroupsStore } from '../../../application/groups.store';
 import { CreateGroupCommand } from '../../../domain/model/create-group.command';
 import { GroupList } from '../../components/group-list/group-list';
@@ -18,6 +18,7 @@ import { NoGroupLeader } from '../../components/no-group-leader/no-group-leader'
 export class LeaderGroups implements OnInit {
   readonly groupsStore = inject(GroupsStore);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute, { optional: true });
   readonly showCreateModal = signal(false);
   name = '';
   description = '';
@@ -25,6 +26,7 @@ export class LeaderGroups implements OnInit {
 
   ngOnInit(): void {
     this.groupsStore.loadGroups();
+    if (this.route?.snapshot.queryParamMap.get('create') === 'true') this.showCreateModal.set(true);
   }
 
   toggleCreateModal(): void { this.showCreateModal.update(value => !value); }

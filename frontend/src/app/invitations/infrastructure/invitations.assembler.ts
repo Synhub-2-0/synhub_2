@@ -1,6 +1,7 @@
 import {BaseAssembler} from '../../shared/infrastructure/base-assembler';
 import {Invitation} from '../domain/model/invitation.entity';
-import {InvitationResource, InvitationsResponse} from './invitations.response';
+import {CreateInvitationRequest, InvitationResource, InvitationsResponse} from './invitations.response';
+import {CreateInvitationCommand} from '../domain/model/create-invitation.command';
 import {GroupsAssembler} from '../../groups/infrastructure/groups.assembler';
 import {ProfilesAssembler} from '../../iam/infrastructure/profiles/profiles.assembler';
 
@@ -26,5 +27,12 @@ export class InvitationsAssembler implements BaseAssembler<Invitation, Invitatio
       group: this.groupAssembler.toResourceFromEntity(entity.group),
       user: this.profileAssembler.toResourceFromEntity(entity.profile)
     } as InvitationResource;
+  }
+
+  toRequestFromCreateCommand(command: CreateInvitationCommand): CreateInvitationRequest {
+    return {
+      groupId: command.groupId,
+      userId: command.userId
+    } as CreateInvitationRequest;
   }
 }

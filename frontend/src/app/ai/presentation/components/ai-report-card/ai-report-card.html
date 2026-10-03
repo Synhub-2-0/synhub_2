@@ -1,0 +1,38 @@
+<section class="rounded-3xl border border-indigo-100 bg-gradient-to-b from-indigo-50/60 to-white p-6 shadow-sm">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h2 class="flex items-center gap-2 text-lg font-extrabold text-slate-800">
+        <mat-icon class="text-indigo-500">auto_awesome</mat-icon> Informe con IA
+      </h2>
+      <p class="text-xs text-slate-500 mt-0.5">Análisis de la carga, riesgos y recomendaciones de tu equipo.</p>
+    </div>
+    <button type="button" (click)="generate()" [disabled]="!groupId() || aiStore.reportLoading()"
+      class="rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">
+      {{ aiStore.reportLoading() ? 'Analizando tu equipo…' : (aiStore.report() ? 'Regenerar informe' : 'Generar informe') }}
+    </button>
+  </div>
+  @if (aiStore.error()) {
+    <p class="mt-3 text-sm text-red-600">{{ aiStore.error() }}</p>
+  }
+  @if (aiStore.report()) {
+    <div class="mt-4 flex flex-col gap-1.5 text-sm text-slate-700 leading-relaxed">
+      @for (block of blocks(); track $index) {
+        @switch (block.type) {
+          @case ('heading') {
+            <h3 class="mt-3 text-base font-extrabold text-indigo-900">
+              @for (s of block.segments; track $index) { {{ s.text }} }
+            </h3>
+          }
+          @case ('item') {
+            <p class="pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-indigo-400">
+              @for (s of block.segments; track $index) { <span [class.font-bold]="s.bold">{{ s.text }}</span> }
+            </p>
+          }
+          @default {
+            <p>@for (s of block.segments; track $index) { <span [class.font-bold]="s.bold">{{ s.text }}</span> }</p>
+          }
+        }
+      }
+    </div>
+  }
+</section>

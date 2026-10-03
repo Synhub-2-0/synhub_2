@@ -1,6 +1,7 @@
 export const environment = {
   production: true,
-  platformProviderApiBaseUrl: 'http://localhost:8080/api/v1',
+  // CloudFront sirve el front y reenvía /api/* al backend: mismo dominio, sin CORS.
+  platformProviderApiBaseUrl: '/api/v1',
   platformProviderSignInEndpointPath: '/authentication/sign-in',
   platformProviderSignUpEndpointPath: '/authentication/sign-up',
   platformProviderUserEndpointPath: '/users',
@@ -8,5 +9,7 @@ export const environment = {
   platformProviderGroupsEndpointPath: '/groups',
   platformProviderTasksEndpointPath: '/tasks',
   platformProviderInvitationsEndpointPath: '/invitations',
+  platformProviderRequestsEndpointPath: '/requests',
+  platformProviderAiEndpointPath: '/ai',
   logoProviderApiBaseUrl: 'https://img.logo.dev'
 };

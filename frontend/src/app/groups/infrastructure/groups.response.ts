@@ -7,7 +7,6 @@ export interface GroupResource extends BaseResource {
   imgUrl: string;
   description: string;
   code: string;
-  usersInGroup?: GroupUsersResource[];
   memberCount?: number;
   leader?: ProfileResource;
 }

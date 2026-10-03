@@ -18,8 +18,6 @@ export class GroupCard {
 
   constructor(private readonly router: Router) {}
 
-  get memberCount(): number { return this.group.usersInGroup?.length ?? 0; }
-
   openGroupDetails(): void {
     this.router.navigate(['/groups'], { queryParams: { id: this.group.id, role: this.isLeader ? 'leader' : 'member' } }).then();
   }

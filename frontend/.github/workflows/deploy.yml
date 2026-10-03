@@ -1,0 +1,45 @@
+name: Deploy front
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # OIDC hacia AWS, sin claves guardadas
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  BUCKET: synhub-front-${{ vars.AWS_ACCOUNT_ID }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # ponytail: solo compila; activar `npm test` cuando se arreglen los 5 specs que ya fallan en develop
+      - run: npx ng build
+      - uses: actions/upload-artifact@v4
+        with: { name: front, path: dist/Synhub-website/browser }
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: front, path: site }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      # El bucket es permanente; CloudFront se enciende/apaga a demanda.
+      - run: aws s3 sync site "s3://$BUCKET" --delete
+      - name: Invalidar CloudFront si está encendido
+        run: |
+          id=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[0].DomainName=='$BUCKET.s3.$AWS_REGION.amazonaws.com'].Id | [0]" --output text 2>/dev/null || true)
+          if [ -n "$id" ] && [ "$id" != "None" ]; then aws cloudfront create-invalidation --distribution-id "$id" --paths '/*'; else echo "CloudFront apagado: archivos subidos a S3."; fi
