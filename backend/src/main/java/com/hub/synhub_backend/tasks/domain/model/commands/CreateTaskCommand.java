@@ -8,6 +8,11 @@ public record CreateTaskCommand(
         String description,
         OffsetDateTime dueDate,
         Long userId,
-        Long groupId
+        Long groupId,
+        Integer difficulty,
+        String context,
+        String urgency,
+        String labels,
+        Boolean aiAccepted
 ) {
 }

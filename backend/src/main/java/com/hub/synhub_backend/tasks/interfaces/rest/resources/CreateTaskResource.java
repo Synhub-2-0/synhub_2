@@ -7,6 +7,11 @@ public record CreateTaskResource(
         String description,
         OffsetDateTime dueDate,
         Long userId,
-        Long groupId
+        Long groupId,
+        Integer difficulty,
+        String context,
+        String urgency,
+        String labels,
+        Boolean aiAccepted
 ) {
 }
