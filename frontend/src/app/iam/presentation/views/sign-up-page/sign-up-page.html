@@ -1,85 +1,92 @@
-<div class="register-screen">
-  <div class="register-container">
-    <div class="register-title">
-      <p>Registro</p>
-    </div>
-    <div class="register-form">
-      <form [formGroup]="form" (submit)="performSignUp()">
-        <div class="register-form-row">
-          <mat-form-field appearance="fill" class="custom-form-field full-width">
-            <mat-label>Nombre</mat-label>
-            <mat-icon matPrefix style="color: #888;">abc</mat-icon>
-            <input matInput formControlName="name" placeholder="Nombre" type="text" id="name" name="name" required>
-            @if (isInvalidControl(form, 'name')) {
-              <mat-error>{{errorMessagesForControl(form, 'name')}}</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field appearance="fill" class="custom-form-field full-width">
-            <mat-label>Apellido</mat-label>
-            <mat-icon matPrefix style="color: #888;">abc</mat-icon>
-            <input matInput formControlName="surname" placeholder="Apellido" type="text" id="surname" name="surname" required>
-            @if (isInvalidControl(form, 'surname')) {
-              <mat-error>{{errorMessagesForControl(form, 'surname')}}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-        <div>
-          <mat-form-field appearance="fill" class="custom-form-field full-width">
-            <mat-label>Usuario</mat-label>
-            <mat-icon matPrefix style="color: #888;">person</mat-icon>
-            <input matInput formControlName="username" placeholder="Usuario" type="text" id="username" name="username" required>
-            @if (isInvalidControl(form, 'username')) {
-              <mat-error>{{errorMessagesForControl(form, 'username')}}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-        <div>
-          <mat-form-field appearance="fill" class="custom-form-field full-width">
-            <mat-label>Correo Electrónico</mat-label>
-            <mat-icon matPrefix style="color: #888;">mail</mat-icon>
-            <input matInput formControlName="email" placeholder="Correo Electrónico" type="email" id="email" name="email" required>
-            @if (isInvalidControl(form, 'email')) {
-              <mat-error>{{errorMessagesForControl(form, 'email')}}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-        <div>
-          <mat-form-field appearance="fill" class="custom-form-field full-width">
-            <mat-label>URL de foto de perfil</mat-label>
-            <mat-icon matPrefix style="color: #888;">link</mat-icon>
-            <input matInput formControlName="imgUrl" placeholder="URL de foto de perfil" type="text" id="imgUrl" name="imgUrl">
-            @if (isInvalidControl(form, 'imgUrl')) {
-              <mat-error>{{errorMessagesForControl(form, 'imgUrl')}}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-        <div>
-          <mat-form-field appearance="fill" class="custom-form-field full-width">
-            <mat-label>Contraseña</mat-label>
-            <mat-icon matPrefix style="color: #888;">lock</mat-icon>
-            <input matInput formControlName="password" placeholder="Contraseña" type="password" id="password" name="password" required>
-            @if (isInvalidControl(form, 'password')) {
-              <mat-error>{{ errorMessagesForControl(form,'password')}}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-        <div>
-          <mat-form-field appearance="fill" class="custom-form-field full-width">
-            <mat-label>Repetir Contraseña</mat-label>
-            <mat-icon matPrefix style="color: #888;">lock</mat-icon>
-            <input matInput formControlName="confirmPassword" placeholder="Confirmar Contraseña" id="confirmPassword" name="confirmPassword" required>
-            @if (isInvalidControl(form, 'confirmPassword')) {
-              <mat-error>{{ errorMessagesForControl(form,'confirmPassword')}}</mat-error>
-            } @else if (form.hasError('passwordMismatch')) {
-              <mat-error>La contraseña no coincide.</mat-error>
-            }
-          </mat-form-field>
-        </div>
-        <div class="button-container">
-          <button mat-raised-button color="primary" class="sign-up-button" type="submit" [disabled]="form.invalid">Registrarse</button>
-          <button mat-raised-button color="primary" class="sign-in-button" type="button" (click)="routeToSignIn()">Iniciar Sesión</button>
-        </div>
-      </form>
-    </div>
+<div class="grid min-h-screen place-items-center bg-slate-50 p-6">
+  <div class="w-full max-w-2xl rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm md:p-10">
+    <header class="flex items-center gap-4 border-b pb-6">
+      <img src="synhub_logo.png" alt="Synhub Logo" class="h-12 w-auto">
+      <div>
+        <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Nueva cuenta</span>
+        <h1 class="text-2xl font-extrabold text-slate-900">Registro</h1>
+        <p class="mt-1 text-sm text-slate-500">Completa tus datos para unirte a Synhub.</p>
+      </div>
+    </header>
+
+    <form [formGroup]="form" (submit)="performSignUp()" class="mt-6 flex flex-col gap-2">
+      <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Nombre</mat-label>
+          <mat-icon matPrefix class="mr-2 text-slate-400">abc</mat-icon>
+          <input matInput formControlName="name" placeholder="Nombre" type="text" id="name" name="name" required>
+          @if (isInvalidControl(form, 'name')) {
+            <mat-error>{{errorMessagesForControl(form, 'name')}}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Apellido</mat-label>
+          <mat-icon matPrefix class="mr-2 text-slate-400">abc</mat-icon>
+          <input matInput formControlName="surname" placeholder="Apellido" type="text" id="surname" name="surname" required>
+          @if (isInvalidControl(form, 'surname')) {
+            <mat-error>{{errorMessagesForControl(form, 'surname')}}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Usuario</mat-label>
+        <mat-icon matPrefix class="mr-2 text-slate-400">person</mat-icon>
+        <input matInput formControlName="username" placeholder="Usuario" type="text" id="username" name="username" required>
+        @if (isInvalidControl(form, 'username')) {
+          <mat-error>{{errorMessagesForControl(form, 'username')}}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Correo Electrónico</mat-label>
+        <mat-icon matPrefix class="mr-2 text-slate-400">mail</mat-icon>
+        <input matInput formControlName="email" placeholder="Correo Electrónico" type="email" id="email" name="email" required>
+        @if (isInvalidControl(form, 'email')) {
+          <mat-error>{{errorMessagesForControl(form, 'email')}}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>URL de foto de perfil</mat-label>
+        <mat-icon matPrefix class="mr-2 text-slate-400">link</mat-icon>
+        <input matInput formControlName="imgUrl" placeholder="URL de foto de perfil" type="text" id="imgUrl" name="imgUrl">
+        @if (isInvalidControl(form, 'imgUrl')) {
+          <mat-error>{{errorMessagesForControl(form, 'imgUrl')}}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix class="mr-2 text-slate-400">lock</mat-icon>
+          <input matInput formControlName="password" placeholder="Contraseña" type="password" id="password" name="password" required>
+          @if (isInvalidControl(form, 'password')) {
+            <mat-error>{{ errorMessagesForControl(form,'password')}}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Repetir Contraseña</mat-label>
+          <mat-icon matPrefix class="mr-2 text-slate-400">lock</mat-icon>
+          <input matInput formControlName="confirmPassword" placeholder="Confirmar Contraseña" type="password" id="confirmPassword" name="confirmPassword" required>
+          @if (isInvalidControl(form, 'confirmPassword')) {
+            <mat-error>{{ errorMessagesForControl(form,'confirmPassword')}}</mat-error>
+          } @else if (form.hasError('passwordMismatch')) {
+            <mat-error>La contraseña no coincide.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 gap-3 border-t pt-5 sm:grid-cols-2">
+        <button type="button" (click)="routeToSignIn()"
+                class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
+          Iniciar Sesión
+        </button>
+        <button type="submit" [disabled]="form.invalid"
+                class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#4A90E2]">
+          Registrarse
+        </button>
+      </div>
+    </form>
   </div>
 </div>
