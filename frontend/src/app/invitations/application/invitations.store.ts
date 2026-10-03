@@ -1,4 +1,5 @@
-import {computed, Injectable, signal} from '@angular/core';
+import { ToastStore } from '../../shared/application/toast.store';
+import {computed, Injectable, signal, inject, effect } from '@angular/core';
 import {Invitation} from '../domain/model/invitation.entity';
 import {CreateInvitationCommand} from '../domain/model/create-invitation.command';
 import {InvitationsApi} from '../infrastructure/invitations.api';
@@ -8,6 +9,7 @@ import {IamStore} from '../../iam/application/iam.store';
 
 @Injectable({providedIn: 'root'})
 export class InvitationsStore {
+  private readonly toastStore = inject(ToastStore);
 
   readonly invitationCount = computed(() => this.invitations().length);
 
@@ -28,9 +30,19 @@ export class InvitationsStore {
     private iamApi: IamApi,
     private iamStore: IamStore,
   ) {
+    // Root stores outlive the session: drop the previous user's data as soon as the session ends.
+    effect(() => {
+      if (!this.iamStore.isSignedIn()) this.reset();
+    });
     if (localStorage.getItem('token')) {
       this.loadInvitations();
     }
+  }
+
+  reset(): void {
+    this.invitationsSignal.set([]);
+    this.groupInvitationsSignal.set([]);
+    this.errorSignal.set(null);
   }
 
   getInvitationById(id: number) {
@@ -49,7 +61,7 @@ export class InvitationsStore {
           this.errorSignal.set(null);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to load invitations'));
+          this.setError(this.formatError(err, 'Failed to load invitations'));
           this.loadingSignal.set(false);
         }
       });
@@ -62,7 +74,7 @@ export class InvitationsStore {
       .getInvitationsByGroupId(groupId)
       .subscribe({
         next: (invitations) => this.groupInvitationsSignal.set(invitations),
-        error: (err) => this.errorSignal.set(this.formatError(err, 'Failed to load group invitations')),
+        error: (err) => this.setError(this.formatError(err, 'Failed to load group invitations')),
       });
   }
 
@@ -73,7 +85,7 @@ export class InvitationsStore {
     const trimmedUsername = username.trim();
     if (!trimmedUsername) return;
     if (trimmedUsername === this.iamStore.currentUsername()) {
-      this.errorSignal.set('No puedes invitarte a ti mismo.');
+      this.setError('No puedes invitarte a ti mismo.');
       return;
     }
 
@@ -98,7 +110,7 @@ export class InvitationsStore {
           onSuccess?.();
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to create invitation'));
+          this.setError(this.formatError(err, 'Failed to create invitation'));
           this.invitingSignal.set(false);
         }
       });
@@ -116,7 +128,7 @@ export class InvitationsStore {
    *       this.loadingSignal.set(false);
    *     },
    *     error: err => {
-   *       this.errorSignal.set(this.formatError(err, 'Failed to request group invitation'));
+   *       this.setError(this.formatError(err, 'Failed to request group invitation'));
    *       this.loadingSignal.set(false);
    *     },
    *   });
@@ -136,7 +148,7 @@ export class InvitationsStore {
           onSuccess?.();
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to accept invitation'));
+          this.setError(this.formatError(err, 'Failed to accept invitation'));
           this.loadingSignal.set(false);
         }
       });
@@ -155,7 +167,7 @@ export class InvitationsStore {
           this.loadingSignal.set(false);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to decline invitation'));
+          this.setError(this.formatError(err, 'Failed to decline invitation'));
           this.loadingSignal.set(false);
         }
       });
@@ -177,5 +189,10 @@ export class InvitationsStore {
         : error.message;
     }
     return fallback;
+  }
+
+  private setError(message: string): void {
+    this.errorSignal.set(message);
+    this.toastStore.error(message);
   }
 }

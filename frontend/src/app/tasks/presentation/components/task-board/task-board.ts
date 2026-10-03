@@ -17,6 +17,9 @@ interface KanbanColumn {
 })
 export class TaskBoard {
   readonly tasks = input<Task[]>([]);
+  // Members can only move their own tasks; the leader of the group can move any of them.
+  readonly currentUserId = input<number | null>(null);
+  readonly canManageAll = input(false);
   readonly statusChange = output<{ taskId: number; status: TaskStatus }>();
 
   readonly columns: KanbanColumn[] = [
@@ -48,6 +51,15 @@ export class TaskBoard {
     }
     return taskMap;
   });
+
+  canChangeStatus(task: Task): boolean {
+    if (task.status === 'DONE') return false;
+    return this.canManageAll() || (this.currentUserId() !== null && task.assignedTo?.id === this.currentUserId());
+  }
+
+  statusLabel(status: TaskStatus): string {
+    return this.columns.find((column) => column.status === status)?.title ?? status;
+  }
 
   initialsOf(task: Task): string {
     const user = task.assignedTo;

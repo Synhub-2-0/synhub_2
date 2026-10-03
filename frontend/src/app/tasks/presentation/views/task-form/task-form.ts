@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TasksStore } from '../../../application/tasks.store';
 import { GroupsStore } from '../../../../groups/application/groups.store';
 import { IamStore } from '../../../../iam/application/iam.store';
+import { ToastStore } from '../../../../shared/application/toast.store';
 import { CreateTaskCommand } from '../../../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../../../domain/model/update-task.command';
 import { Task } from '../../../domain/model/task.entity';
@@ -23,6 +24,7 @@ export class TaskForm implements OnInit {
   readonly tasksStore = inject(TasksStore);
   readonly groupsStore = inject(GroupsStore);
   readonly iamStore = inject(IamStore);
+  private readonly toastStore = inject(ToastStore);
 
   isEditMode = false;
   taskId: number | null = null;
@@ -67,6 +69,11 @@ export class TaskForm implements OnInit {
   }
 
   private populateForm(task: Task): void {
+    if (task.status === 'DONE') {
+      this.toastStore.error('Una tarea terminada no puede editarse ni eliminarse.');
+      this.router.navigate(['/tasks/leader']).then();
+      return;
+    }
     this.title = task.title;
     this.description = task.description;
     this.groupId = task.group?.id ?? this.groupId;

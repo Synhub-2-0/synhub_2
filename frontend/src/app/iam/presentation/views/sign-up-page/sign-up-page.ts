@@ -64,6 +64,7 @@ export class SignUpPage extends BaseForm {
   routeToSignIn() {
     this.router.navigateByUrl('/auth/sign-in').then();
   }
+
 }
 
 export const passwordMatchValidator: ValidatorFn = (group: AbstractControl)

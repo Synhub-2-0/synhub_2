@@ -35,7 +35,7 @@
       <div class="h-full w-full transition-all" [ngClass]="progressClass"></div>
     </div>
     <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 font-medium">
-      <span>Vence: {{ task.dueDate | date:'dd/MM/yyyy HH:mm' }}</span>
+      <span>Vence: {{ task && task.dueDate ? (task.dueDate | date:'dd/MM/yyyy HH:mm') : 'Sin fecha' }}</span>
       <span class="font-semibold text-slate-700">{{ remainingTimeLabel }}</span>
     </div>
 
@@ -48,6 +48,9 @@
           </button>
         } @else { <span></span> }
         <div class="flex items-center gap-2">
+          @if (isLocked) {
+            <span class="inline-flex items-center gap-1 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-700"><mat-icon class="scale-75">lock</mat-icon> Tarea terminada</span>
+          } @else {
           <button type="button" (click)="onEdit($event)"
             class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-slate-100 hover:bg-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 transition">
             <mat-icon class="scale-75">edit</mat-icon> Editar
@@ -56,6 +59,7 @@
             class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-red-50 hover:bg-red-100 px-3.5 py-2 text-xs font-bold text-red-600 transition">
             <mat-icon class="scale-75">delete</mat-icon> Eliminar
           </button>
+          }
         </div>
       </footer>
     }
@@ -69,9 +73,6 @@
         } @else if (showSubmitForm()) {
           <textarea rows="3" [value]="submissionMessage()" (input)="onSubmissionInput($event)" placeholder="Mensaje para el líder (opcional)"
             class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]"></textarea>
-          @if (requestsStore.error()) {
-            <div class="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-medium text-red-600">{{ requestsStore.error() }}</div>
-          }
           <div class="grid grid-cols-2 gap-2.5">
             <button type="button" (click)="toggleSubmitForm($event)"
               class="rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">Cancelar</button>

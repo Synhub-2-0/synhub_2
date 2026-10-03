@@ -27,9 +27,11 @@
               </div>
             }
             <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400">
-              <span class="font-medium">Vence: {{ task.dueDate | date:'dd/MM/yyyy' }}</span>
+              <span class="font-medium">Vence: {{ task && task.dueDate ? (task.dueDate | date:'dd/MM/yyyy') : 'Sin fecha' }}</span>
               @if (task.status === 'DONE') {
                 <span class="rounded-lg bg-purple-50 px-2 py-1 text-[10px] font-bold text-purple-700">Terminada</span>
+              } @else if (!canChangeStatus(task)) {
+                <span class="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500" title="Solo el integrante asignado puede cambiar el estado">{{ statusLabel(task.status) }}</span>
               } @else {
                 <select
                   [value]="task.status"

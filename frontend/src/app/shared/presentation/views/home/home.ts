@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { GroupsStore } from '../../../../groups/application/groups.store';
@@ -21,6 +21,8 @@ export class Home implements OnInit {
   readonly tasksStore = inject(TasksStore);
 
   readonly selectedGroupId = signal<number | null>(null);
+
+  readonly isLeaderOfSelectedGroup = computed(() => this.groupsStore.leaderGroups().some((group) => group.id === this.selectedGroupId()));
 
   private readonly autoSelectGroupEffect = effect(() => {
     const groups = this.groupsStore.groups();

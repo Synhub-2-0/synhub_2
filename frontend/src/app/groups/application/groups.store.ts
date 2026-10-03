@@ -1,4 +1,5 @@
-import { computed, Injectable, Signal, signal } from '@angular/core';
+import { ToastStore } from '../../shared/application/toast.store';
+import { computed, Injectable, Signal, signal, inject, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { forkJoin, retry } from 'rxjs';
@@ -10,6 +11,7 @@ import { IamStore } from '../../iam/application/iam.store';
 
 @Injectable({ providedIn: 'root' })
 export class GroupsStore {
+  private readonly toastStore = inject(ToastStore);
   private readonly groupsSignal = signal<Group[]>([]);
   private readonly leaderGroupsSignal = signal<Group[]>([]);
   private readonly memberGroupsSignal = signal<Group[]>([]);
@@ -33,9 +35,21 @@ export class GroupsStore {
     private iamStore: IamStore,
     private location: Location,
   ) {
+    // Root stores outlive the session: drop the previous user's data as soon as the session ends.
+    effect(() => {
+      if (!this.iamStore.isSignedIn()) this.reset();
+    });
     if (localStorage.getItem('token')) {
       this.loadGroups();
     }
+  }
+
+  reset(): void {
+    this.groupsSignal.set([]);
+    this.leaderGroupsSignal.set([]);
+    this.memberGroupsSignal.set([]);
+    this.membersByGroupSignal.set({});
+    this.errorSignal.set(null);
   }
 
   getGroupById(id: number): Signal<Group | undefined> {
@@ -59,7 +73,7 @@ export class GroupsStore {
         this.loadingSignal.set(false);
       },
       error: (err) => {
-        this.errorSignal.set(this.formatError(err, 'Failed to load groups'));
+        this.setError(this.formatError(err, 'Failed to load groups'));
         this.loadingSignal.set(false);
       },
     });
@@ -78,7 +92,7 @@ export class GroupsStore {
       },
       error: (err) => {
         this.membersByGroupSignal.update((cache) => ({ ...cache, [groupId]: [] }));
-        this.errorSignal.set(this.formatError(err, 'Failed to load group members'));
+        this.setError(this.formatError(err, 'Failed to load group members'));
         this.membersLoadingSignal.set(false);
       },
     });
@@ -99,7 +113,7 @@ export class GroupsStore {
           router.navigate(['/groups/leader']).then();
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to create group'));
+          this.setError(this.formatError(err, 'Failed to create group'));
           this.loadingSignal.set(false);
         },
       });
@@ -121,7 +135,7 @@ export class GroupsStore {
           router.navigate(['/groups/leader']).then();
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to update group'));
+          this.setError(this.formatError(err, 'Failed to update group'));
           this.loadingSignal.set(false);
         },
       });
@@ -134,5 +148,10 @@ export class GroupsStore {
         : error.message;
     }
     return fallback;
+  }
+
+  private setError(message: string): void {
+    this.errorSignal.set(message);
+    this.toastStore.error(message);
   }
 }

@@ -1,4 +1,6 @@
-import {Injectable, signal} from '@angular/core';
+import { IamStore } from '../../iam/application/iam.store';
+import { ToastStore } from '../../shared/application/toast.store';
+import {Injectable, signal, inject, effect } from '@angular/core';
 import {Observable} from 'rxjs';
 import {RequestStatus, TaskRequest} from '../domain/model/task-request.entity';
 import {CreateRequestCommand} from '../domain/model/create-request.command';
@@ -6,6 +8,8 @@ import {RequestsApi} from '../infrastructure/requests.api';
 
 @Injectable({providedIn: 'root'})
 export class RequestsStore {
+  private readonly toastStore = inject(ToastStore);
+  private readonly iamStore = inject(IamStore);
   private readonly submissionsSignal = signal<TaskRequest[]>([]);
   private readonly requestsByTaskSignal = signal<Record<number, TaskRequest[]>>({});
   private readonly statusFilterSignal = signal<RequestStatus>('PENDING');
@@ -20,7 +24,19 @@ export class RequestsStore {
   readonly processing = this.processingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
 
-  constructor(private requestsApi: RequestsApi) {}
+  constructor(private requestsApi: RequestsApi) {
+    // Root stores outlive the session: drop the previous user's data as soon as the session ends.
+    effect(() => {
+      if (!this.iamStore.isSignedIn()) this.reset();
+    });
+  }
+
+  reset(): void {
+    this.submissionsSignal.set([]);
+    this.requestsByTaskSignal.set({});
+    this.statusFilterSignal.set('PENDING');
+    this.errorSignal.set(null);
+  }
 
   /** Leader inbox: the SUBMISSION requests of every task of the group, filtered by status. */
   loadGroupSubmissions(groupId: number, status: RequestStatus = this.statusFilterSignal()): void {
@@ -36,7 +52,7 @@ export class RequestsStore {
         },
         error: (err) => {
           this.submissionsSignal.set([]);
-          this.errorSignal.set(err.message);
+          this.setError(err.message);
           this.loadingSignal.set(false);
         }
       });
@@ -63,7 +79,7 @@ export class RequestsStore {
           onSuccess?.();
         },
         error: (err) => {
-          this.errorSignal.set(err.message);
+          this.setError(err.message);
           this.processingSignal.set(false);
         }
       });
@@ -97,9 +113,14 @@ export class RequestsStore {
         this.processingSignal.set(false);
       },
       error: (err) => {
-        this.errorSignal.set(err.message);
+        this.setError(err.message);
         this.processingSignal.set(false);
       }
     });
+  }
+
+  private setError(message: string): void {
+    this.errorSignal.set(message);
+    this.toastStore.error(message);
   }
 }

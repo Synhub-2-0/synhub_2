@@ -59,7 +59,7 @@
     @if (groupsStore.groups().length === 0) {
       <div class="py-12 text-center text-sm text-slate-400">No hay grupos disponibles para mostrar en el tablero.</div>
     } @else {
-      <app-task-board [tasks]="tasksStore.tasks()" (statusChange)="onChangeTaskStatus($event.taskId, $event.status)"></app-task-board>
+      <app-task-board [tasks]="tasksStore.tasks()" [currentUserId]="iamStore.currentUserId()" [canManageAll]="isLeaderOfSelectedGroup()" (statusChange)="onChangeTaskStatus($event.taskId, $event.status)"></app-task-board>
     }
   </section>
 </div>

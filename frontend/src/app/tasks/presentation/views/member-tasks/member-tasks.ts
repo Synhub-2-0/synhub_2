@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,6 +23,15 @@ export class MemberTasks implements OnInit {
 
   selectedGroupId = signal<number | null>(null);
 
+  // Groups where the user is a member, plus the groups he leads only when he also has tasks assigned there.
+  readonly availableGroups = computed(() => {
+    const memberGroups = this.groupsStore.memberGroups();
+    const ledWithTasks = this.groupsStore.leaderGroups().filter(
+      (group) => this.tasksStore.assignedGroupIds().includes(group.id) && !memberGroups.some((m) => m.id === group.id),
+    );
+    return [...memberGroups, ...ledWithTasks];
+  });
+
   readonly statusOptions: (TaskStatus | 'ALL')[] = [
     'ALL',
     'IN_PROGRESS',
@@ -41,9 +50,19 @@ export class MemberTasks implements OnInit {
     EXPIRED: 'Vencidas',
   };
 
+  // Safeguard: the list is user-scoped on the client too, whatever the endpoint returns.
+  readonly myTasks = computed(() =>
+    this.tasksStore.filteredTasks().filter((task) => task.assignedTo?.id === this.iamStore.currentUserId()),
+  );
+
   constructor() {
     effect(() => {
-      const groups = this.groupsStore.memberGroups();
+      const leaderGroups = this.groupsStore.leaderGroups();
+      const userId = this.iamStore.currentUserId();
+      if (userId) this.tasksStore.loadAssignedGroupIds(leaderGroups.map((group) => group.id), userId);
+    });
+    effect(() => {
+      const groups = this.availableGroups();
       const userId = this.iamStore.currentUserId();
       if (groups.length > 0 && !this.selectedGroupId()) {
         this.selectGroup(groups[0].id, userId);
@@ -63,23 +82,12 @@ export class MemberTasks implements OnInit {
       this.selectGroup(queryGroupId, userId);
       return;
     }
-
-    const groups = this.groupsStore.memberGroups();
-    if (groups.length > 0) {
-      this.selectGroup(groups[0].id, userId);
-    } else {
-      // Fallback directo al Grupo 1 para cargar tareas aunque falle /groups/user/role
-      this.selectGroup(1, userId);
-    }
   }
 
   selectGroup(groupId: number, userId = this.iamStore.currentUserId()): void {
     this.selectedGroupId.set(groupId);
-    if (userId) {
-      this.tasksStore.loadTasksByGroupAndUser(groupId, userId);
-    } else {
-      this.tasksStore.loadTasksByGroup(groupId);
-    }
+    // This view is personal: without a user id nothing is requested, never the tasks of the whole group.
+    if (userId) this.tasksStore.loadTasksByGroupAndUser(groupId, userId);
   }
 
   setFilter(status: TaskStatus | 'ALL'): void {

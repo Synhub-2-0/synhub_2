@@ -9,6 +9,7 @@ import { TaskStatus } from '../../../../tasks/domain/model/task.entity';
 import { TasksStore } from '../../../../tasks/application/tasks.store';
 import { TaskList } from '../../../../tasks/presentation/components/task-list/task-list';
 import { TaskBoard } from '../../../../tasks/presentation/components/task-board/task-board';
+import { IamStore } from '../../../../iam/application/iam.store';
 import { InvitationsStore } from '../../../../invitations/application/invitations.store';
 
 @Component({
@@ -24,6 +25,7 @@ export class GroupDetails implements OnInit {
   readonly groupsStore = inject(GroupsStore);
   readonly tasksStore = inject(TasksStore);
   readonly invitationsStore = inject(InvitationsStore);
+  readonly iamStore = inject(IamStore);
   readonly groupId = signal(0);
   readonly isLeaderView = signal(false);
   readonly isEditing = signal(false);

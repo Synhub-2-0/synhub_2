@@ -1,21 +1,27 @@
-import { computed, Injectable, Signal, signal } from '@angular/core';
+import { IamStore } from '../../iam/application/iam.store';
+import { ToastStore } from '../../shared/application/toast.store';
+import { computed, Injectable, Signal, signal, inject, effect } from '@angular/core';
 import { Task, TaskStatus } from '../domain/model/task.entity';
 import { CreateTaskCommand } from '../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../domain/model/update-task.command';
 import { TasksApi } from '../infrastructure/tasks.api';
-import { retry } from 'rxjs';
+import { catchError, forkJoin, map, of, retry } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TasksStore {
+  private readonly toastStore = inject(ToastStore);
+  private readonly iamStore = inject(IamStore);
   private readonly tasksSignal = signal<Task[]>([]);
   private readonly selectedTaskSignal = signal<Task | null>(null);
   private readonly statusFilterSignal = signal<TaskStatus | 'ALL'>('ALL');
+  private readonly assignedGroupIdsSignal = signal<number[]>([]);
   private readonly loadingSignal = signal<boolean>(false);
   private readonly errorSignal = signal<string | null>(null);
 
   readonly tasks = this.tasksSignal.asReadonly();
   readonly selectedTask = this.selectedTaskSignal.asReadonly();
   readonly statusFilter = this.statusFilterSignal.asReadonly();
+  readonly assignedGroupIds = this.assignedGroupIdsSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
 
@@ -27,7 +33,20 @@ export class TasksStore {
     return filter === 'ALL' ? all : all.filter((t) => t.status === filter);
   });
 
-  constructor(private tasksApi: TasksApi) {}
+  constructor(private tasksApi: TasksApi) {
+    // Root stores outlive the session: drop the previous user's data as soon as the session ends.
+    effect(() => {
+      if (!this.iamStore.isSignedIn()) this.reset();
+    });
+  }
+
+  reset(): void {
+    this.tasksSignal.set([]);
+    this.selectedTaskSignal.set(null);
+    this.statusFilterSignal.set('ALL');
+    this.assignedGroupIdsSignal.set([]);
+    this.errorSignal.set(null);
+  }
 
   setStatusFilter(status: TaskStatus | 'ALL'): void {
     this.statusFilterSignal.set(status);
@@ -39,6 +58,7 @@ export class TasksStore {
 
   /** Carga todas las tareas de un grupo (y opcionalmente filtradas por status en el backend) */
   loadTasksByGroup(groupId: number, status?: TaskStatus): void {
+    this.tasksSignal.set([]);
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.tasksApi
@@ -50,7 +70,7 @@ export class TasksStore {
           this.loadingSignal.set(false);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to load group tasks'));
+          this.setError(this.formatError(err, 'Failed to load group tasks'));
           this.loadingSignal.set(false);
         },
       });
@@ -58,6 +78,7 @@ export class TasksStore {
 
   /** Carga todas las tareas asignadas a un usuario específico dentro de un grupo */
   loadTasksByGroupAndUser(groupId: number, userId: number): void {
+    this.tasksSignal.set([]);
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.tasksApi
@@ -69,10 +90,26 @@ export class TasksStore {
           this.loadingSignal.set(false);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to load user tasks'));
+          this.setError(this.formatError(err, 'Failed to load user tasks'));
           this.loadingSignal.set(false);
         },
       });
+  }
+
+  /** Detects, among the given groups, the ones where the user has at least one assigned task. */
+  loadAssignedGroupIds(groupIds: number[], userId: number): void {
+    if (groupIds.length === 0) {
+      this.assignedGroupIdsSignal.set([]);
+      return;
+    }
+    forkJoin(
+      groupIds.map((groupId) =>
+        this.tasksApi.getTasksByGroupAndUser(groupId, userId).pipe(
+          map((tasks) => (tasks.length > 0 ? groupId : null)),
+          catchError(() => of(null)),
+        ),
+      ),
+    ).subscribe((ids) => this.assignedGroupIdsSignal.set(ids.filter((id): id is number => id !== null)));
   }
 
   /** Obtiene una tarea individual desde el backend y actualiza el estado local */
@@ -92,7 +129,7 @@ export class TasksStore {
           this.loadingSignal.set(false);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to load task'));
+          this.setError(this.formatError(err, 'Failed to load task'));
           this.loadingSignal.set(false);
         },
       });
@@ -111,7 +148,7 @@ export class TasksStore {
           this.loadingSignal.set(false);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to create task'));
+          this.setError(this.formatError(err, 'Failed to create task'));
           this.loadingSignal.set(false);
         },
       });
@@ -119,6 +156,10 @@ export class TasksStore {
 
   /** PUT /api/v1/tasks/{taskId} */
   updateTask(taskId: number, command: UpdateTaskCommand): void {
+    if (this.isDone(taskId)) {
+      this.setError(this.lockedMessage);
+      return;
+    }
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.tasksApi
@@ -135,7 +176,7 @@ export class TasksStore {
           this.loadingSignal.set(false);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to update task'));
+          this.setError(this.formatError(err, 'Failed to update task'));
           this.loadingSignal.set(false);
         },
       });
@@ -159,7 +200,7 @@ export class TasksStore {
           this.loadingSignal.set(false);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to update task status'));
+          this.setError(this.formatError(err, 'Failed to update task status'));
           this.loadingSignal.set(false);
         },
       });
@@ -167,6 +208,10 @@ export class TasksStore {
 
   /** DELETE /api/v1/tasks/{taskId} */
   deleteTask(id: number): void {
+    if (this.isDone(id)) {
+      this.setError(this.lockedMessage);
+      return;
+    }
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.tasksApi
@@ -182,7 +227,7 @@ export class TasksStore {
           this.errorSignal.set(null);
         },
         error: (err) => {
-          this.errorSignal.set(this.formatError(err, 'Failed to delete task'));
+          this.setError(this.formatError(err, 'Failed to delete task'));
           this.loadingSignal.set(false);
         },
       });
@@ -195,5 +240,17 @@ export class TasksStore {
         : error.message;
     }
     return fallback;
+  }
+
+  private readonly lockedMessage = 'Una tarea terminada no puede editarse ni eliminarse.';
+
+  private isDone(taskId: number): boolean {
+    const task = this.tasksSignal().find((t) => t.id === taskId) ?? this.selectedTaskSignal();
+    return task?.id === taskId && task.status === 'DONE';
+  }
+
+  private setError(message: string): void {
+    this.errorSignal.set(message);
+    this.toastStore.error(message);
   }
 }

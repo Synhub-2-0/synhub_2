@@ -43,10 +43,6 @@
       }
     </div>
 
-    @if (requestsStore.error()) {
-      <div class="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-medium text-red-600">{{ requestsStore.error() }}</div>
-    }
-
     @if (requestsStore.loading()) {
       <div class="flex flex-col items-center justify-center gap-3 py-16">
         <mat-icon fontIcon="cached" class="animate-spin text-4xl text-[#4A90E2]"></mat-icon>
@@ -103,7 +99,7 @@
 
             <div class="flex flex-col gap-3">
               <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-500">
-                <span>Vence: {{ request?.task?.dueDate ? (request.task.dueDate | date:'dd/MM/yyyy HH:mm') : 'Sin fecha' }}</span>
+                <span>Vence: {{ request && request.task && request.task.dueDate ? (request.task.dueDate | date:'dd/MM/yyyy HH:mm') : 'Sin fecha' }}</span>
                 @if (request.requestStatus === 'PENDING' && isOverdue(request)) {
                   <span class="font-bold text-red-600">Fecha límite vencida</span>
                 }
