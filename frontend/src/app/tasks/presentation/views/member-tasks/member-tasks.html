@@ -4,8 +4,15 @@
       <h1 class="text-2xl lg:text-3xl font-extrabold text-slate-800">Mis Tareas Asignadas</h1>
       <p class="text-sm text-slate-500 mt-1">Consulta tus entregas pendientes y actualiza el estado de tu progreso.</p>
     </div>
-    @if (availableGroups().length > 1) {
+    @if (availableGroups().length > 0) {
       <div class="flex items-center gap-2 overflow-x-auto pb-1">
+        <span class="text-xs font-bold text-slate-400 uppercase mr-2">Grupo:</span>
+        @if (availableGroups().length > 1) {
+          <button type="button" (click)="selectAllGroups()"
+            [class]="selectedGroupId() === ALL_GROUPS ? 'bg-[#1A4E85] text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition cursor-pointer shrink-0' : 'bg-white text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-xl text-xs border border-slate-200 transition cursor-pointer shrink-0'">
+            Todos
+          </button>
+        }
         @for (group of availableGroups(); track group.id) {
           <button type="button" (click)="selectGroup(group.id)"
             [class]="selectedGroupId() === group.id ? 'bg-[#1A4E85] text-white font-bold pl-2 pr-4 py-1.5 rounded-xl text-xs shadow-sm transition cursor-pointer flex items-center gap-2 shrink-0' : 'bg-white text-slate-600 hover:bg-slate-100 pl-2 pr-4 py-1.5 rounded-xl text-xs border border-slate-200 transition cursor-pointer flex items-center gap-2 shrink-0'">
@@ -34,7 +41,7 @@
         <span class="text-sm text-slate-500 font-medium">Cargando tus tareas...</span>
       </div>
     } @else {
-      <app-task-list [tasks]="myTasks()" [isLeader]="false" (changeStatus)="onChangeStatus($event)">
+      <app-task-list [tasks]="myTasks()" [isLeader]="false" [showGroup]="selectedGroupId() === ALL_GROUPS" (changeStatus)="onChangeStatus($event)">
       </app-task-list>
     }
   </div>

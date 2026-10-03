@@ -96,6 +96,30 @@ export class TasksStore {
       });
   }
 
+  /** Tasks assigned to the user in every given group (one GET /tasks/group/{id}/user/{id} per group). */
+  loadTasksByGroupsAndUser(groupIds: number[], userId: number): void {
+    this.tasksSignal.set([]);
+    this.errorSignal.set(null);
+    if (groupIds.length === 0) return;
+    this.loadingSignal.set(true);
+    let failed = false;
+    forkJoin(
+      groupIds.map((groupId) =>
+        this.tasksApi.getTasksByGroupAndUser(groupId, userId).pipe(
+          retry(2),
+          catchError(() => {
+            failed = true;
+            return of([] as Task[]);
+          }),
+        ),
+      ),
+    ).subscribe((lists) => {
+      this.tasksSignal.set(lists.flat().sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime()));
+      if (failed) this.setError('Failed to load user tasks');
+      this.loadingSignal.set(false);
+    });
+  }
+
   /** Detects, among the given groups, the ones where the user has at least one assigned task. */
   loadAssignedGroupIds(groupIds: number[], userId: number): void {
     if (groupIds.length === 0) {

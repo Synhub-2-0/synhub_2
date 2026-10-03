@@ -14,6 +14,7 @@ import { TaskCard } from '../task-card/task-card';
 export class TaskList {
   @Input() tasks: Task[] = [];
   @Input() isLeader = false;
+  @Input() showGroup = false;
   @Output() deleteTask = new EventEmitter<number>();
   @Output() changeStatus = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 }

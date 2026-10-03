@@ -16,6 +16,9 @@
               <span class="text-slate-400 font-normal">(&#64;{{ task.assignedTo.username }})</span>
             </p>
           }
+          @if (showGroup && task.group) {
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#4A90E2]"><mat-icon class="scale-75">groups</mat-icon>{{ task.group.name }}</span>
+          }
           <h3 class="text-lg font-extrabold text-slate-800 truncate">{{ task.title }}</h3>
         </div>
       </div>

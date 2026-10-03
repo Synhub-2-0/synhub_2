@@ -21,6 +21,8 @@ export class MemberTasks implements OnInit {
   readonly groupsStore = inject(GroupsStore);
   readonly iamStore = inject(IamStore);
 
+  // null: nothing chosen yet, ALL_GROUPS: the tasks of every group at once, otherwise a group id.
+  readonly ALL_GROUPS = 0;
   selectedGroupId = signal<number | null>(null);
 
   // Groups where the user is a member, plus the groups he leads only when he also has tasks assigned there.
@@ -64,8 +66,15 @@ export class MemberTasks implements OnInit {
     effect(() => {
       const groups = this.availableGroups();
       const userId = this.iamStore.currentUserId();
-      if (groups.length > 0 && !this.selectedGroupId()) {
-        this.selectGroup(groups[0].id, userId);
+      const selected = this.selectedGroupId();
+      if (groups.length === 0) return;
+      if (selected === null) {
+        // With several groups the default is the complete picture; with one, that group.
+        if (groups.length > 1) this.selectAllGroups(userId);
+        else this.selectGroup(groups[0].id, userId);
+      } else if (selected === this.ALL_GROUPS) {
+        // The list of groups can grow after the led-groups probe finishes.
+        this.selectAllGroups(userId);
       }
     });
   }
@@ -88,6 +97,11 @@ export class MemberTasks implements OnInit {
     this.selectedGroupId.set(groupId);
     // This view is personal: without a user id nothing is requested, never the tasks of the whole group.
     if (userId) this.tasksStore.loadTasksByGroupAndUser(groupId, userId);
+  }
+
+  selectAllGroups(userId = this.iamStore.currentUserId()): void {
+    this.selectedGroupId.set(this.ALL_GROUPS);
+    if (userId) this.tasksStore.loadTasksByGroupsAndUser(this.availableGroups().map((group) => group.id), userId);
   }
 
   setFilter(status: TaskStatus | 'ALL'): void {

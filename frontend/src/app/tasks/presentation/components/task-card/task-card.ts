@@ -19,6 +19,7 @@ export class TaskCard implements OnInit {
 
   @Input({ required: true }) task!: Task;
   @Input() isLeader = false;
+  @Input() showGroup = false;
   @Output() deleteRequested = new EventEmitter<number>();
   @Output() statusChangeRequested = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 

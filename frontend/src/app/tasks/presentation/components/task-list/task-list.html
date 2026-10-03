@@ -7,7 +7,7 @@
 } @else {
   <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     @for (task of tasks; track task.id) {
-      <app-task-card [task]="task" [isLeader]="isLeader"
+      <app-task-card [task]="task" [isLeader]="isLeader" [showGroup]="showGroup"
         (deleteRequested)="deleteTask.emit($event)"
         (statusChangeRequested)="changeStatus.emit($event)">
       </app-task-card>
