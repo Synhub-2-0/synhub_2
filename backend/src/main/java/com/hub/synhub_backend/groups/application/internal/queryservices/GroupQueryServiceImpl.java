@@ -1,11 +1,13 @@
 package com.hub.synhub_backend.groups.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.queries.*;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -66,5 +68,11 @@ public class GroupQueryServiceImpl implements GroupQueryService {
         return groups;
     }
 
-
+    @Override
+    public List<GroupProfile> handle(GetGroupMembersByGroupIdQuery query) {
+        if (!this.groupRepository.existsById(query.groupId())) {
+            throw new ResourceNotFoundException("Group with id " + query.groupId() + " does not exist");
+        }
+        return this.groupProfileRepository.findByGroup_Id(query.groupId());
+    }
 }

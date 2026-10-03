@@ -16,7 +16,12 @@ public class TaskResourceFromEntityAssembler {
                 entity.getUpdatedAt().toString(),
                 entity.getStatus().toString(),
                 GroupResourceReducedFromEntityAssembler.toResourceFromEntity(entity.getProfile().getGroup()),
-                UserResourceFromEntityAssembler.toResourceFromEntity(entity.getProfile().getUser())
+                UserResourceFromEntityAssembler.toResourceFromEntity(entity.getProfile().getUser()),
+                entity.getDifficulty(),
+                entity.getContext(),
+                entity.getUrgency(),
+                entity.getLabels(),
+                entity.getAiAccepted()
         );
     }
 }

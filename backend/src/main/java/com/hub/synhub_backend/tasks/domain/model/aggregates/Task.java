@@ -37,6 +37,13 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     @JoinColumn(name = "profile_id")
     private GroupProfile profile;
 
+    // Clasificación sugerida por IA (nullable: tareas previas o sin sugerencia). labels = CSV.
+    private Integer difficulty;
+    private String context;
+    private String urgency;
+    private String labels;
+    private Boolean aiAccepted;
+
     @Column(nullable = false)
     private Integer timesRearranged = 0;
 
@@ -53,6 +60,11 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         this.description = command.description();
         this.dueDate = command.dueDate();
         this.status = TaskStatus.IN_PROGRESS;
+        this.difficulty = command.difficulty();
+        this.context = command.context();
+        this.urgency = command.urgency();
+        this.labels = command.labels();
+        this.aiAccepted = command.aiAccepted();
     }
 
     public void updateStatus(UpdateTaskStatusCommand command) {

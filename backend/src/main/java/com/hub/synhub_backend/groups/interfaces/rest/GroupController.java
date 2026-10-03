@@ -2,6 +2,9 @@ package com.hub.synhub_backend.groups.interfaces.rest;
 
 import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupMembersByGroupIdQuery;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.UserInGroupResource;
+import com.hub.synhub_backend.groups.interfaces.rest.transform.UserInGroupResourceFromEntityAssembler;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupsByUserRoleQuery;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
@@ -64,6 +67,17 @@ public class GroupController {
                 .orElseThrow(() -> new ResourceNotFoundException("Group with id " + groupId + " does not exist"));
         var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
         return ResponseEntity.ok(groupResource);
+    }
+
+    @GetMapping("/{groupId}/members")
+    @Operation(summary = "Get the members of a group", description = "Get the members of a group with their role in it")
+    public ResponseEntity<List<UserInGroupResource>> getGroupMembers(@PathVariable Long groupId) {
+        var getGroupMembersByGroupIdQuery = new GetGroupMembersByGroupIdQuery(groupId);
+        var profiles = this.groupQueryService.handle(getGroupMembersByGroupIdQuery);
+        var memberResources = profiles.stream()
+                .map(profile -> UserInGroupResourceFromEntityAssembler.toResourceFromEntity(profile.getUser(), profile.getRoleInGroup()))
+                .toList();
+        return ResponseEntity.ok(memberResources);
     }
 
     @PostMapping()
