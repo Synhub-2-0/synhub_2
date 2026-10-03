@@ -13,6 +13,11 @@ public record TaskResource(
         String updatedAt,
         String status,
         GroupResourceReduced group,
-        UserResource assignedTo
+        UserResource assignedTo,
+        Integer difficulty,
+        String context,
+        String urgency,
+        String labels,
+        Boolean aiAccepted
 ) {
 }

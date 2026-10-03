@@ -11,7 +11,12 @@ public class CreateTaskCommandFromResourceAssembler {
                 resource.description(),
                 resource.dueDate(),
                 resource.userId(),
-                resource.groupId()
+                resource.groupId(),
+                resource.difficulty(),
+                resource.context(),
+                resource.urgency(),
+                resource.labels(),
+                resource.aiAccepted()
         );
     }
 }
