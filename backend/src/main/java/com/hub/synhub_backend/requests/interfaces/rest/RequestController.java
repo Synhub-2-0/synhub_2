@@ -16,6 +16,7 @@ import com.hub.synhub_backend.requests.interfaces.rest.transform.RequestResource
 import com.hub.synhub_backend.requests.interfaces.rest.transform.UpdateRequestCommandFromResourceAssembler;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTaskByIdQuery;
 import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -45,11 +46,16 @@ public class RequestController {
         this.userQueryService = userQueryService;
     }
 
-    // TODO: Create a new request for a task
     @PostMapping
-    @Operation(summary = "Create a new request", description = "Create a new request")
+    @Operation(summary = "Create a new request", description = "Create a request for a task. Only the assigned member; a SUBMISSION needs the task COMPLETED and no pending submission")
     public ResponseEntity<RequestResource> createRequest(@PathVariable Long taskId, @RequestBody CreateRequestResource resource, @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.internalServerError().build();
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var createRequestCommand = CreateRequestCommandFromResourceAssembler.toCommandFromResource(resource, taskId, user.getId());
+        var requestId = this.requestCommandService.handle(createRequestCommand);
+        var request = this.requestQueryService.handle(new GetRequestByIdQuery(requestId))
+                .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
+        return ResponseEntity.ok(RequestResourceFromEntityAssembler.toResourceFromEntity(request));
     }
 
     @GetMapping
@@ -83,9 +89,11 @@ public class RequestController {
     }
 
     @PutMapping("/{requestId}/status/{status}")
-    @Operation(summary = "Update a request status", description = "Update the status of a request")
-    public ResponseEntity<RequestResource> updateRequestStatus(@PathVariable Long taskId, @PathVariable Long requestId, @PathVariable String status) {
-        var updateRequestCommand = UpdateRequestCommandFromResourceAssembler.toCommandFromResource(requestId, status);
+    @Operation(summary = "Review a request", description = "Approve or reject a request. Leader only; approving a submission marks the task DONE, rejecting sends it back to IN_PROGRESS")
+    public ResponseEntity<RequestResource> updateRequestStatus(@PathVariable Long taskId, @PathVariable Long requestId, @PathVariable String status, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var updateRequestCommand = UpdateRequestCommandFromResourceAssembler.toCommandFromResource(requestId, status, user.getId());
         var updatedRequest = this.requestCommandService.handle(updateRequestCommand);
 
         if (updatedRequest.isEmpty()) {
