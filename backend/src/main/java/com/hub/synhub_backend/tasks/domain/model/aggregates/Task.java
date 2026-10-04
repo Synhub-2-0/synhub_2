@@ -67,6 +67,11 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         this.aiAccepted = command.aiAccepted();
     }
 
+    /** Resultado de revisar la entrega: aprobada -> DONE; rechazada -> IN_PROGRESS (suma un reagendado). */
+    public void applySubmissionReview(boolean approved) {
+        this.updateStatus(new UpdateTaskStatusCommand(null, this.getId(), approved ? TaskStatus.DONE : TaskStatus.IN_PROGRESS));
+    }
+
     public void updateStatus(UpdateTaskStatusCommand command) {
 
         var commandStatus = command.status();
