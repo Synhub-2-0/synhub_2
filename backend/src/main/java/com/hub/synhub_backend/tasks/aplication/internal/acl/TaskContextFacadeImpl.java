@@ -2,6 +2,8 @@ package com.hub.synhub_backend.tasks.aplication.internal.acl;
 
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAndGroupIdCommand;
+import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
@@ -30,5 +32,10 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
     public void deleteTasksByUserIdAndGroupId(Long userId, Long groupId) {
         var command = new DeleteTasksByUserIdAndGroupIdCommand(userId, groupId);
         taskCommandService.handle(command);
+    }
+
+    @Override
+    public Task updateTaskStatus(Long requesterId, Long taskId, TaskStatus status) {
+        return taskCommandService.handle(new UpdateTaskStatusCommand(requesterId, taskId, status));
     }
 }
