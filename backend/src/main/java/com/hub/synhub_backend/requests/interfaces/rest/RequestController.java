@@ -55,7 +55,7 @@ public class RequestController {
         var requestId = this.requestCommandService.handle(createRequestCommand);
         var request = this.requestQueryService.handle(new GetRequestByIdQuery(requestId))
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
-        return ResponseEntity.ok(RequestResourceFromEntityAssembler.toResourceFromEntity(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(RequestResourceFromEntityAssembler.toResourceFromEntity(request));
     }
 
     @GetMapping
@@ -93,7 +93,7 @@ public class RequestController {
     public ResponseEntity<RequestResource> updateRequestStatus(@PathVariable Long taskId, @PathVariable Long requestId, @PathVariable String status, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        var updateRequestCommand = UpdateRequestCommandFromResourceAssembler.toCommandFromResource(requestId, status, user.getId());
+        var updateRequestCommand = UpdateRequestCommandFromResourceAssembler.toCommandFromResource(taskId, requestId, status, user.getId());
         var updatedRequest = this.requestCommandService.handle(updateRequestCommand);
 
         if (updatedRequest.isEmpty()) {

@@ -1,9 +1,8 @@
 package com.hub.synhub_backend.tasks.aplication.internal.acl;
 
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAndGroupIdCommand;
-import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
-import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
@@ -13,7 +12,6 @@ import java.util.Optional;
 
 @Service
 public class TaskContextFacadeImpl implements TasksContextFacade {
-
     private final TaskCommandService taskCommandService;
     private final TaskRepository taskRepository;
 
@@ -34,8 +32,12 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
         taskCommandService.handle(command);
     }
 
+    // DONE solo se alcanza por aquí: el endpoint de status lo rechaza (TaskStatusTransitionNotAllowedException).
     @Override
-    public Task updateTaskStatus(Long requesterId, Long taskId, TaskStatus status) {
-        return taskCommandService.handle(new UpdateTaskStatusCommand(requesterId, taskId, status));
+    public Task applySubmissionReview(Long taskId, boolean approved) {
+        var task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
+        task.applySubmissionReview(approved);
+        return taskRepository.save(task);
     }
 }

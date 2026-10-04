@@ -4,7 +4,9 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.tasks.domain.exceptions.TaskStatusTransitionNotAllowedException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.model.commands.*;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
@@ -109,6 +111,8 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     public Task handle(UpdateTaskStatusCommand command) {
         var taskToUpdate = this.taskRepository.findById(command.taskId())
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        if (command.status() == TaskStatus.DONE)
+            throw new TaskStatusTransitionNotAllowedException("A task can only be marked as DONE by approving its submission request");
         if (!(taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId()) || taskToUpdate.getProfile().getUser().getId().equals(command.requesterId()))) {
             throw new AccessDeniedException("Only the leader or the assigned member can update the task status");
         }
