@@ -1,20 +1,33 @@
 import { Injectable, signal } from '@angular/core';
-import { TaskClassification } from '../domain/model/task-classification.entity';
+import { GroupReport, TaskClassification } from '../domain/model/task-classification.entity';
 import { AiApi } from '../infrastructure/ai.api';
 
 @Injectable({ providedIn: 'root' })
 export class AiStore {
   private readonly classificationSignal = signal<TaskClassification | null>(null);
   private readonly classifyingSignal = signal<boolean>(false);
-  private readonly reportSignal = signal<string | null>(null);
-  private readonly reportLoadingSignal = signal<boolean>(false);
+  // Un informe por grupo: cambiar de grupo nunca muestra el informe de otro.
+  private readonly reportsSignal = signal<Record<number, GroupReport>>({});
+  private readonly reportLoadingGroupSignal = signal<number | null>(null);
+  private readonly reportErrorSignal = signal<{ groupId: number; message: string } | null>(null);
   private readonly errorSignal = signal<string | null>(null);
 
   readonly classification = this.classificationSignal.asReadonly();
   readonly classifying = this.classifyingSignal.asReadonly();
-  readonly report = this.reportSignal.asReadonly();
-  readonly reportLoading = this.reportLoadingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
+
+  reportFor(groupId: number | null): GroupReport | null {
+    return groupId == null ? null : this.reportsSignal()[groupId] ?? null;
+  }
+
+  isReportLoading(groupId: number | null): boolean {
+    return groupId != null && this.reportLoadingGroupSignal() === groupId;
+  }
+
+  reportErrorFor(groupId: number | null): string | null {
+    const error = this.reportErrorSignal();
+    return error && error.groupId === groupId ? error.message : null;
+  }
 
   constructor(private readonly aiApi: AiApi) {}
 
@@ -39,16 +52,17 @@ export class AiStore {
   }
 
   loadReport(groupId: number): void {
-    this.reportLoadingSignal.set(true);
-    this.errorSignal.set(null);
+    this.reportLoadingGroupSignal.set(groupId);
+    this.reportErrorSignal.set(null);
     this.aiApi.getGroupReport(groupId).subscribe({
-      next: (report) => {
-        this.reportSignal.set(report);
-        this.reportLoadingSignal.set(false);
+      next: (text) => {
+        // Se guarda bajo el grupo pedido aunque el usuario ya haya cambiado de grupo.
+        this.reportsSignal.update((all) => ({ ...all, [groupId]: { text, generatedAt: new Date() } }));
+        if (this.reportLoadingGroupSignal() === groupId) this.reportLoadingGroupSignal.set(null);
       },
       error: () => {
-        this.errorSignal.set('No se pudo generar el informe ahora. Intenta de nuevo.');
-        this.reportLoadingSignal.set(false);
+        this.reportErrorSignal.set({ groupId, message: 'No se pudo generar el informe ahora. Intenta de nuevo.' });
+        if (this.reportLoadingGroupSignal() === groupId) this.reportLoadingGroupSignal.set(null);
       },
     });
   }

@@ -6,16 +6,17 @@
       </h2>
       <p class="text-xs text-slate-500 mt-0.5">Análisis de la carga, riesgos y recomendaciones de tu equipo.</p>
     </div>
-    <button type="button" (click)="generate()" [disabled]="!groupId() || aiStore.reportLoading()"
+    <button type="button" (click)="generate()" [disabled]="!groupId() || loading()"
       class="rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">
-      {{ aiStore.reportLoading() ? 'Analizando tu equipo…' : (aiStore.report() ? 'Regenerar informe' : 'Generar informe') }}
+      {{ loading() ? 'Analizando tu equipo…' : (report() ? 'Regenerar informe' : 'Generar informe') }}
     </button>
   </div>
-  @if (aiStore.error()) {
-    <p class="mt-3 text-sm text-red-600">{{ aiStore.error() }}</p>
+  @if (error()) {
+    <p class="mt-3 text-sm text-red-600">{{ error() }}</p>
   }
-  @if (aiStore.report()) {
-    <div class="mt-4 flex flex-col gap-1.5 text-sm text-slate-700 leading-relaxed">
+  @if (report(); as current) {
+    <p class="mt-3 text-xs text-slate-400">Generado a las {{ current.generatedAt | date:'HH:mm' }} con los datos de ese momento.</p>
+    <div class="mt-2 flex flex-col gap-1.5 text-sm text-slate-700 leading-relaxed">
       @for (block of blocks(); track $index) {
         @switch (block.type) {
           @case ('heading') {
