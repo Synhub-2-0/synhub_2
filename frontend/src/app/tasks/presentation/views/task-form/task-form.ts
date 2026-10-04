@@ -151,8 +151,13 @@ export class TaskForm implements OnInit {
         this.labels.trim() || undefined, this.aiAccepted,
       ));
     }
-    this.router.navigate(['/tasks/leader']).then();
+    this.backToGroupTasks();
   }
 
-  cancel(): void { this.router.navigate(['/tasks/leader']).then(); }
+  cancel(): void { this.backToGroupTasks(); }
+
+  // Vuelve a la lista del grupo de la tarea; sin groupId la lista abre otro grupo y la tarea "desaparece".
+  private backToGroupTasks(): void {
+    this.router.navigate(['/tasks/leader'], { queryParams: this.groupId ? { groupId: this.groupId } : {} }).then();
+  }
 }
