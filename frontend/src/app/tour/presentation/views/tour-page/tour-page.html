@@ -1,0 +1,69 @@
+<div class="mx-auto flex max-w-7xl flex-col gap-6 p-4 lg:p-8">
+  <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Ayuda</span>
+      <h1 class="mt-1 text-2xl font-extrabold text-slate-900 lg:text-3xl">Recorrido de Synhub</h1>
+      <p class="mt-1 max-w-2xl text-sm text-slate-500">Todas las funciones de la aplicación en 2 minutos y medio, desde el inicio de sesión hasta la IA que clasifica tareas y analiza la carga del equipo.</p>
+    </div>
+    <a [href]="videoUrl" download="synhub-recorrido.mp4"
+      class="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-[#1A4E85] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#153f6c] sm:self-auto">
+      <mat-icon class="scale-90">download</mat-icon> Descargar video (MP4, 4 MB)
+    </a>
+  </header>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <section class="flex min-w-0 flex-col gap-3">
+      <video #video [src]="videoUrl" [poster]="posterUrl" controls playsinline preload="metadata"
+        (timeupdate)="onTimeUpdate()" (seeked)="onTimeUpdate()"
+        class="aspect-video w-full rounded-3xl border border-slate-200 bg-slate-900 shadow-sm"></video>
+
+      <div class="flex h-7 gap-1" role="group" aria-label="Capítulos del video">
+        @for (c of chapters; track c.id; let i = $index) {
+          <button type="button" (click)="goTo(i)" [title]="formatTime(c.start) + ' · ' + c.title" [attr.aria-label]="'Ir a ' + c.title"
+            [style.flex-grow]="ends[i] - c.start"
+            class="relative min-w-[6px] basis-0 cursor-pointer overflow-hidden rounded-md transition"
+            [class]="(c.ai ? 'bg-indigo-100' : 'bg-slate-200') + (currentIndex() === i ? ' ring-2 ring-[#1A4E85] ring-offset-1' : '')">
+            <span class="absolute inset-y-0 left-0" [class]="c.ai ? 'bg-indigo-500/70' : 'bg-[#4A90E2]/60'" [style.width.%]="progress()[i] * 100"></span>
+          </button>
+        }
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="min-w-0 flex-1 basis-64" aria-live="polite">
+          <p class="text-base font-extrabold" [class]="current().ai ? 'text-indigo-600' : 'text-slate-800'">{{ current().title }}</p>
+          <p class="text-sm text-slate-500">{{ current().description }}</p>
+        </div>
+        <button type="button" (click)="goTo(currentIndex() - 1)"
+          class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:border-[#4A90E2] cursor-pointer">← Anterior</button>
+        <button type="button" (click)="goTo(currentIndex() + 1)"
+          class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:border-[#4A90E2] cursor-pointer">Siguiente →</button>
+        <div class="inline-flex overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Velocidad">
+          @for (r of rates; track r) {
+            <button type="button" (click)="setRate(r)" [attr.aria-pressed]="rate() === r"
+              class="px-3 py-2.5 text-xs font-bold transition cursor-pointer"
+              [class]="rate() === r ? 'bg-[#4A90E2] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'">{{ r }}×</button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <aside class="h-fit rounded-3xl border border-slate-200 bg-white p-2 shadow-sm">
+      <h2 class="px-3 pb-2 pt-3 text-xs font-bold uppercase tracking-widest text-slate-400">Capítulos</h2>
+      <ol class="flex flex-col gap-0.5">
+        @for (c of chapters; track c.id; let i = $index) {
+          <li>
+            <button type="button" (click)="goTo(i)" [attr.aria-current]="currentIndex() === i"
+              class="grid w-full cursor-pointer grid-cols-[44px_1fr] gap-x-2 rounded-2xl px-3 py-2.5 text-left transition hover:bg-slate-50"
+              [class]="currentIndex() === i ? (c.ai ? 'bg-indigo-50 shadow-[inset_3px_0_0_#6366f1]' : 'bg-slate-50 shadow-[inset_3px_0_0_#1A4E85]') : ''">
+              <span class="row-span-2 pt-0.5 font-mono text-xs text-slate-400 tabular-nums">{{ formatTime(c.start) }}</span>
+              <span class="text-sm font-bold" [class]="c.ai ? 'text-indigo-600' : 'text-slate-800'">{{ c.title }}</span>
+              <span class="text-xs leading-relaxed text-slate-500">{{ c.description }}</span>
+            </button>
+          </li>
+        }
+      </ol>
+    </aside>
+  </div>
+
+  <p class="max-w-3xl text-xs text-slate-400">Grabado sobre la aplicación real con datos de prueba (equipo Diseño &amp; Branding Collab). Las sugerencias y el informe los genera la IA en vivo, por eso pueden variar en cada uso.</p>
+</div>
