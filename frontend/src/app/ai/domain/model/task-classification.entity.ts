@@ -21,6 +21,11 @@ export interface TaskClassification {
   rationale: string;
 }
 
+export interface GroupReport {
+  text: string;
+  generatedAt: Date;
+}
+
 export interface ReportBlock {
   type: 'heading' | 'item' | 'paragraph';
   segments: { text: string; bold: boolean }[];
