@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      # ponytail: solo compila; activar `npm test` cuando se arreglen los 5 specs que ya fallan en develop
+      - run: npx ng test --watch=false
       - run: npx ng build
       - uses: actions/upload-artifact@v4
         with: { name: front, path: dist/Synhub-website/browser }
