@@ -4,7 +4,6 @@ import com.hub.synhub_backend.requests.application.internal.commandservices.Requ
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteAllRequestsByTaskIdCommand;
-import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
@@ -19,9 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Value objects y agregado Request, y borrado de requests.
- * Los permisos del borrado (AUDIT SEC-02) se prueban por HTTP en api/AuthorizationApiTests,
- * porque la corrección cambia la firma de DeleteRequestCommand.
+ * Value objects y agregado Request, y borrado de todas las requests de una tarea.
+ * El borrado individual y sus permisos (AUDIT SEC-02) están en RequestCommandServiceImplTest.
  */
 class RequestDomainAndDeleteTest {
 
@@ -60,18 +58,6 @@ class RequestDomainAndDeleteTest {
     }
 
     // ---- Borrado
-    @Test void deletingUnknownRequestIsABadRequest() {
-        when(repo.existsById(9L)).thenReturn(false);
-        assertThrows(IllegalArgumentException.class, () -> service.handle(new DeleteRequestCommand(9L)));
-        verify(repo, never()).deleteById(any());
-    }
-
-    @Test void deletesExistingRequest() {
-        when(repo.existsById(5L)).thenReturn(true);
-        service.handle(new DeleteRequestCommand(5L));
-        verify(repo).deleteById(5L);
-    }
-
     @Test void deletesAllRequestsOfATask() {
         when(tasks.getTaskById(1L)).thenReturn(Optional.of(new Task()));
         service.handle(new DeleteAllRequestsByTaskIdCommand(1L));

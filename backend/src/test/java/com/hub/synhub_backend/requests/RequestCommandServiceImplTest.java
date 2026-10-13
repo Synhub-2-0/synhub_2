@@ -6,6 +6,7 @@ import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedE
 import com.hub.synhub_backend.requests.domain.exceptions.TaskNotCompletedException;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
+import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.UpdateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
@@ -175,5 +176,40 @@ class RequestCommandServiceImplTest {
         when(task.getStatus()).thenReturn(TaskStatus.COMPLETED);
         service.handle(review("APPROVED", LEADER));
         verify(tasks, never()).applySubmissionReview(anyLong(), anyBoolean());
+    }
+
+    // ---- Borrar (AUDIT SEC-02)
+    @Test void leaderDeletesAnyRequest() {
+        var request = pending("EXPIRED");
+        service.handle(new DeleteRequestCommand(TASK, REQUEST, LEADER));
+        verify(repo).delete(request);
+    }
+
+    @Test void memberDeletesOwnPendingSubmission() {
+        var request = pending("SUBMISSION");
+        service.handle(new DeleteRequestCommand(TASK, REQUEST, MEMBER));
+        verify(repo).delete(request);
+    }
+
+    @Test void memberCannotDeleteReviewedOrSystemRequests() {
+        var reviewed = pending("SUBMISSION");
+        reviewed.updateRequestStatus("APPROVED");
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(TASK, REQUEST, MEMBER)));
+        pending("EXPIRED");
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(TASK, REQUEST, MEMBER)));
+        verify(repo, never()).delete(any(Request.class));
+    }
+
+    @Test void strangersCannotDeleteRequests() {
+        pending("SUBMISSION");
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(TASK, REQUEST, 99L)));
+        verify(repo, never()).delete(any(Request.class));
+    }
+
+    @Test void deletingRequestOfAnotherTaskOrUnknownIs404() {
+        pending("SUBMISSION");
+        assertThrows(ResourceNotFoundException.class, () -> service.handle(new DeleteRequestCommand(999L, REQUEST, LEADER)));
+        when(repo.findById(REQUEST)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> service.handle(new DeleteRequestCommand(TASK, REQUEST, LEADER)));
     }
 }

@@ -111,8 +111,11 @@ public class RequestController {
 
     @DeleteMapping("/{requestId}")
     @Operation(summary = "Delete a request by id", description = "Delete a request by id")
-    public ResponseEntity<Void> deleteRequestById(@PathVariable Long taskId, @PathVariable Long requestId) {
-        var deleteRequestCommand = new DeleteRequestCommand(requestId);
+    public ResponseEntity<Void> deleteRequestById(@PathVariable Long taskId, @PathVariable Long requestId,
+                                                  @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var deleteRequestCommand = new DeleteRequestCommand(taskId, requestId, user.getId());
         this.requestCommandService.handle(deleteRequestCommand);
         return ResponseEntity.noContent().build();
     }

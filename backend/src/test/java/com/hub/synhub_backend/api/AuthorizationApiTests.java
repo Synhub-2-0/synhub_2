@@ -85,7 +85,7 @@ class AuthorizationApiTests extends ApiTestSupport {
         assertEquals(403, get("/invitations/group?groupId=" + team.groupId(), team.member().token()).status());
     }
 
-    @Disabled("AUDIT SEC-02: DELETE /tasks/{t}/requests/{r} no verifica permisos")
+    // AUDIT SEC-02 (resuelto)
     @Test void strangerCannotDeleteRequests() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());

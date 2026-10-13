@@ -14,7 +14,7 @@ Todos requieren token.
 | `GET` | `/` | — | `200 RequestResource[]` · `403` · `404` | Solo integrantes del grupo de la tarea. |
 | `GET` | `/{requestId}` | — | `200` · `404` · `400` si la request es de otra tarea | Solo integrantes del grupo de la tarea (403). |
 | `PUT` | `/{requestId}/status/{status}` | `status` = `APPROVED` \| `REJECTED` | `200 RequestResource` | Ver "Reglas al revisar". |
-| `DELETE` | `/{requestId}` | — | `204` · `400` si no existe | **Sin control de acceso.** |
+| `DELETE` | `/{requestId}` | — | `204` · `403` · `404` (no existe o es de otra tarea) | El líder del grupo borra cualquiera; el integrante asignado, solo las suyas en `PENDING` que no sean `EXPIRED`. |
 
 ### `GroupRequestController`: `/api/v1/groups/{groupId}/requests`
 
@@ -83,6 +83,5 @@ Todos requieren token.
 
 ## Observaciones
 
-- `DELETE /tasks/{taskId}/requests/{id}` no valida quién borra ni que la request pertenezca a `taskId`.
 - `RequestController` tiene `@CrossOrigin(origins = "*")` redundante: el CORS ya se configura en `WebSecurityConfiguration`.
 - `DeleteAllRequestsByTaskIdCommand` tiene handler pero nadie lo invoca (ver la observación sobre borrado en [tasks/backend](../../tasks/backend/README.md)).

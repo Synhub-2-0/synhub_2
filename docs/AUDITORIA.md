@@ -58,7 +58,7 @@ Los riesgos principales son tres:
 | ID | Sev. | Área | Título | Verificación | Estado |
 |---|---|---|---|---|---|
 | [SEC-01](#sec-01) | Crítica | Backend · seguridad | Lecturas sin control de pertenencia al grupo (IDOR) | Reproducido | Resuelto |
-| [SEC-02](#sec-02) | Crítica | Backend · seguridad | Cualquier usuario puede borrar requests ajenas | Reproducido | Pendiente |
+| [SEC-02](#sec-02) | Crítica | Backend · seguridad | Cualquier usuario puede borrar requests ajenas | Reproducido | Resuelto |
 | [SEC-03](#sec-03) | Alta | Backend · seguridad | El JWT completo se escribe en los logs | Reproducido | Pendiente |
 | [SEC-04](#sec-04) | Alta | Config · seguridad | Secretos por defecto versionados (JWT y BD) | Código | Pendiente |
 | [DEP-01](#dep-01) | Alta | Frontend · dependencias | 5 vulnerabilidades npm (2 críticas, 3 altas) | `npm audit` | Pendiente |

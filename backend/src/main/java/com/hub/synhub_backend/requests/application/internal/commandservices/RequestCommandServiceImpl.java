@@ -100,17 +100,20 @@ public class RequestCommandServiceImpl implements RequestCommandService {
     }
 
     @Override
+    @Transactional
     public void handle(DeleteRequestCommand command) {
-        var requestId = command.requestId();
-
-        if (!requestRepository.existsById(requestId))
-            throw new IllegalArgumentException("Request with id " + requestId + " does not exist");
-
-        try {
-            requestRepository.deleteById(requestId);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error while deleting request: " + e.getMessage());
-        }
+        var request = this.requestRepository.findById(command.requestId())
+                .orElseThrow(() -> new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
+        var task = request.getTask();
+        if (!task.getId().equals(command.taskId()))
+            throw new ResourceNotFoundException("Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
+        var isLeader = task.getProfile().getGroup().getLeader().getId().equals(command.requesterId());
+        var isOwnPendingRequest = task.getProfile().getUser().getId().equals(command.requesterId())
+                && RequestStatus.PENDING.name().equals(request.getRequestStatus())
+                && !RequestType.EXPIRED.name().equals(request.getRequestType());
+        if (!isLeader && !isOwnPendingRequest)
+            throw new AccessDeniedException("Only the leader of the group, or the assigned member while the request is pending, can delete it");
+        this.requestRepository.delete(request);
     }
 
     @Override
