@@ -31,7 +31,7 @@ jobs:
       # Las pruebas de integración levantan PostgreSQL con Testcontainers (el runner ya trae Docker).
       - run: ./mvnw -B verify
       # El jar probado es el mismo que se despliega.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with: { name: backend-jar, path: backend/target/*.jar, if-no-files-found: error }
 
   deploy:
