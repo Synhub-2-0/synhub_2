@@ -38,8 +38,8 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 |---|---|---|---|---|
 | Backend: pruebas unitarias | 26 | 19 | 7 | 0 |
 | Backend: API (integración) | 6 | 2 | 4 | 0 |
-| Frontend | 37 | 0 | 0 | 37 |
-| **Total** | **69** | **21** | **11** | **37** |
+| Frontend | 37 | 3 | 3 | 31 |
+| **Total** | **69** | **24** | **14** | **31** |
 
 ---
 
@@ -95,12 +95,12 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|
-| F-IAM-01 | `iam/application/iam.store.spec.ts` | `IamStore` | signIn guarda el token y el userId, carga el perfil y navega a `/home` · un error de signIn no inicia sesión · signUp navega al login · signOut limpia y navega · restoreSession sin token no llama a la API · restoreSession con un token inválido limpia la sesión | — | PENDIENTE |
-| F-IAM-02 | `iam/infrastructure/iam.interceptor.spec.ts` | `iamInterceptor` | agrega Bearer · no lo agrega en sign-in ni sign-up · no agrega `undefined`/`null` · un 401 cierra la sesión y redirige | SEC-10 | PENDIENTE |
-| F-IAM-03 | `iam/infrastructure/iam.guard.spec.ts` | `iamGuard` | con sesión permite · sin sesión redirige a `/auth/sign-in` · un token vencido redirige | SEC-10 | PENDIENTE |
-| F-IAM-04 | `iam/infrastructure/iam.assemblers.spec.ts` | Assemblers de sign-in, sign-up, users y profiles | comando → request · respuesta → recurso o entidad · `Profile.userId` | BUG-15 | PENDIENTE |
-| F-IAM-05 | `iam/infrastructure/iam.api.spec.ts` | `IamApi` (HTTP) | URLs y verbos: sign-in, sign-up, `/users/me`, `/users/{id}`, `/users/username?username=` codificado | — | PENDIENTE |
-| F-IAM-06 | `iam/presentation/views/sign-in-page/sign-in-page.spec.ts` | `SignInPage` | (previo) se crea | — | PENDIENTE |
+| F-IAM-01 | `iam/application/iam.store.spec.ts` | `IamStore` | signIn guarda el token y el userId, carga el perfil y navega a `/home` · un error de signIn no inicia sesión · signUp navega al login · signOut limpia y navega · restoreSession sin token no llama a la API · restoreSession con un token inválido limpia la sesión | — | LISTO |
+| F-IAM-02 | `iam/infrastructure/iam.interceptor.spec.ts` | `iamInterceptor` | agrega Bearer · no lo agrega en sign-in ni sign-up · no agrega `undefined`/`null` · un 401 cierra la sesión y redirige | SEC-10 | LISTO-PARCIAL |
+| F-IAM-03 | `iam/infrastructure/iam.guard.spec.ts` | `iamGuard` | con sesión permite · sin sesión redirige a `/auth/sign-in` · un token vencido redirige | SEC-10 | LISTO-PARCIAL |
+| F-IAM-04 | `iam/infrastructure/iam.assemblers.spec.ts` | Assemblers de sign-in, sign-up, users y profiles | comando → request · respuesta → recurso o entidad · `Profile.userId` | BUG-15 | LISTO-PARCIAL |
+| F-IAM-05 | `iam/infrastructure/iam.api.spec.ts` | `IamApi` (HTTP) | URLs y verbos: sign-in, sign-up, `/users/me`, `/users/{id}`, `/users/username?username=` codificado | — | LISTO |
+| F-IAM-06 | `iam/presentation/views/sign-in-page/sign-in-page.spec.ts` | `SignInPage` | (previo) se crea | — | PREVIO |
 | F-IAM-07 | `iam/presentation/views/sign-up-page/sign-up-page.spec.ts` | `SignUpPage` | (previo) se crea · (esperado) contraseña < 8 caracteres inválida | FE-03 | PENDIENTE |
 | F-SHR-01 | `shared/application/toast.store.spec.ts` | `ToastStore` | success, info y error agregan un toast · dismiss · los mensajes técnicos con códigos HTTP se vuelven amigables · desaparece por tiempo | — | PENDIENTE |
 | F-SHR-02 | `shared/infrastructure/base-api-endpoint.spec.ts` | `BaseApiEndpoint` | getAll (arreglo y objeto envoltorio), getById, create, update y delete: URL, verbo y mapeo · `handleError` con 404 / estado / ErrorEvent | — | PENDIENTE |
@@ -146,3 +146,5 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 | Fecha | Avance | Siguiente |
 |---|---|---|
 | 2026-10-13 | Se crea el inventario (69 archivos, todos `PENDIENTE`). | B-IAM-01 |
+| 2026-10-13 | Backend completo: 26 unitarias + 6 de API (22 casos `AUDIT` deshabilitados, verificados: todos fallan al habilitarlos). Frontend: F-IAM-01 a F-IAM-06. Sesión detenida por límite de uso. | F-IAM-07: agregar a `sign-up-page.spec.ts` el caso de coincidencia de contraseñas y `it.skip('AUDIT FE-03 …')`; luego F-SHR-01 |
+| — | Notas: (1) docs/features/iam: `signUp` inicia sesión y navega a `/home`, no al login (corregir la doc). (2) AUDITORIA FE-03: el email ya tiene `Validators.email`; solo falta `minLength(8)` en la contraseña. | — |
