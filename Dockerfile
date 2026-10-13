@@ -2,7 +2,7 @@
 # reenvía /api/ al backend Spring Boot, que corre en el mismo contenedor (:8080).
 
 # ---- Frontend (Angular) ----
-FROM node:22-alpine AS frontend
+FROM node:26-alpine AS frontend
 WORKDIR /src
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
