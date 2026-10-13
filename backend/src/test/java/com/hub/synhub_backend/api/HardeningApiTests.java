@@ -52,7 +52,9 @@ class HardeningApiTests extends ApiTestSupport {
     // Rutas o métodos inexistentes respondían 500 por el handler genérico.
     @Test void unknownRoutesAndMethodsKeepTheirStatus() {
         var token = account("rutas").token();
-        assertEquals(404, get("/no-existe", token).status());
+        var notFound = get("/no-existe", token);
+        assertEquals(404, notFound.status());
+        assertTrue(notFound.text("timestamp").endsWith("Z"), "AUDIT BUG-14: timestamp en UTC con zona");
         assertEquals(405, call("PATCH", "/users/me", token, null).status());
     }
 }

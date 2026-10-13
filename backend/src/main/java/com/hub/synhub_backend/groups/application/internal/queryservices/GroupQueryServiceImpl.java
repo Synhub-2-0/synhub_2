@@ -28,11 +28,6 @@ public class GroupQueryServiceImpl implements GroupQueryService {
     }
 
     @Override
-    public List<Group> handle(GetGroupsByLeaderIdQuery query) {
-        return this.groupRepository.findByLeaderId(query.leaderId());
-    }
-
-    @Override
     public Optional<Group> handle(GetGroupByCodeQuery query) {
         var code = new GroupCode(query.code());
         var group = this.groupRepository.findByCode(code);

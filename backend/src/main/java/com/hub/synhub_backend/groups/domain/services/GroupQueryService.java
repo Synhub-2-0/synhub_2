@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GroupQueryService {
-    List<Group> handle(GetGroupsByLeaderIdQuery query);
     Optional<Group> handle(GetGroupByCodeQuery query);
     List<Group> handle(GetGroupsByUserIdQuery query);
     Optional<Group> handle(GetGroupByIdQuery query);

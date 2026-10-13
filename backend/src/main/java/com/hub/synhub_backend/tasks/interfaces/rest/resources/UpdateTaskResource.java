@@ -5,9 +5,11 @@ import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
 
-/** title/description vacíos y dueDate ausente no cambian; userId es el integrante asignado (puede ser el mismo). */
+/**
+ * title/description vacíos y dueDate ausente no cambian; userId es el integrante asignado (puede ser el mismo).
+ * Quien edita se toma de la sesión (AUDIT BUG-16).
+ */
 public record UpdateTaskResource(
-        Long requesterId,
         @Size(max = 255) String title,
         @Size(max = 255) String description,
         OffsetDateTime dueDate,

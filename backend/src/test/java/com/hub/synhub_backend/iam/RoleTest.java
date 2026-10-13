@@ -43,4 +43,16 @@ class RoleTest {
         verify(repo, times(1)).save(saved.capture());
         assertEquals(AccountRole.ROLE_ADMIN, saved.getValue().getName());
     }
+
+    // AUDIT BUG-13: la igualdad depende del nombre, no del id que asigna la base
+    @Test void rolesAreEqualByName() {
+        var saved = new Role(1L, AccountRole.ROLE_USER);
+        var fresh = new Role(AccountRole.ROLE_USER);
+        assertEquals(saved, fresh);
+        assertEquals(saved.hashCode(), fresh.hashCode());
+        assertNotEquals(saved, new Role(AccountRole.ROLE_ADMIN));
+        var set = new java.util.HashSet<Role>(java.util.List.of(fresh));
+        fresh.setId(9L);
+        assertTrue(set.contains(saved), "asignar el id no cambia el hash dentro del Set");
+    }
 }

@@ -10,7 +10,6 @@ import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ErrorResponse;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.GlobalExceptionHandler;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -92,7 +91,7 @@ class GlobalExceptionHandlerTest {
         }
     }
 
-    @Disabled("AUDIT BUG-14: ErrorResponse.timestamp es LocalDateTime (sin zona)")
+    // AUDIT BUG-14 (resuelto)
     @Test void timestampCarriesTimezone() {
         assertEquals(OffsetDateTime.class, ErrorResponse.class.getRecordComponents()[0].getType());
     }
