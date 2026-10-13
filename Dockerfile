@@ -30,7 +30,8 @@ COPY docker/entrypoint.sh /entrypoint.sh
 COPY --from=frontend /src/dist/Synhub-website/browser /usr/share/nginx/html
 COPY --from=backend /app.jar /app/app.jar
 RUN chmod +x /entrypoint.sh
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError" \n    SPRING_PROFILES_ACTIVE=prod
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError" \
+    SPRING_PROFILES_ACTIVE=prod
 EXPOSE 80
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
   CMD curl -fsS http://127.0.0.1/actuator/health || exit 1

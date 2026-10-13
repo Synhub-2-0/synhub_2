@@ -95,8 +95,13 @@ public class WebSecurityConfiguration {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.cors(corsConfigurer -> corsConfigurer.configurationSource( request -> {
+      var origins = allowedOrigins.stream().filter(origin -> !origin.isBlank()).toList();
+      // Sin orígenes configurados (producción: front y API comparten origen detrás de nginx o CloudFront)
+      // no se procesa CORS. Si se procesara, un proxy que reescribe el Host haría que Spring tomara las
+      // peticiones del propio sitio por cross-origin y las rechazara con 403.
+      if (origins.isEmpty()) return null;
       var cors = new CorsConfiguration();
-      cors.setAllowedOrigins(allowedOrigins.stream().filter(origin -> !origin.isBlank()).toList());
+      cors.setAllowedOrigins(origins);
       cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
       cors.setAllowedHeaders(List.of("Content-Type", "Authorization"));
       cors.setAllowCredentials(true);
