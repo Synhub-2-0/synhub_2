@@ -77,7 +77,7 @@ class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().message().contains("password"));
     }
 
-    @Disabled("AUDIT BUG-07: handleGeneric no registra la excepción")
+    // AUDIT BUG-07 (resuelto)
     @Test void unexpectedErrorIsLogged() {
         var root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
         var appender = new ListAppender<ILoggingEvent>();

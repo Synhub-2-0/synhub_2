@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.shared.interfaces.rest.exceptions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private static ResponseEntity<ErrorResponse> badRequest(String message, HttpServletRequest request) {
         var error = ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(), message, request.getRequestURI());
@@ -136,10 +140,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
+        // El cliente recibe un mensaje genérico; el detalle queda en el log para poder diagnosticarlo.
+        LOGGER.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex);
         var error = ErrorResponse.of(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "An unexpected error has ocurred",
+                "An unexpected error has occurred",
                 request.getRequestURI()
         );
 
