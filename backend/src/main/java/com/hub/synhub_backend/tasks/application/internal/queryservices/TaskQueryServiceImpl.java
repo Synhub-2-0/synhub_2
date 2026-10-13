@@ -1,4 +1,4 @@
-package com.hub.synhub_backend.tasks.aplication.internal.queryservices;
+package com.hub.synhub_backend.tasks.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;

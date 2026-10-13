@@ -1,11 +1,11 @@
-package com.hub.synhub_backend.metrics.application.internal.queryservice;
+package com.hub.synhub_backend.metrics.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.metrics.domain.exceptions.MetricNotAvailableException;
 import com.hub.synhub_backend.metrics.domain.model.queries.*;
-import com.hub.synhub_backend.metrics.domain.model.services.TaskMetricsQueryService;
-import com.hub.synhub_backend.metrics.interfaces.rest.resources.*;
+import com.hub.synhub_backend.metrics.domain.services.TaskMetricsQueryService;
+import com.hub.synhub_backend.metrics.domain.model.valueobjects.*;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
@@ -65,25 +65,25 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
 
     // ---- Grupo
     @Override
-    public TaskOverviewResource handle(GetTaskOverviewInGroupQuery query) {
+    public TaskOverview handle(GetTaskOverviewInGroupQuery query) {
         var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
-        return new TaskOverviewResource("TASK_OVERVIEW", tasks.size(), countByStatus(tasks));
+        return new TaskOverview("TASK_OVERVIEW", tasks.size(), countByStatus(tasks));
     }
 
     @Override
-    public TaskDistributionResource handle(GetTaskDistributionInGroupQuery query) {
+    public TaskDistribution handle(GetTaskDistributionInGroupQuery query) {
         var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
-        Map<String, MemberTaskInfo> details = new HashMap<>();
+        Map<String, MemberTaskCount> details = new HashMap<>();
         tasks.stream()
                 .filter(task -> task.getProfile().getUser() != null)
                 .collect(Collectors.groupingBy(task -> task.getProfile().getUser().getId()))
                 .forEach((userId, memberTasks) ->
-                        details.put(userId.toString(), new MemberTaskInfo(memberName(memberTasks.getFirst()), memberTasks.size())));
-        return new TaskDistributionResource("TASK_DISTRIBUTION", tasks.size(), details);
+                        details.put(userId.toString(), new MemberTaskCount(memberName(memberTasks.getFirst()), memberTasks.size())));
+        return new TaskDistribution("TASK_DISTRIBUTION", tasks.size(), details);
     }
 
     @Override
-    public RescheduledTasksResource handle(GetRescheduledTasksInGroupQuery query) {
+    public RescheduledTasks handle(GetRescheduledTasksInGroupQuery query) {
         var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
         var rescheduledUserIds = tasks.stream()
                 .filter(task -> task.getTimesRearranged() > 0 && task.getProfile().getUser() != null)
@@ -91,54 +91,54 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
                 .distinct()
                 .toList();
         var total = totalRescheduled(tasks);
-        return new RescheduledTasksResource("RESCHEDULED_TASKS", total,
+        return new RescheduledTasks("RESCHEDULED_TASKS", total,
                 Map.of("total", tasks.size(), "rescheduled", (int) total), rescheduledUserIds);
     }
 
     @Override
-    public AvgCompletionTimeResource handle(GetAvgCompletionTimeInGroupQuery query) {
+    public AvgCompletionTime handle(GetAvgCompletionTimeInGroupQuery query) {
         if (groupQueryService.handle(new GetGroupByIdQuery(query.groupId())).isEmpty()) {
-            return new AvgCompletionTimeResource("AVG_COMPLETION_TIME", 0, Map.of("completedTasks", 0));
+            return new AvgCompletionTime("AVG_COMPLETION_TIME", 0, Map.of("completedTasks", 0));
         }
         var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
-        return new AvgCompletionTimeResource("AVG_COMPLETION_TIME", averageDaysToDone(tasks), Map.of("completedTasks", countDone(tasks)));
+        return new AvgCompletionTime("AVG_COMPLETION_TIME", averageDaysToDone(tasks), Map.of("completedTasks", countDone(tasks)));
     }
 
     // ---- Integrante dentro del grupo (AUDIT BUG-08: solo las tareas de ese grupo)
     @Override
-    public TaskOverviewResource handle(GetTaskOverviewForUserInGroupQuery query) {
+    public TaskOverview handle(GetTaskOverviewForUserInGroupQuery query) {
         var tasks = memberTasks(query.groupId(), query.memberId());
-        return new TaskOverviewResource("TASK_OVERVIEW_MEMBER", tasks.size(), countByStatus(tasks));
+        return new TaskOverview("TASK_OVERVIEW_MEMBER", tasks.size(), countByStatus(tasks));
     }
 
     @Override
-    public TaskDistributionResource handle(GetTaskDistributionForUserInGroupQuery query) {
+    public TaskDistribution handle(GetTaskDistributionForUserInGroupQuery query) {
         var tasks = memberTasks(query.groupId(), query.userId());
-        Map<String, MemberTaskInfo> details = tasks.isEmpty() ? Map.of()
-                : Map.of(query.userId().toString(), new MemberTaskInfo(memberName(tasks.getFirst()), tasks.size()));
-        return new TaskDistributionResource("TASK_DISTRIBUTION_MEMBER", tasks.size(), details);
+        Map<String, MemberTaskCount> details = tasks.isEmpty() ? Map.of()
+                : Map.of(query.userId().toString(), new MemberTaskCount(memberName(tasks.getFirst()), tasks.size()));
+        return new TaskDistribution("TASK_DISTRIBUTION_MEMBER", tasks.size(), details);
     }
 
     @Override
-    public RescheduledTasksResource handle(GetRescheduledTasksForUserInGroupQuery query) {
+    public RescheduledTasks handle(GetRescheduledTasksForUserInGroupQuery query) {
         var tasks = memberTasks(query.groupId(), query.userId());
         var total = totalRescheduled(tasks);
-        return new RescheduledTasksResource("RESCHEDULED_TASKS_MEMBER", total,
+        return new RescheduledTasks("RESCHEDULED_TASKS_MEMBER", total,
                 Map.of("total", tasks.size(), "rescheduled", (int) total),
                 total > 0 ? List.of(query.userId()) : List.of());
     }
 
     @Override
-    public AvgCompletionTimeResource handle(GetAvgCompletionTimeForUserInGroupQuery query) {
+    public AvgCompletionTime handle(GetAvgCompletionTimeForUserInGroupQuery query) {
         var tasks = memberTasks(query.groupId(), query.userId());
-        return new AvgCompletionTimeResource("AVG_COMPLETION_TIME_MEMBER", averageDaysToDone(tasks), Map.of("completedTasks", countDone(tasks)));
+        return new AvgCompletionTime("AVG_COMPLETION_TIME_MEMBER", averageDaysToDone(tasks), Map.of("completedTasks", countDone(tasks)));
     }
 
     @Override
-    public TaskTimePassedResource handle(GetTaskTimePassedForUserInGroupQuery query) {
+    public TaskTimePassed handle(GetTaskTimePassedForUserInGroupQuery query) {
         var average = memberTasks(query.groupId(), query.userId()).stream()
                 .mapToLong(Task::getTimePassed).average().orElse(0);
-        return new TaskTimePassedResource(query.userId(), (long) average);
+        return new TaskTimePassed(query.userId(), (long) average);
     }
 
     // ---- Una tarea
@@ -148,23 +148,23 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     }
 
     @Override
-    public TaskTimePassedResource handle(GetTaskTimePassedByIdQuery query) {
+    public TaskTimePassed handle(GetTaskTimePassedByIdQuery query) {
         var task = task(query.taskId());
         if (task.getStatus() != TaskStatus.COMPLETED && task.getStatus() != TaskStatus.DONE) {
             throw new MetricNotAvailableException("Time passed is only available for COMPLETED or DONE tasks");
         }
         var user = task.getProfile().getUser();
-        return new TaskTimePassedResource(user != null ? user.getId() : null, task.getTimePassed());
+        return new TaskTimePassed(user != null ? user.getId() : null, task.getTimePassed());
     }
 
     @Override
-    public TaskDurationResource handle(GetTaskDurationByIdQuery query) {
+    public TaskDuration handle(GetTaskDurationByIdQuery query) {
         var task = task(query.taskId());
         if (task.getStatus() != TaskStatus.IN_PROGRESS) {
             throw new MetricNotAvailableException("Duration is only available for IN_PROGRESS tasks");
         }
         // Plazo total de la tarea: de la creación a la fecha límite.
         long durationMillis = task.getDueDate().toInstant().toEpochMilli() - task.getCreatedAt().toInstant().toEpochMilli();
-        return new TaskDurationResource(task.getId(), durationMillis / (1000 * 60 * 60));
+        return new TaskDuration(task.getId(), durationMillis / (1000 * 60 * 60));
     }
 }

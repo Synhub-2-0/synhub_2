@@ -1,7 +1,7 @@
 package com.hub.synhub_backend.tasks;
 
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
-import com.hub.synhub_backend.tasks.aplication.internal.queryservices.TaskQueryServiceImpl;
+import com.hub.synhub_backend.tasks.application.internal.queryservices.TaskQueryServiceImpl;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.queries.*;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;

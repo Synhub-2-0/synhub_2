@@ -4,9 +4,9 @@ import com.hub.synhub_backend.ai.application.internal.queryservices.GroupReportQ
 import com.hub.synhub_backend.ai.domain.model.queries.GenerateGroupReportQuery;
 import com.hub.synhub_backend.metrics.domain.model.queries.GetRescheduledTasksInGroupQuery;
 import com.hub.synhub_backend.metrics.domain.model.queries.GetTaskOverviewInGroupQuery;
-import com.hub.synhub_backend.metrics.domain.model.services.TaskMetricsQueryService;
-import com.hub.synhub_backend.metrics.interfaces.rest.resources.RescheduledTasksResource;
-import com.hub.synhub_backend.metrics.interfaces.rest.resources.TaskOverviewResource;
+import com.hub.synhub_backend.metrics.domain.services.TaskMetricsQueryService;
+import com.hub.synhub_backend.metrics.domain.model.valueobjects.RescheduledTasks;
+import com.hub.synhub_backend.metrics.domain.model.valueobjects.TaskOverview;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetAllTasksByGroupIdQuery;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
@@ -45,9 +45,9 @@ class GroupReportQueryServiceImplTest {
         service = new GroupReportQueryServiceImpl(client, metrics, taskQueries, "model-id");
 
         when(metrics.handle(new GetTaskOverviewInGroupQuery(GROUP)))
-                .thenReturn(new TaskOverviewResource("TASK_OVERVIEW", 3, Map.of("IN_PROGRESS", 2, "EXPIRED", 1)));
+                .thenReturn(new TaskOverview("TASK_OVERVIEW", 3, Map.of("IN_PROGRESS", 2, "EXPIRED", 1)));
         when(metrics.handle(new GetRescheduledTasksInGroupQuery(GROUP)))
-                .thenReturn(new RescheduledTasksResource("RESCHEDULED_TASKS", 2, Map.of("total", 3, "rescheduled", 2), List.of(2L)));
+                .thenReturn(new RescheduledTasks("RESCHEDULED_TASKS", 2, Map.of("total", 3, "rescheduled", 2), List.of(2L)));
 
         var group = group(GROUP, user(1, "lider"), user(2, "ana"));
         var anaProfile = group.getUserProfiles().get(1);

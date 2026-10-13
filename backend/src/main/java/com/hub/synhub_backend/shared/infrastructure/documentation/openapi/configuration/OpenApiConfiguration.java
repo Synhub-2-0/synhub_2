@@ -1,4 +1,4 @@
-package com.hub.synhub_backend.shared.domain.model.infrastructure.documentation.openapi.configuration;
+package com.hub.synhub_backend.shared.infrastructure.documentation.openapi.configuration;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

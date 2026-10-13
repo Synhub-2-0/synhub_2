@@ -1,7 +1,7 @@
 package com.hub.synhub_backend.tasks;
 
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
-import com.hub.synhub_backend.tasks.aplication.internal.acl.TaskContextFacadeImpl;
+import com.hub.synhub_backend.tasks.application.internal.acl.TaskContextFacadeImpl;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAndGroupIdCommand;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;

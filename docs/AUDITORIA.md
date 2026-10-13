@@ -96,7 +96,7 @@ Los riesgos principales son tres:
 | [BUG-16](#bug-16) | Baja | API · tasks | `UpdateTaskResource.requesterId` se ignora | Código | Resuelto |
 | [BUG-17](#bug-17) | Baja | Frontend · groups | Búsqueda por código comentada aunque el backend la expone | Código | Resuelto (unirse por código, HUM-05) |
 | [BUG-18](#bug-18) | Media | Backend · tasks | Una tarea `DONE` se puede editar, mover o borrar por API | Reproducido | Resuelto |
-| [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Pendiente |
+| [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Resuelto |
 | [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Resuelto |
 | [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Resuelto |
 | [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Resuelto |
@@ -630,6 +630,8 @@ La relación JPA `Task.profile → GroupProfile` se **mantiene**: cambiarla por 
 Actualizar `application.properties` (FQCN de la estrategia de nombres) y la documentación.
 
 **Criterios de aceptación.** Compila, los tests pasan y la documentación no menciona las rutas viejas.
+
+**Resolución.** `tasks/aplication` → `tasks/application`; `metrics/.../queryservice` → `queryservices`; `metrics/domain/model/services` → `metrics/domain/services`; `shared/domain/model/infrastructure` → `shared/infrastructure` (con el FQCN de la estrategia de nombres). El scheduler ya se había movido a `tasks/application/internal/schedulers` (BUG-09) y `persistenence` desapareció con ARC-03. `TaskMetricsQueryService` devuelve value objects de dominio y `MetricsResourceFromValueAssembler` arma los recursos REST; el JSON no cambia (`api/MetricsApiTests`).
 
 ### ARC-03
 

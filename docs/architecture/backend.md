@@ -184,9 +184,9 @@ flowchart LR
 
 | Elemento | Dónde |
 |---|---|
-| OpenAPI / Swagger UI | `shared/domain/model/infrastructure/documentation/openapi/configuration/OpenApiConfiguration` ("SynHub API", esquema bearer). Disponible en `/swagger-ui.html` solo con el perfil `dev`. |
+| OpenAPI / Swagger UI | `shared/infrastructure/documentation/openapi/configuration/OpenApiConfiguration` ("SynHub API", esquema bearer). Disponible en `/swagger-ui.html` solo con el perfil `dev`. |
 | Seed de roles | `iam/application/internal/eventhandlers/ApplicationReadyEventHandler` |
-| Tarea programada | `tasks/aplication/internal/schedulers/TaskStatusScheduler` (cada 60 s, `app.tasks.expiration-check-ms`; segura con varias instancias) |
+| Tarea programada | `tasks/application/internal/schedulers/TaskStatusScheduler` (cada 60 s, `app.tasks.expiration-check-ms`; segura con varias instancias) |
 | Salud | Actuator `/actuator/health` (lo usan el ALB y el `HEALTHCHECK` de Docker) |
 | Configuración | `application.properties` (sin secretos por defecto; perfil `dev` en `application-dev.properties`), con variables de entorno: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, `AWS_REGION`, `BEDROCK_MODEL_ID` |
 
@@ -203,10 +203,6 @@ Están documentadas para no copiarlas en código nuevo:
 
 | Desviación | Ubicación |
 |---|---|
-| Errata `aplication` | `tasks/aplication/` |
-| Erratas `persistenence` y `queryservice` | `metrics/infrastructure/persistenence/`, `metrics/application/internal/queryservice/` |
-| Infraestructura compartida dentro de `domain` | `shared/domain/model/infrastructure/` (OpenAPI y estrategia de nombres) |
-| Servicio de dominio que devuelve DTOs REST | `metrics/domain/model/services/TaskMetricsQueryService` |
 | Repositorios de otro contexto usados directamente | `TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`, `GroupCommandServiceImpl`, `InvitationCommandServiceImpl` |
 
 ## 11. Cómo agregar un caso de uso

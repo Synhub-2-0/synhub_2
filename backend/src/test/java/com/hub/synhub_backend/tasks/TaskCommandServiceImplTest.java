@@ -7,7 +7,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
-import com.hub.synhub_backend.tasks.aplication.internal.commandservices.TaskCommandServiceImpl;
+import com.hub.synhub_backend.tasks.application.internal.commandservices.TaskCommandServiceImpl;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.*;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;

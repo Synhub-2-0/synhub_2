@@ -1,4 +1,4 @@
-package com.hub.synhub_backend.tasks.aplication.internal.commandservices;
+package com.hub.synhub_backend.tasks.application.internal.commandservices;
 
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;

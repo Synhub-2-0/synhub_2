@@ -1,4 +1,4 @@
-package com.hub.synhub_backend.tasks.aplication.internal.acl;
+package com.hub.synhub_backend.tasks.application.internal.acl;
 
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;

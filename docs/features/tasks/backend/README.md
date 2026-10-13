@@ -1,6 +1,6 @@
 # Tasks: backend
 
-Paquete: [`com.hub.synhub_backend.tasks`](../../../../backend/src/main/java/com/hub/synhub_backend/tasks). La capa de aplicación está en `aplication/` (con una sola "p").
+Paquete: [`com.hub.synhub_backend.tasks`](../../../../backend/src/main/java/com/hub/synhub_backend/tasks).
 
 ## Endpoints (`TaskController`)
 
@@ -49,7 +49,7 @@ Comportamiento del agregado:
 |---|---|
 | `TaskCommandServiceImpl` | `CreateTaskCommand`, `UpdateTaskCommand` (incluye reasignación entre membresías), `DeleteTaskCommand`, `UpdateTaskStatusCommand` y `DeleteTasksByUserIdAndGroupIdCommand`. |
 | `TaskQueryServiceImpl` | `GetTaskByIdQuery`, `GetAllTasksByUserId`, `GetAllTasksByGroupIdQuery`, `GetTasksByGroupIdAndStatus`, `GetTasksByGroupIdAndUserIdQuery`. |
-| `TaskStatusScheduler` (`aplication/internal/schedulers`) | `@Scheduled` cada `app.tasks.expiration-check-ms` (60 s; variable `TASKS_EXPIRATION_CHECK_MS`): busca las tareas `IN_PROGRESS` vencidas y, en una transacción por tarea, las marca con un `UPDATE` condicional (`TaskRepository.markExpiredIfInProgress`, `WHERE status = IN_PROGRESS`). Solo si cambió la fila crea `CreateRequestCommand("La tarea venció automáticamente.", "EXPIRED", taskId)` sin `requesterId`, por lo que se salta las validaciones de usuario. Con varias instancias, solo una crea la request (AUDIT BUG-09). |
+| `TaskStatusScheduler` (`application/internal/schedulers`) | `@Scheduled` cada `app.tasks.expiration-check-ms` (60 s; variable `TASKS_EXPIRATION_CHECK_MS`): busca las tareas `IN_PROGRESS` vencidas y, en una transacción por tarea, las marca con un `UPDATE` condicional (`TaskRepository.markExpiredIfInProgress`, `WHERE status = IN_PROGRESS`). Solo si cambió la fila crea `CreateRequestCommand("La tarea venció automáticamente.", "EXPIRED", taskId)` sin `requesterId`, por lo que se salta las validaciones de usuario. Con varias instancias, solo una crea la request (AUDIT BUG-09). |
 
 ## ACL
 
@@ -57,7 +57,7 @@ Hacia requests: `RequestsContextFacade.deleteAllRequestsByTaskId`, que `DeleteTa
 
 Hacia otros contextos:
 
-`TasksContextFacade` (`interfaces/acl`) / `TaskContextFacadeImpl` (`aplication/internal/acl`):
+`TasksContextFacade` (`interfaces/acl`) / `TaskContextFacadeImpl` (`application/internal/acl`):
 
 | Método | Lo usa |
 |---|---|

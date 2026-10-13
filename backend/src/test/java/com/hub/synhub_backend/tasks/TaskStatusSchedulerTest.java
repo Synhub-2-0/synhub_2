@@ -2,7 +2,7 @@ package com.hub.synhub_backend.tasks;
 
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
-import com.hub.synhub_backend.tasks.aplication.internal.schedulers.TaskStatusScheduler;
+import com.hub.synhub_backend.tasks.application.internal.schedulers.TaskStatusScheduler;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;

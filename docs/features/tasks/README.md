@@ -5,7 +5,7 @@ El líder crea tareas dentro de su grupo y se las asigna a un integrante. El int
 | | |
 |---|---|
 | **Recurso REST** | `/api/v1/tasks` |
-| **Bounded context (backend)** | [`tasks`](../../../backend/src/main/java/com/hub/synhub_backend/tasks) (el subpaquete se llama `aplication`, sic) |
+| **Bounded context (backend)** | [`tasks`](../../../backend/src/main/java/com/hub/synhub_backend/tasks) |
 | **Módulo (frontend)** | [`src/app/tasks`](../../../frontend/src/app/tasks) |
 | **Rutas de la web** | `/tasks/leader`, `/tasks/member`, `/tasks/create`, `/tasks/:id`, `/tasks/:id/edit`, además del tablero en `/home` y `/groups?id=…` |
 | **Documentación** | [Backend](backend/README.md) · [Frontend](frontend/README.md) |
@@ -48,7 +48,7 @@ stateDiagram-v2
 
 - **Asignación mediante groups**: `Task.profile` apunta a `GroupProfile` (la membresía de groups) y `GroupProfile.tasks` es la colección inversa. Una tarea no tiene `userId` ni `groupId` propios: ambos se derivan de la membresía. `TaskResource` expone `group` y `assignedTo` armados con assemblers de groups e IAM.
 - **`TaskCommandServiceImpl` usa repositorios de otros contextos** (`GroupRepository`, `GroupProfileRepository` de groups y `UserRepository` de IAM) en lugar de sus ACL.
-- **Scheduler de vencimiento**: `TaskStatusScheduler` está en `tasks/aplication/internal/schedulers`, pero escribe en **requests** (`RequestCommandService`, solicitud `EXPIRED`). El proceso es de tasks y el dato resultante es de requests.
+- **Scheduler de vencimiento**: `TaskStatusScheduler` está en `tasks/application/internal/schedulers`, pero escribe en **requests** (`RequestCommandService`, solicitud `EXPIRED`). El proceso es de tasks y el dato resultante es de requests.
 - **`DONE` lo decide requests**: requests llama a `TasksContextFacade.applySubmissionReview` al revisar una entrega. Es la única vía hacia `DONE`.
 - **Campos de IA en `Task`** (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`): se persisten en tasks, pero los produce [ai](../ai/README.md) y los consume su informe de grupo.
 - **Métricas**: `TaskMetricsQueryServiceImpl` ([metrics](../metrics/README.md)) lee `TaskRepository` directamente.

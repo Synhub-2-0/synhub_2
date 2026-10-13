@@ -1,6 +1,6 @@
 package com.hub.synhub_backend.shared;
 
-import com.hub.synhub_backend.shared.domain.model.infrastructure.persistence.jpa.configuration.strategy.SnakeCaseWithPluralizedTablePhysicalNamingStrategy;
+import com.hub.synhub_backend.shared.infrastructure.persistence.jpa.configuration.strategy.SnakeCaseWithPluralizedTablePhysicalNamingStrategy;
 import org.hibernate.boot.model.naming.Identifier;
 import org.junit.jupiter.api.Test;
 

@@ -5,7 +5,7 @@ import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import com.hub.synhub_backend.metrics.application.internal.queryservice.TaskMetricsQueryServiceImpl;
+import com.hub.synhub_backend.metrics.application.internal.queryservices.TaskMetricsQueryServiceImpl;
 import com.hub.synhub_backend.metrics.domain.exceptions.MetricNotAvailableException;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.metrics.domain.model.queries.*;

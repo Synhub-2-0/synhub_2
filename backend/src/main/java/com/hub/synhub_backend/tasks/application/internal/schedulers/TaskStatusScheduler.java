@@ -1,4 +1,4 @@
-package com.hub.synhub_backend.tasks.aplication.internal.schedulers;
+package com.hub.synhub_backend.tasks.application.internal.schedulers;
 
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.services.RequestCommandService;

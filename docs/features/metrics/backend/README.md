@@ -31,7 +31,9 @@ Recursos:
 - `TaskTimePassedResource { memberId, timePassed (ms) }`
 - `TaskDurationResource { taskId, durationInHours }` (de la creación a la fecha límite)
 
-## Consultas (`TaskMetricsQueryService` / `TaskMetricsQueryServiceImpl`)
+## Consultas (`domain/services/TaskMetricsQueryService` / `application/internal/queryservices/TaskMetricsQueryServiceImpl`)
+
+El servicio devuelve value objects de dominio (`domain/model/valueobjects`: `TaskOverview`, `TaskDistribution`, `MemberTaskCount`, `RescheduledTasks`, `AvgCompletionTime`, `TaskTimePassed`, `TaskDuration`); `MetricsResourceFromValueAssembler` (`interfaces/rest/transform`) los convierte en los recursos REST (AUDIT ARC-02).
 
 | Query | Fuente | Consumidores |
 |---|---|---|
@@ -50,8 +52,5 @@ Metrics no tiene modelo propio ni persistencia: calcula sobre las tareas de task
 
 ## Estructura y observaciones
 
-- **Inversión de capas**: el servicio de dominio (`domain/model/services/TaskMetricsQueryService`) devuelve tipos de `interfaces/rest/resources` (`TaskOverviewResource`, etc.). Lo habitual en el resto del backend es que el dominio devuelva entidades o value objects, y que los assemblers de `interfaces/rest/transform` los conviertan (ver ARC-02).
-- Los nombres de paquete tienen erratas: `application/internal/queryservice` (sin "s") e `infrastructure/persistenence`.
-- `TaskMetricsQueryService` está en `domain/model/services` en lugar de `domain/services`, que es donde lo ponen los demás contextos.
 - Lee `TaskRepository` de tasks directamente (ARC-01).
 - Pruebas: `metrics/TaskMetricsQueryServiceImplTest` (cálculos) y `api/MetricsApiTests` (endpoints y permisos).

@@ -1,6 +1,6 @@
 package com.hub.synhub_backend.api;
 
-import com.hub.synhub_backend.tasks.aplication.internal.schedulers.TaskStatusScheduler;
+import com.hub.synhub_backend.tasks.application.internal.schedulers.TaskStatusScheduler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;

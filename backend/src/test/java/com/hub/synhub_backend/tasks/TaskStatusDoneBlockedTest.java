@@ -3,7 +3,7 @@ package com.hub.synhub_backend.tasks;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
-import com.hub.synhub_backend.tasks.aplication.internal.commandservices.TaskCommandServiceImpl;
+import com.hub.synhub_backend.tasks.application.internal.commandservices.TaskCommandServiceImpl;
 import com.hub.synhub_backend.tasks.domain.exceptions.TaskStatusTransitionNotAllowedException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;

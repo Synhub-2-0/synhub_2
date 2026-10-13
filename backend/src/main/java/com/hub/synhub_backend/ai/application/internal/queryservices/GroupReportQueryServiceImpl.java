@@ -3,7 +3,7 @@ package com.hub.synhub_backend.ai.application.internal.queryservices;
 import com.hub.synhub_backend.ai.domain.model.queries.GenerateGroupReportQuery;
 import com.hub.synhub_backend.ai.domain.services.GroupReportQueryService;
 import com.hub.synhub_backend.metrics.domain.model.queries.*;
-import com.hub.synhub_backend.metrics.domain.model.services.TaskMetricsQueryService;
+import com.hub.synhub_backend.metrics.domain.services.TaskMetricsQueryService;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetAllTasksByGroupIdQuery;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
