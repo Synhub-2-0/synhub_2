@@ -69,7 +69,7 @@ class AuthApiTests extends ApiTestSupport {
         assertEquals("[\"ROLE_USER\"]", res.json().get("accountRoles").toString());
     }
 
-    @Disabled("AUDIT BUG-04: un email repetido responde 500 (la validación compara el username)")
+    // AUDIT BUG-04 (resuelto)
     @Test void duplicateEmailIs409() {
         var account = account("mail");
         var res = post("/authentication/sign-up", null, signUpBody(unique("otro"), account.username() + "@synhub.test", "Secret123!", List.of("ROLE_USER")));

@@ -72,7 +72,7 @@ Los riesgos principales son tres:
 | [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Pendiente |
 | [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Pendiente |
 | [SEC-10](#sec-10) | Media | Frontend · sesión | Sesión: el 401 no cierra la sesión; token de 7 días en `localStorage` | Código | Pendiente |
-| [BUG-04](#bug-04) | Media | Backend · iam | Email duplicado → 500 (la validación compara el username) | Reproducido | Pendiente |
+| [BUG-04](#bug-04) | Media | Backend · iam | Email duplicado → 500 (la validación compara el username) | Reproducido | Resuelto |
 | [BUG-05](#bug-05) | Media | Backend · iam | Rol inexistente en el registro → 500 | Reproducido | Resuelto (por SEC-05) |
 | [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Resuelto (por SEC-07) |
 | [BUG-07](#bug-07) | Media | Backend · shared | El handler de 500 no registra la excepción | Código | Pendiente |

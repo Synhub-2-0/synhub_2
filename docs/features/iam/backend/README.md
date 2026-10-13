@@ -60,6 +60,5 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 
 ## Observaciones
 
-- `UserCommandServiceImpl.handle(SignUpCommand)` valida el email con `existsByEmail(command.username())`, es decir, compara el **username**. Un email repetido no se detecta ahí: lo detiene la restricción `unique` de la base, y como esa excepción no está mapeada, responde 500.
 - `GET /users` devuelve todos los usuarios con su email a cualquier usuario autenticado. El frontend no lo usa.
 - `GET /roles` no lo usa el frontend.

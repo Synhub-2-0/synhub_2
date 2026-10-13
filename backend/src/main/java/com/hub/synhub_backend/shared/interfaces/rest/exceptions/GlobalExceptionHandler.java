@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.shared.interfaces.rest.exceptions;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -103,6 +104,21 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
 
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Restricción única o clave foránea violada en la base. Las reglas de negocio deberían detectarlo antes;
+     * esto evita que una carrera o un caso no previsto termine en 500.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
+        var error = ErrorResponse.of(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                "The operation conflicts with existing data",
+                request.getRequestURI()
+        );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 

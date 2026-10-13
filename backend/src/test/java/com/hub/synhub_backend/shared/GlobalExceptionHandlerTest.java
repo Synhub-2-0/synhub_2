@@ -65,6 +65,12 @@ class GlobalExceptionHandlerTest {
         assertError(handler.handleIllegalArgument(new UsernameAlreadyExistsException("dup"), request), 409, "dup");
     }
 
+    @Test void dataIntegrityViolationIsConflict() {
+        var response = handler.handleDataIntegrity(new org.springframework.dao.DataIntegrityViolationException("duplicate key"), request);
+        assertEquals(409, response.getStatusCode().value());
+        assertFalse(response.getBody().message().contains("duplicate key"), "no expone detalles de la base");
+    }
+
     @Test void unexpectedErrorHidesDetails() {
         var response = handler.handleGeneric(new IllegalStateException("db password is x"), request);
         assertEquals(500, response.getStatusCode().value());

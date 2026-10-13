@@ -116,7 +116,7 @@ class UserCommandServiceImplTest {
         verify(users, never()).save(any());
     }
 
-    @Disabled("AUDIT BUG-04: el sign-up compara el email con el username (existsByEmail(command.username()))")
+    // AUDIT BUG-04 (resuelto)
     @Test void duplicateEmailIsRejected() {
         when(users.existsByEmail("ana@synhub.io")).thenReturn(true);
         assertThrows(EmailAlreadyExistsException.class,

@@ -72,7 +72,7 @@ public class UserCommandServiceImpl implements UserCommandService {
   public Optional<User> handle(SignUpCommand command) {
     if (userRepository.existsByUsername(command.username()))
       throw new UsernameAlreadyExistsException("Username already exists");
-    if(userRepository.existsByEmail(command.username()))
+    if(userRepository.existsByEmail(command.email()))
         throw new EmailAlreadyExistsException("User with this email already exists");
     var roles = command.roles().stream()
         .map(role ->

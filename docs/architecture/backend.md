@@ -152,6 +152,7 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
 | `AccessDeniedException` (permisos de negocio: "solo el líder…") | 403 |
 | `ResourceNotFoundException` y sus subclases | 404 |
 | `BusinessRuleViolationException` y sus subclases | 409 |
+| `DataIntegrityViolationException` (restricción única o FK; red de seguridad, sin detalles de la base) | 409 |
 | Cualquier otra `Exception` | 500 |
 
 **Convención**: una regla de negocio nueva lanza una subclase de `BusinessRuleViolationException` (409) en `domain/exceptions` de su contexto. El frontend traduce esos códigos a mensajes en español en cada `*ApiEndpoint`.
