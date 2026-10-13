@@ -36,10 +36,10 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 
 | Capa | Archivos | LISTO / PREVIO | LISTO-PARCIAL | PENDIENTE |
 |---|---|---|---|---|
-| Backend: pruebas unitarias | 27 | 20 | 7 | 0 |
-| Backend: API (integración) | 6 | 2 | 4 | 0 |
+| Backend: pruebas unitarias | 27 | 22 | 5 | 0 |
+| Backend: API (integración) | 6 | 5 | 1 | 0 |
 | Frontend | 37 | 33 | 4 | 0 |
-| **Total** | **70** | **55** | **15** | **0** |
+| **Total** | **70** | **60** | **10** | **0** |
 
 ---
 
@@ -49,7 +49,7 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|
-| B-IAM-01 | `iam/UserCommandServiceImplTest.java` | `UserCommandServiceImpl` | sign-in correcto devuelve usuario+token · contraseña incorrecta → `BadCredentialsException` · usuario inexistente → `BadCredentialsException` · sign-up guarda con hash y roles resueltos · username duplicado → 409 · rol inexistente · email duplicado → 409 | BUG-04, BUG-05 | LISTO-PARCIAL |
+| B-IAM-01 | `iam/UserCommandServiceImplTest.java` | `UserCommandServiceImpl` | sign-in correcto devuelve usuario+token · contraseña incorrecta → `BadCredentialsException` · usuario inexistente → `BadCredentialsException` · sign-up guarda con hash y roles resueltos · username duplicado → 409 · rol inexistente · email duplicado → 409 | BUG-04, BUG-05 | LISTO |
 | B-IAM-02 | `iam/RoleTest.java` | `Role`, `RoleCommandServiceImpl` | lista vacía o null → `ROLE_USER` · `toRoleFromName` válido e inválido · el seed crea solo los roles faltantes | — | LISTO |
 | B-IAM-03 | `iam/TokenServiceImplTest.java` | `TokenServiceImpl` | genera un token con el username como subject · valida un token propio · rechaza un token alterado · rechaza un token firmado con otra clave · rechaza un token expirado · extrae el bearer del header (presente, ausente, sin prefijo) | — | LISTO |
 | B-IAM-04 | `iam/UserQueryServiceImplTest.java` | `UserQueryServiceImpl` | por id, por username, todos · usuarios de un grupo a partir de las membresías | — | LISTO |
@@ -61,7 +61,7 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 | B-GRP-03 | `groups/GroupQueryServiceImplTest.java` | `GroupQueryServiceImpl` | grupos por rol filtra por `GroupRole` · grupos por usuario · miembros de un grupo inexistente → 404 · por código con formato inválido → `IllegalArgumentException` | — | LISTO |
 | B-GRP-04 | `groups/InvitationCommandServiceImplTest.java` | `InvitationCommandServiceImpl` | crear: OK solo el líder · invitación duplicada → 409 · ya es miembro → 409 · usuario o grupo inexistente → 404 · aceptar: solo el invitado; crea `GROUP_MEMBER` y borra la invitación; ya es miembro → 409 · cancelar: el invitado o el líder sí, un tercero → 403 | — | LISTO |
 | B-GRP-05 | `groups/InvitationQueryServiceImplTest.java` | `InvitationQueryServiceImpl`, `GroupsContextFacadeImpl` | invitaciones por usuario y por grupo · `fetchLeaderIdByGroupId` (con líder, sin líder, sin grupo) | — | LISTO |
-| B-TSK-01 | `tasks/TaskTest.java` | Agregado `Task` | nace `IN_PROGRESS` · `IN_PROGRESS`→`COMPLETED` calcula `timePassed` · `COMPLETED`/`ON_HOLD`/`EXPIRED` → `IN_PROGRESS` suma `timesRearranged` · `updateTask` con fecha pasada → `EXPIRED`, con fecha futura → `IN_PROGRESS` · ignora los campos vacíos · `applySubmissionReview` → `DONE`/`IN_PROGRESS` · rechaza un título vacío | BUG-03 | LISTO-PARCIAL |
+| B-TSK-01 | `tasks/TaskTest.java` | Agregado `Task` | nace `IN_PROGRESS` · `IN_PROGRESS`→`COMPLETED` calcula `timePassed` · `COMPLETED`/`ON_HOLD`/`EXPIRED` → `IN_PROGRESS` suma `timesRearranged` · `updateTask` con fecha pasada → `EXPIRED`, con fecha futura → `IN_PROGRESS` · ignora los campos vacíos · `applySubmissionReview` → `DONE`/`IN_PROGRESS` · rechaza un título vacío | BUG-03 | LISTO |
 | B-TSK-02 | `tasks/TaskCommandServiceImplTest.java` | `TaskCommandServiceImpl` | crear: solo el líder; el asignado debe ser miembro · actualizar: solo el líder, reasigna la membresía · borrar: solo el líder · estado: el líder o el asignado sí, un tercero → 403 · borrar las tareas de un miembro | — | LISTO |
 | B-TSK-03 | `tasks/TaskStatusDoneBlockedTest.java` | `PUT /status` con `DONE` | `DONE` directo → 409 incluso para el líder | — | PREVIO |
 | B-TSK-04 | `tasks/TaskQueryServiceImplTest.java` | `TaskQueryServiceImpl` | por grupo con y sin estado · por grupo y usuario · por id · por estado (texto) | — | LISTO |
@@ -84,11 +84,11 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|
 | B-API-00 | `api/ApiTestSupport.java` | Utilidad compartida | cliente HTTP, registro y login, creación de grupo, invitación y tarea | — | LISTO |
-| B-API-01 | `api/AuthApiTests.java` | IAM por HTTP | sign-up 201 · sign-in 200 con token · contraseña incorrecta 401 · sin token 401 · token alterado 401 · `/users/me` · `/actuator/health` público · rol `ROLE_ADMIN` ignorado · email duplicado 409 · rol inválido no da 500 | SEC-05, BUG-04, BUG-05 | LISTO-PARCIAL |
+| B-API-01 | `api/AuthApiTests.java` | IAM por HTTP | sign-up 201 · sign-in 200 con token · contraseña incorrecta 401 · sin token 401 · token alterado 401 · `/users/me` · `/actuator/health` público · rol `ROLE_ADMIN` ignorado · email duplicado 409 · rol inválido no da 500 | SEC-05, BUG-04, BUG-05 | LISTO |
 | B-API-02 | `api/TaskLifecycleApiTests.java` | Flujo completo | crear grupo → invitar → aceptar → miembro listado · crear tarea → miembro `COMPLETED` → entrega → líder aprueba → `DONE` · rechazar → `IN_PROGRESS` · `DONE` directo 409 · segunda entrega pendiente 409 · bandeja del líder filtra por estado | — | LISTO |
 | B-API-03 | `api/AuthorizationApiTests.java` | Matriz de permisos | (vigentes) miembro no puede editar ni borrar el grupo, ni invitar, ni crear o borrar tareas, ni revisar · ajeno no puede cambiar el estado · (esperados) ajeno → 403 en las lecturas del grupo, tareas, requests e invitaciones · ajeno no borra requests · `GET /users` solo admin | SEC-01, SEC-02, SEC-06 | LISTO-PARCIAL |
-| B-API-04 | `api/ValidationApiTests.java` | Validación de entrada | (vigentes) `GroupCode` mal formado 400 · código inexistente 404 · tipo de request inválido 400 · un miembro no crea requests `EXPIRED` · (esperados) tarea sin título 400 · grupo sin nombre 400 · registro débil 400 · difficulty fuera de 1..5 400 · enum inválido en un parámetro 400 | SEC-07, BUG-03, BUG-06 | LISTO-PARCIAL |
-| B-API-05 | `api/CascadeDeleteApiTests.java` | Borrados | (vigente) borrar un grupo vacío 204 · borrar una tarea sin requests 204 · (esperados) tarea con requests 204 · grupo con tareas y requests 204 | BUG-01, BUG-02 | LISTO-PARCIAL |
+| B-API-04 | `api/ValidationApiTests.java` | Validación de entrada | (vigentes) `GroupCode` mal formado 400 · código inexistente 404 · tipo de request inválido 400 · un miembro no crea requests `EXPIRED` · (esperados) tarea sin título 400 · grupo sin nombre 400 · registro débil 400 · difficulty fuera de 1..5 400 · enum inválido en un parámetro 400 | SEC-07, BUG-03, BUG-06 | LISTO |
+| B-API-05 | `api/CascadeDeleteApiTests.java` | Borrados | (vigente) borrar un grupo vacío 204 · borrar una tarea sin requests 204 · (esperados) tarea con requests 204 · grupo con tareas y requests 204 | BUG-01, BUG-02 | LISTO |
 
 ## Frontend
 
@@ -150,3 +150,4 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 | 2026-10-13 | Backend completo: 26 unitarias + 6 de API (22 casos `AUDIT` deshabilitados, verificados: todos fallan al habilitarlos). Frontend: F-IAM-01 a F-IAM-06. Sesión detenida por límite de uso. | F-IAM-07: agregar a `sign-up-page.spec.ts` el caso de coincidencia de contraseñas y `it.skip('AUDIT FE-03 …')`; luego F-SHR-01 |
 | 2026-10-13 | Frontend completo: F-IAM-07 a F-ENV-01. Se corrigieron la doc de iam (el registro inicia sesión y va a `/home`) y FE-03 en la auditoría. | — |
 | 2026-10-13 | **Inventario completo: 69/69.** Backend: `./mvnw test` → 197 pruebas, 0 fallas, 22 omitidas `AUDIT`. Frontend: `ng test` → 46 archivos, 177 pruebas, 4 omitidas `AUDIT`; `ng build` OK. Las 26 pruebas `AUDIT` fallan al habilitarlas (verificado). | Habilitar cada prueba `AUDIT <ID>` al corregir ese ID de [docs/AUDITORIA.md](docs/AUDITORIA.md). |
+| 2026-10-13 | Rama `audit`: corregidos TEST-02, SEC-01..05, SEC-07, DEP-01, BUG-01..07. Sus pruebas `AUDIT` se habilitaron y pasan. Backend: 221 pruebas (6 `AUDIT` pendientes: SEC-06, BUG-08, BUG-09, BUG-10, BUG-12, BUG-14). Frontend: 181 (4 `AUDIT` pendientes: SEC-10 ×2, BUG-15, FE-03). | Fase 3 de la auditoría |
