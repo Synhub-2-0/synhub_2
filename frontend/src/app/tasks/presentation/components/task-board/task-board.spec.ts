@@ -4,7 +4,7 @@ import { Task, TaskStatus } from '../../../domain/model/task.entity';
 
 const task = (id: number, status: TaskStatus, assigneeId = 5) => new Task({
   id, title: `T${id}`, description: '', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date(), status,
-  assignedTo: { id: assigneeId, username: 'u', name: 'Ana', surname: 'Torres', imgUrl: '', email: '', accountRoles: [] },
+  assignedTo: { id: assigneeId, username: 'u', name: 'Ana', surname: 'Torres', imgUrl: '', email: '' },
 });
 
 describe('TaskBoard', () => {

@@ -14,14 +14,14 @@ const task = (id: number, status: TaskStatus = 'IN_PROGRESS', due = '2026-12-01T
 });
 
 describe('TasksStore', () => {
-  let api: Record<'getTasksByGroup' | 'getTasksByGroupAndUser' | 'getTaskById' | 'createTask' | 'updateTask' | 'updateTaskStatus' | 'deleteTask', ReturnType<typeof vi.fn>>;
+  let api: Record<'getTasksByGroup' | 'getTasksByGroupAndUser' | 'getMyTasks' | 'getTaskById' | 'createTask' | 'updateTask' | 'updateTaskStatus' | 'deleteTask', ReturnType<typeof vi.fn>>;
   let isSignedIn: ReturnType<typeof signal<boolean>>;
   let store: TasksStore;
   let toasts: ToastStore;
 
   beforeEach(() => {
     api = {
-      getTasksByGroup: vi.fn(), getTasksByGroupAndUser: vi.fn(), getTaskById: vi.fn(), createTask: vi.fn(),
+      getTasksByGroup: vi.fn(), getTasksByGroupAndUser: vi.fn(), getMyTasks: vi.fn(), getTaskById: vi.fn(), createTask: vi.fn(),
       updateTask: vi.fn(), updateTaskStatus: vi.fn(), deleteTask: vi.fn(),
     };
     isSignedIn = signal(true);
@@ -60,34 +60,24 @@ describe('TasksStore', () => {
     expect(store.loading()).toBe(false);
   });
 
-  describe('tareas del usuario en varios grupos', () => {
-    it('une las listas ordenadas por fecha límite', () => {
-      api.getTasksByGroupAndUser.mockImplementation((groupId: number) => of(groupId === 1
-        ? [task(1, 'IN_PROGRESS', '2026-12-10T00:00:00Z')]
-        : [task(2, 'IN_PROGRESS', '2026-12-01T00:00:00Z')]));
-      store.loadTasksByGroupsAndUser([1, 2], 5);
+  describe('AUDIT PERF-03: mis tareas con una sola petición', () => {
+    it('carga mis tareas y los grupos donde tengo alguna', () => {
+      const mine = [task(2, 'IN_PROGRESS', '2026-12-01T00:00:00Z'), task(1, 'IN_PROGRESS', '2026-12-10T00:00:00Z')];
+      api.getMyTasks.mockReturnValue(of(mine));
+      store.loadMyTasks();
+      expect(api.getMyTasks).toHaveBeenCalledTimes(1);
       expect(store.tasks().map((t) => t.id)).toEqual([2, 1]);
+      expect(store.assignedGroupIds()).toEqual([...new Set(mine.map((t) => t.group?.id))].filter((id) => id != null));
       expect(store.error()).toBeNull();
+      expect(store.loading()).toBe(false);
     });
 
-    it('si un grupo falla muestra los demás y avisa', () => {
-      api.getTasksByGroupAndUser.mockImplementation((groupId: number) =>
-        groupId === 1 ? of([task(1)]) : throwError(() => new Error('500')));
-      store.loadTasksByGroupsAndUser([1, 2], 5);
-      expect(store.tasks().map((t) => t.id)).toEqual([1]);
-      expect(store.error()).toBe('Failed to load user tasks');
-    });
-
-    it('sin grupos no llama a la API', () => {
-      store.loadTasksByGroupsAndUser([], 5);
-      expect(api.getTasksByGroupAndUser).not.toHaveBeenCalled();
-    });
-
-    it('detecta los grupos con alguna tarea asignada', () => {
-      api.getTasksByGroupAndUser.mockImplementation((groupId: number) =>
-        groupId === 2 ? throwError(() => new Error('x')) : of(groupId === 1 ? [task(1)] : []));
-      store.loadAssignedGroupIds([1, 2, 3], 5);
-      expect(store.assignedGroupIds()).toEqual([1]);
+    it('si falla avisa y deja de cargar', () => {
+      api.getMyTasks.mockReturnValue(throwError(() => new Error('Failed to load your tasks: 500')));
+      store.loadMyTasks();
+      expect(store.error()).toBe('Failed to load your tasks: 500');
+      expect(toasts.toasts()[0].message).toBe('El servidor tuvo un problema. Inténtalo más tarde.');
+      expect(store.loading()).toBe(false);
     });
   });
 
@@ -110,7 +100,7 @@ describe('TasksStore', () => {
 
     store.addTask(new CreateTaskCommand('T2', '', new Date(), 5, 10));
     store.updateTaskStatus(1, 'COMPLETED');
-    store.updateTask(2, new UpdateTaskCommand(1, 'Editada', '', new Date(), 5));
+    store.updateTask(2, new UpdateTaskCommand('Editada', '', new Date(), 5));
     store.deleteTask(1);
 
     expect(store.tasks().map((t) => [t.id, t.title])).toEqual([[2, 'Editada']]);
@@ -118,7 +108,7 @@ describe('TasksStore', () => {
 
   it('una tarea DONE no se edita ni se borra', () => {
     loadGroup(task(1, 'DONE'));
-    store.updateTask(1, new UpdateTaskCommand(1, 'x', '', new Date(), 5));
+    store.updateTask(1, new UpdateTaskCommand('x', '', new Date(), 5));
     store.deleteTask(1);
     expect(api.updateTask).not.toHaveBeenCalled();
     expect(api.deleteTask).not.toHaveBeenCalled();

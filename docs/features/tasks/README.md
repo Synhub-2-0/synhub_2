@@ -5,7 +5,7 @@ El líder crea tareas dentro de su grupo y se las asigna a un integrante. El int
 | | |
 |---|---|
 | **Recurso REST** | `/api/v1/tasks` |
-| **Bounded context (backend)** | [`tasks`](../../../backend/src/main/java/com/hub/synhub_backend/tasks) (el subpaquete se llama `aplication`, sic) |
+| **Bounded context (backend)** | [`tasks`](../../../backend/src/main/java/com/hub/synhub_backend/tasks) |
 | **Módulo (frontend)** | [`src/app/tasks`](../../../frontend/src/app/tasks) |
 | **Rutas de la web** | `/tasks/leader`, `/tasks/member`, `/tasks/create`, `/tasks/:id`, `/tasks/:id/edit`, además del tablero en `/home` y `/groups?id=…` |
 | **Documentación** | [Backend](backend/README.md) · [Frontend](frontend/README.md) |
@@ -27,7 +27,7 @@ stateDiagram-v2
 
 - `PUT /tasks/{id}/status` acepta cualquier estado **excepto `DONE`** (responde 409 `TaskStatusTransitionNotAllowedException`). Pueden hacerlo el líder o el integrante asignado.
 - `PUT /tasks/{id}` con una `dueDate` pasada mueve la tarea a `EXPIRED`; con una fecha futura la vuelve a `IN_PROGRESS`, salvo que ya esté `EXPIRED`.
-- `TaskStatusScheduler` revisa cada 30 s las tareas `IN_PROGRESS` vencidas: las marca `EXPIRED` y crea una solicitud `EXPIRED` en requests.
+- `TaskStatusScheduler` revisa cada 60 s las tareas `IN_PROGRESS` vencidas: las marca `EXPIRED` y crea una solicitud `EXPIRED` en requests.
 - En la web, una tarea `DONE` no se puede editar ni eliminar (`TasksStore` lo bloquea).
 
 ## Comunicación frontend ↔ backend
@@ -39,7 +39,7 @@ stateDiagram-v2
 | Editar tarea (líder) | `TaskForm` → `TasksStore.updateTask` | `PUT /tasks/{id}` | `updateTaskDetails` → `UpdateTaskCommand` |
 | Ver detalle | `TaskDetails`, `TaskForm` (edición) → `loadTaskById` | `GET /tasks/{id}` | `getTaskById` |
 | Tablero del grupo | `Home`, `GroupDetails`, `LeaderTasks` → `loadTasksByGroup` | `GET /tasks/group/{groupId}[?status=]` | `getByGroup` → `GetTasksByGroupIdAndStatus` |
-| Mis tareas | `MemberTasks` → `loadTasksByGroupAndUser` / `loadTasksByGroupsAndUser` | `GET /tasks/group/{groupId}/user/{userId}` (una por grupo) | `getTaskByGroupIdAndUserId` |
+| Mis tareas | `MemberTasks` → `loadMyTasks` | `GET /tasks/user` (una sola petición) | `getMyTasks` → `GetAllTasksByUserId` |
 | Mover de columna | `TaskBoard` (`statusChange`) → `updateTaskStatus` | `PUT /tasks/{id}/status?status=` | `updateTaskStatus` → `UpdateTaskStatusCommand` |
 | Eliminar (líder) | `GroupDetails`, `LeaderTasks` → `deleteTask` | `DELETE /tasks/{id}` | `deleteTaskById` → `DeleteTaskCommand` |
 | Enviar entrega (miembro) | `TaskCard` → `RequestsStore.submitTask` | `POST /tasks/{id}/requests` | [requests](../requests/README.md) |
@@ -47,12 +47,11 @@ stateDiagram-v2
 ## Propiedad compartida
 
 - **Asignación mediante groups**: `Task.profile` apunta a `GroupProfile` (la membresía de groups) y `GroupProfile.tasks` es la colección inversa. Una tarea no tiene `userId` ni `groupId` propios: ambos se derivan de la membresía. `TaskResource` expone `group` y `assignedTo` armados con assemblers de groups e IAM.
-- **`TaskCommandServiceImpl` usa repositorios de otros contextos** (`GroupRepository`, `GroupProfileRepository` de groups y `UserRepository` de IAM) en lugar de sus ACL.
-- **Scheduler de vencimiento**: `TaskStatusScheduler` está en `tasks/domain/services`, pero escribe en **requests** (`RequestCommandService`, solicitud `EXPIRED`). El proceso es de tasks y el dato resultante es de requests.
+- **`TaskCommandServiceImpl` usa las ACL de groups e IAM** (`GroupsContextFacade`, `IamContextFacade`) para el líder, la membresía y el usuario (AUDIT ARC-01).
+- **Scheduler de vencimiento**: `TaskStatusScheduler` está en `tasks/application/internal/schedulers`, pero escribe en **requests** (`RequestCommandService`, solicitud `EXPIRED`). El proceso es de tasks y el dato resultante es de requests.
 - **`DONE` lo decide requests**: requests llama a `TasksContextFacade.applySubmissionReview` al revisar una entrega. Es la única vía hacia `DONE`.
 - **Campos de IA en `Task`** (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`): se persisten en tasks, pero los produce [ai](../ai/README.md) y los consume su informe de grupo.
-- **Métricas**: `TaskMetricsQueryServiceImpl` ([metrics](../metrics/README.md)) lee `TaskRepository` directamente.
-- **`TestController`** (`/api/v1/tests`, solo fuera de `prod`) está en el paquete tasks, pero es una herramienta de depuración de IAM: lee el usuario del token y genera tokens.
+- **Métricas**: `TaskMetricsQueryServiceImpl` ([metrics](../metrics/README.md)) lee las tareas por `TasksContextFacade`.
 - **Frontend**: `TaskCard` (tasks) usa `RequestsStore`; `TaskForm` usa `AiStore` y `GroupsStore`; `LeaderTasks` incrusta `AiReportCard` (ai); `Home` (shared) y `GroupDetails` (groups) usan `TasksStore`.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).

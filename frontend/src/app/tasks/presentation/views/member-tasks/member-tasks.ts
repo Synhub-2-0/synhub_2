@@ -52,30 +52,22 @@ export class MemberTasks implements OnInit {
     EXPIRED: 'Vencidas',
   };
 
+  // Mis tareas (una sola petición, AUDIT PERF-03), filtradas en el cliente por estado y por el grupo elegido.
   // Safeguard: the list is user-scoped on the client too, whatever the endpoint returns.
-  readonly myTasks = computed(() =>
-    this.tasksStore.filteredTasks().filter((task) => task.assignedTo?.id === this.iamStore.currentUserId()),
-  );
+  readonly myTasks = computed(() => {
+    const selected = this.selectedGroupId();
+    return this.tasksStore.filteredTasks().filter((task) =>
+      task.assignedTo?.id === this.iamStore.currentUserId()
+      && (selected === null || selected === this.ALL_GROUPS || task.group?.id === selected));
+  });
 
   constructor() {
     effect(() => {
-      const leaderGroups = this.groupsStore.leaderGroups();
-      const userId = this.iamStore.currentUserId();
-      if (userId) this.tasksStore.loadAssignedGroupIds(leaderGroups.map((group) => group.id), userId);
-    });
-    effect(() => {
       const groups = this.availableGroups();
-      const userId = this.iamStore.currentUserId();
-      const selected = this.selectedGroupId();
-      if (groups.length === 0) return;
-      if (selected === null) {
-        // With several groups the default is the complete picture; with one, that group.
-        if (groups.length > 1) this.selectAllGroups(userId);
-        else this.selectGroup(groups[0].id, userId);
-      } else if (selected === this.ALL_GROUPS) {
-        // The list of groups can grow after the led-groups probe finishes.
-        this.selectAllGroups(userId);
-      }
+      if (groups.length === 0 || this.selectedGroupId() !== null) return;
+      // With several groups the default is the complete picture; with one, that group.
+      if (groups.length > 1) this.selectAllGroups();
+      else this.selectGroup(groups[0].id);
     });
   }
 
@@ -83,25 +75,19 @@ export class MemberTasks implements OnInit {
     if (this.groupsStore.groups().length === 0) {
       this.groupsStore.loadGroups();
     }
+    // This view is personal: without a session nothing is requested.
+    if (this.iamStore.currentUserId()) this.tasksStore.loadMyTasks();
 
     const queryGroupId = Number(this.route.snapshot.queryParamMap.get('groupId'));
-    const userId = this.iamStore.currentUserId();
-
-    if (queryGroupId) {
-      this.selectGroup(queryGroupId, userId);
-      return;
-    }
+    if (queryGroupId) this.selectGroup(queryGroupId);
   }
 
-  selectGroup(groupId: number, userId = this.iamStore.currentUserId()): void {
+  selectGroup(groupId: number): void {
     this.selectedGroupId.set(groupId);
-    // This view is personal: without a user id nothing is requested, never the tasks of the whole group.
-    if (userId) this.tasksStore.loadTasksByGroupAndUser(groupId, userId);
   }
 
-  selectAllGroups(userId = this.iamStore.currentUserId()): void {
+  selectAllGroups(): void {
     this.selectedGroupId.set(this.ALL_GROUPS);
-    if (userId) this.tasksStore.loadTasksByGroupsAndUser(this.availableGroups().map((group) => group.id), userId);
   }
 
   setFilter(status: TaskStatus | 'ALL'): void {

@@ -9,7 +9,7 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 | Ruta | Vista | Stores | Qué hace |
 |---|---|---|---|
 | `/tasks/leader?groupId=` | `LeaderTasks` | `TasksStore`, `GroupsStore` | Tareas de un grupo que lidero, con filtro de estado, cambio de estado y eliminación. Incrusta `AiReportCard` ([ai](../../ai/frontend/README.md)). |
-| `/tasks/member?groupId=` | `MemberTasks` | `TasksStore`, `GroupsStore`, `IamStore` | Mis tareas en uno o en todos mis grupos (`loadTasksByGroupsAndUser`), con filtro de estado. |
+| `/tasks/member?groupId=` | `MemberTasks` | `TasksStore`, `GroupsStore`, `IamStore` | Mis tareas en uno o en todos mis grupos: una sola petición (`loadMyTasks`) y el grupo y el estado se filtran en el cliente. |
 | `/tasks/create?groupId=` | `TaskForm` | `TasksStore`, `GroupsStore`, `IamStore`, `AiStore`, `ToastStore` | Alta de una tarea: elegir grupo e integrante; botón "sugerir con IA". |
 | `/tasks/:id/edit` | `TaskForm` | ídem | Edición (`updateTask`). |
 | `/tasks/:id` | `TaskDetails` | `TasksStore` | Detalle de solo lectura. |
@@ -26,14 +26,14 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 |---|---|
 | `tasks`, `selectedTask` | Tareas cargadas y tarea abierta. |
 | `statusFilter`, `filteredTasks` | Filtro `TaskStatus \| 'ALL'` y el `computed` resultante. |
-| `assignedGroupIds` | Grupos donde el usuario tiene al menos una tarea (para `MemberTasks`). |
+| `assignedGroupIds` | Grupos donde el usuario tiene al menos una tarea (para `MemberTasks`); sale de `loadMyTasks`. |
 | `loading`, `error`, `taskCount` | Estado de la UI. |
 
 | Método | Petición |
 |---|---|
 | `loadTasksByGroup(groupId, status?)` | `GET /tasks/group/{groupId}` |
 | `loadTasksByGroupAndUser(groupId, userId)` | `GET /tasks/group/{groupId}/user/{userId}` |
-| `loadTasksByGroupsAndUser(groupIds, userId)`, `loadAssignedGroupIds(...)` | Una `GET /tasks/group/{g}/user/{u}` por grupo, combinadas en el cliente. |
+| `loadMyTasks()` | `GET /tasks/user`: todas mis tareas con una sola petición (AUDIT PERF-03). |
 | `loadTaskById(id)` | `GET /tasks/{id}` |
 | `addTask(command)` | `POST /tasks` |
 | `updateTask(id, command)` | `PUT /tasks/{id}`: bloqueado en el cliente si la tarea está `DONE`. |

@@ -1,20 +1,21 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { BaseApi } from '../../shared/infrastructure/base-api';
 import { TaskClassification } from '../domain/model/task-classification.entity';
 
 const aiEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderAiEndpointPath}`;
 
 @Injectable({ providedIn: 'root' })
-export class AiApi extends BaseApi {
-  constructor(private readonly http: HttpClient) {
-    super();
-  }
+export class AiApi {
+  private readonly http = inject(HttpClient);
 
   /** POST /api/v1/ai/classify */
-  classifyTask(payload: { title: string; description: string; dueDate?: Date }): Observable<TaskClassification> {
+  classifyTask(payload: {
+    title: string;
+    description: string;
+    dueDate?: Date;
+  }): Observable<TaskClassification> {
     return this.http.post<TaskClassification>(`${aiEndpointUrl}/classify`, {
       ...payload,
       dueDate: payload.dueDate?.toISOString(),

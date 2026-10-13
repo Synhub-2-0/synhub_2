@@ -9,6 +9,4 @@ public record UserResource(
         String surname,
         String imgUrl,
         String email,
-        List<String> accountRoles
-) {
-}
+        List<String> accountRoles) {}

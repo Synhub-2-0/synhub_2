@@ -39,7 +39,7 @@ export class SignUpPage extends BaseForm {
       surname: new FormControl('', { nonNullable: true, validators: [Validators.required]}),
       email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email]}),
       imgUrl: new FormControl('', { validators: [Validators.pattern('https?://.+')]}),
-      password: new FormControl('', { nonNullable: true, validators: [Validators.required]}),
+      password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8), Validators.maxLength(72)]}),
       confirmPassword: new FormControl('', { nonNullable: true, validators: [Validators.required]}),
     },
     {
@@ -56,7 +56,6 @@ export class SignUpPage extends BaseForm {
       email: this.form.value.email!,
       imgUrl: this.form.value.imgUrl!,
       password: this.form.value.password!,
-      accountRoles: ['ROLE_USER']
     });
     this.store.signUp(signUpCommand, this.router);
   }

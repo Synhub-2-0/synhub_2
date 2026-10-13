@@ -1,4 +1,6 @@
 package com.hub.synhub_backend.iam.interfaces.rest.resources;
 
-public record SignInResource(String username, String password) {
-}
+import jakarta.validation.constraints.NotBlank;
+
+public record SignInResource(
+        @NotBlank String username, @NotBlank String password) {}

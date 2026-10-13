@@ -28,7 +28,7 @@ describe('InvitationsStore', () => {
     localStorage.clear();
     invitationsApi = {
       createInvitation: vi.fn(), acceptInvitation: vi.fn(), declineInvitation: vi.fn(),
-      getInvitationsByGroupId: vi.fn(), getInvitationsByAuthenticatedUser: vi.fn(),
+      getInvitationsByGroupId: vi.fn(), getInvitationsByAuthenticatedUser: vi.fn().mockReturnValue(of([])),
     };
     iamApi = { getProfileByUsername: vi.fn() };
     TestBed.configureTestingModule({

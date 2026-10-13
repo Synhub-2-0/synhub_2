@@ -1,7 +1,6 @@
 package com.hub.synhub_backend.groups.interfaces.rest.resources;
 
+import jakarta.validation.constraints.NotNull;
+
 public record CreateInvitationResource(
-        Long userId,
-        Long groupId
-) {
-}
+        @NotNull Long userId, @NotNull Long groupId) {}

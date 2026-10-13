@@ -13,6 +13,4 @@ public record CreateTaskCommand(
         String context,
         String urgency,
         String labels,
-        Boolean aiAccepted
-) {
-}
+        Boolean aiAccepted) {}

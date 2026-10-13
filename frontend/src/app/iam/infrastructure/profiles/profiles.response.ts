@@ -6,7 +6,6 @@ export interface ProfileResource extends BaseResource {
   surname: string;
   email: string;
   imgUrl: string;
-  userId: number;
   username?: string;
 }
 

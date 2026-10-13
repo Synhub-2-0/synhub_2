@@ -45,7 +45,8 @@ export class TourPage {
     const el = this.video().nativeElement;
     el.currentTime = this.chapters[k].start + 0.05;
     this.currentTime.set(el.currentTime);
-    el.play().catch(() => {});
+    // El navegador puede bloquear la reproducción automática: no es un error.
+    el.play().catch(() => undefined);
   }
 
   setRate(rate: number): void {

@@ -1,26 +1,25 @@
 package com.hub.synhub_backend.tasks;
 
-import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
-import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
-import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
-import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
-import com.hub.synhub_backend.tasks.domain.services.TaskStatusScheduler;
-import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/** Vencimiento automático de tareas. */
+import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
+import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
+import com.hub.synhub_backend.tasks.application.internal.schedulers.TaskStatusScheduler;
+import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
+import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
+import java.time.OffsetDateTime;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionOperations;
+
+/** Vencimiento automático de tareas. La concurrencia real contra PostgreSQL está en api/TaskExpirationApiTests. */
 class TaskStatusSchedulerTest {
 
     private TaskRepository tasks;
@@ -32,18 +31,19 @@ class TaskStatusSchedulerTest {
     void setUp() {
         tasks = mock(TaskRepository.class);
         requests = mock(RequestCommandService.class);
-        scheduler = new TaskStatusScheduler(tasks, requests);
+        scheduler = new TaskStatusScheduler(tasks, requests, TransactionOperations.withoutTransaction());
         overdue = new Task();
         ReflectionTestUtils.setField(overdue, "id", 7L);
+        when(tasks.findAllByStatusAndDueDateBefore(eq(TaskStatus.IN_PROGRESS), any(OffsetDateTime.class)))
+                .thenReturn(List.of(overdue));
     }
 
-    @Test void overdueTasksExpireAndGenerateASystemRequest() {
-        when(tasks.findAllByStatusAndDueDateBefore(eq(TaskStatus.IN_PROGRESS), any(OffsetDateTime.class))).thenReturn(List.of(overdue));
+    @Test
+    void overdueTasksExpireAndGenerateASystemRequest() {
+        when(tasks.markExpiredIfInProgress(eq(7L), any(OffsetDateTime.class))).thenReturn(1);
 
         scheduler.updateExpiredTasks();
 
-        assertEquals(TaskStatus.EXPIRED, overdue.getStatus());
-        verify(tasks).save(overdue);
         var request = ArgumentCaptor.forClass(CreateRequestCommand.class);
         verify(requests).handle(request.capture());
         assertEquals("EXPIRED", request.getValue().requestType());
@@ -51,20 +51,21 @@ class TaskStatusSchedulerTest {
         assertNull(request.getValue().requesterId(), "la genera el sistema, sin solicitante");
     }
 
-    @Test void nothingHappensWithoutOverdueTasks() {
-        when(tasks.findAllByStatusAndDueDateBefore(eq(TaskStatus.IN_PROGRESS), any(OffsetDateTime.class))).thenReturn(List.of());
+    @Test
+    void nothingHappensWithoutOverdueTasks() {
+        when(tasks.findAllByStatusAndDueDateBefore(eq(TaskStatus.IN_PROGRESS), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
         scheduler.updateExpiredTasks();
         verifyNoInteractions(requests);
-        verify(tasks, never()).save(any());
+        verify(tasks, never()).markExpiredIfInProgress(any(), any());
     }
 
-    @Disabled("AUDIT BUG-09: dos instancias que leen la misma tarea vencida crean dos requests EXPIRED. "
-            + "Ajustar el doble del repositorio al mecanismo elegido (ShedLock o UPDATE condicional).")
-    @Test void concurrentRunsDoNotDuplicateExpiredRequests() {
-        // Simula dos instancias que leyeron la tarea antes de que la otra la marcara EXPIRED.
-        when(tasks.findAllByStatusAndDueDateBefore(eq(TaskStatus.IN_PROGRESS), any(OffsetDateTime.class)))
-                .thenAnswer(inv -> { var stale = new Task(); ReflectionTestUtils.setField(stale, "id", 7L); return List.of(stale); });
-        var other = new TaskStatusScheduler(tasks, requests);
+    // AUDIT BUG-09 (resuelto): la instancia que no cambió la fila no crea otra request
+    @Test
+    void concurrentRunsDoNotDuplicateExpiredRequests() {
+        // Dos instancias leyeron la tarea vencida; el UPDATE condicional solo afecta la fila una vez.
+        when(tasks.markExpiredIfInProgress(eq(7L), any(OffsetDateTime.class))).thenReturn(1, 0);
+        var other = new TaskStatusScheduler(tasks, requests, TransactionOperations.withoutTransaction());
 
         scheduler.updateExpiredTasks();
         other.updateExpiredTasks();

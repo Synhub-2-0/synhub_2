@@ -49,4 +49,16 @@ describe('GroupsApi (HTTP)', () => {
     backend.expectOne(url).flush({}, { status: 400, statusText: 'Bad Request' });
     expect(message).toBe('Failed to create group: 400');
   });
+
+  it('HUM-05: unirse con código y quitar integrantes', () => {
+    let joined: Group | undefined;
+    api.joinGroupByCode('ABC123XYZ').subscribe((g) => (joined = g));
+    api.removeMember(1, 5).subscribe();
+
+    const join = backend.expectOne({ method: 'POST', url: `${url}/join` });
+    expect(join.request.body).toEqual({ code: 'ABC123XYZ' });
+    join.flush(resource);
+    backend.expectOne({ method: 'DELETE', url: `${url}/1/members/5` }).flush(null);
+    expect(joined?.id).toBe(1);
+  });
 });

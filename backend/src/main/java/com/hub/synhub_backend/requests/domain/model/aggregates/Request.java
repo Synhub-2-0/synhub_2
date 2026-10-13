@@ -1,17 +1,24 @@
 package com.hub.synhub_backend.requests.domain.model.aggregates;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
+/**
+ * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila
+ * de todas las consultas, cargas y colecciones. Los datos siguen en la base.
+ */
 @Getter
 @Entity
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 @Table(name = "requests")
 public class Request extends AuditableAbstractAggregateRoot<Request> {
     @NonNull
@@ -30,8 +37,7 @@ public class Request extends AuditableAbstractAggregateRoot<Request> {
     @JoinColumn(name = "task_id")
     private Task task;
 
-    public Request() {
-    }
+    public Request() {}
 
     public String getRequestType() {
         return requestType.toString();

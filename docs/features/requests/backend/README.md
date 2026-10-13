@@ -11,16 +11,16 @@ Todos requieren token.
 | Método | Ruta | Cuerpo / parámetros | Respuesta | Regla |
 |---|---|---|---|---|
 | `POST` | `/` | `CreateRequestResource { description, requestType }` | `201 RequestResource` | Ver "Reglas al crear". |
-| `GET` | `/` | — | `200 RequestResource[]` | Sin control de acceso por rol. |
-| `GET` | `/{requestId}` | — | `200` · `404` · `400` si la request es de otra tarea | — |
+| `GET` | `/` | — | `200 RequestResource[]` · `403` · `404` | Solo integrantes del grupo de la tarea. |
+| `GET` | `/{requestId}` | — | `200` · `404` · `400` si la request es de otra tarea | Solo integrantes del grupo de la tarea (403). |
 | `PUT` | `/{requestId}/status/{status}` | `status` = `APPROVED` \| `REJECTED` | `200 RequestResource` | Ver "Reglas al revisar". |
-| `DELETE` | `/{requestId}` | — | `204` · `400` si no existe | **Sin control de acceso.** |
+| `DELETE` | `/{requestId}` | — | `204` · `403` · `404` (no existe o es de otra tarea) | El líder del grupo borra cualquiera; el integrante asignado, solo las suyas en `PENDING` que no sean `EXPIRED`. |
 
 ### `GroupRequestController`: `/api/v1/groups/{groupId}/requests`
 
 | Método | Parámetros | Respuesta | Regla |
 |---|---|---|---|
-| `GET` | `?status=` y `?type=` (opcionales; no distinguen mayúsculas) | `200 RequestResource[]`, de la más nueva a la más antigua | Solo el líder del grupo (403). 404 si el grupo no existe. 400 si el filtro tiene un valor desconocido. |
+| `GET` | `?status=` y `?type=` (opcionales; no distinguen mayúsculas); `?page=&size=` (opcionales) | `200 RequestResource[]`, de la más nueva a la más antigua, o `PageResource<RequestResource>` si se pide página. El filtro y el orden se hacen en SQL (`RequestRepository.findByGroupFiltered`) | Solo el líder del grupo (403). 404 si el grupo no existe. 400 si el filtro tiene un valor desconocido. |
 
 `RequestResource = { id, description, requestType, requestStatus, task: TaskResource }`
 
@@ -53,17 +53,21 @@ Todos requieren token.
    - `REJECTED`: si la tarea sigue `COMPLETED`, llama a `applySubmissionReview(taskId, false)` → `IN_PROGRESS`; si no, solo cierra la request.
 5. `MODIFICATION` y `EXPIRED` no modifican la tarea.
 
-`RequestQueryServiceImpl` maneja `GetRequestsByTaskIdQuery`, `GetRequestByIdQuery`, `GetRequestsByGroupIdQuery` (valida al líder con `GroupsContextFacade` y filtra en memoria) y `GetAllRequestsQuery` (sin uso).
+`RequestQueryServiceImpl` maneja `GetRequestsByTaskIdQuery` y `GetRequestByIdQuery` (solo integrantes del grupo de la tarea, vía `TasksContextFacade` + `GroupsContextFacade.isMember`), y `GetRequestsByGroupIdQuery` (valida al líder con `GroupsContextFacade`; filtra y ordena en SQL, también paginado).
 
 ## Dependencias
 
 | Hacia | Mediante | Para |
 |---|---|---|
 | tasks | `TasksContextFacade` (ACL) | Cargar la tarea y aplicar el resultado de la revisión. |
-| groups | `GroupsContextFacade` (ACL) | Saber quién es el líder del grupo. |
+| groups | `GroupsContextFacade` (ACL) | Saber quién es el líder del grupo y si el solicitante es integrante. |
+
+Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsByTaskId`, que usa tasks antes de borrar una tarea. Su implementación usa `RequestRepository` directamente para no formar un ciclo de beans con `RequestCommandService` → `TasksContextFacade`.
 | iam | `UserQueryService` (en los controladores) | Resolver el usuario del token. |
 
 ## Persistencia
+
+`Request` usa borrado lógico (`deleted_at`, HUM-03).
 
 `RequestRepository`: `findByTaskId`, `deleteByTaskId`, `findByTask_Profile_Group_Id` y `existsByTask_IdAndRequestTypeAndRequestStatus`.
 
@@ -83,7 +87,5 @@ Todos requieren token.
 
 ## Observaciones
 
-- `DELETE /tasks/{taskId}/requests/{id}` no valida quién borra ni que la request pertenezca a `taskId`.
-- `GET /tasks/{taskId}/requests` no valida que el solicitante sea del grupo.
-- `RequestController` tiene `@CrossOrigin(origins = "*")` redundante: el CORS ya se configura en `WebSecurityConfiguration`.
-- `DeleteAllRequestsByTaskIdCommand` tiene handler pero nadie lo invoca (ver la observación sobre borrado en [tasks/backend](../../tasks/backend/README.md)).
+Sin observaciones abiertas: los hallazgos de esta parte están resueltos (ver [AUDITORIA.md](../../../AUDITORIA.md)).
+

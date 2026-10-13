@@ -6,9 +6,8 @@ import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.util.ArrayList;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /** Objetos de dominio reales con ids asignados, para las pruebas de groups y tasks. */
 public final class GroupFixtures {
@@ -33,8 +32,6 @@ public final class GroupFixtures {
 
     public static GroupProfile join(Group group, User user, GroupRole role) {
         var profile = new GroupProfile(user, group, role);
-        // GroupProfile no inicializa su lista de tareas (AUDIT BUG-12); se fija aquí para poder asignar tareas.
-        ReflectionTestUtils.setField(profile, "tasks", new ArrayList<>());
         group.getUserProfiles().add(profile);
         user.getGroupProfiles().add(profile);
         return profile;

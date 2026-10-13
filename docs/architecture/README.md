@@ -22,7 +22,7 @@ flowchart LR
 ```
 
 - **Mismo origen**: en producción el frontend llama a `/api/v1` con una ruta relativa, y el proxy (nginx en Docker, CloudFront en AWS) reenvía las peticiones al backend. No hace falta CORS.
-- **Autenticación stateless**: JWT en el header `Authorization: Bearer`, emitido por IAM y validado en cada petición.
+- **Autenticación stateless**: JWT emitido por IAM y validado en cada petición. La web lo recibe en una cookie `HttpOnly` de 1 día (`SYNHUB_SESSION`) que el JavaScript no puede leer; los clientes de API pueden enviarlo como `Authorization: Bearer`.
 
 ## Stack
 
@@ -30,7 +30,7 @@ flowchart LR
 |---|---|
 | Frontend | Angular 22 (componentes standalone, signals), RxJS 7.8, Angular Material, Tailwind CSS 4, Vitest |
 | Backend | Java 21, Spring Boot 4.1 (Web MVC, Data JPA, Security, Validation, Actuator), JJWT 0.12, springdoc-openapi 3.1, AWS SDK v2 (Bedrock Runtime), Lombok |
-| Base de datos | PostgreSQL (16 en Docker y CI); el esquema lo genera Hibernate (`ddl-auto=update`) |
+| Base de datos | PostgreSQL (16 en Docker y CI); el esquema lo crean las migraciones de Flyway (`db/migration`) y Hibernate solo lo valida |
 | Infraestructura | Docker (imagen única nginx + JRE), GitHub Actions, AWS (S3 + CloudFront para el frontend; ECR + ECS para el backend) |
 
 ## Principios de organización
@@ -60,7 +60,7 @@ sequenceDiagram
     V->>S: statusChange → updateTaskStatus(id, COMPLETED)
     S->>A: updateTaskStatus(id, status)
     A->>I: PUT /api/v1/tasks/{id}/status?status=COMPLETED
-    I->>F: + Authorization: Bearer <jwt>
+    I->>F: withCredentials: cookie SYNHUB_SESSION=<jwt>
     F->>C: SecurityContext con el usuario
     C->>CS: handle(UpdateTaskStatusCommand(userId, id, COMPLETED))
     CS->>R: findById

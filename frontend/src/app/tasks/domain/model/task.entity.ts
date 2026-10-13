@@ -9,7 +9,6 @@ export interface TaskUser {
   surname: string;
   imgUrl: string;
   email: string;
-  accountRoles: string[];
 }
 
 export interface TaskGroup {

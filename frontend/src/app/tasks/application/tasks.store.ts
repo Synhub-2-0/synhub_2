@@ -5,10 +5,12 @@ import { Task, TaskStatus } from '../domain/model/task.entity';
 import { CreateTaskCommand } from '../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../domain/model/update-task.command';
 import { TasksApi } from '../infrastructure/tasks.api';
-import { catchError, forkJoin, map, of, retry } from 'rxjs';
+import { retry } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TasksStore {
+  private tasksApi = inject(TasksApi);
+
   private readonly toastStore = inject(ToastStore);
   private readonly iamStore = inject(IamStore);
   private readonly tasksSignal = signal<Task[]>([]);
@@ -33,7 +35,7 @@ export class TasksStore {
     return filter === 'ALL' ? all : all.filter((t) => t.status === filter);
   });
 
-  constructor(private tasksApi: TasksApi) {
+  constructor() {
     // Root stores outlive the session: drop the previous user's data as soon as the session ends.
     effect(() => {
       if (!this.iamStore.isSignedIn()) this.reset();
@@ -96,44 +98,31 @@ export class TasksStore {
       });
   }
 
-  /** Tasks assigned to the user in every given group (one GET /tasks/group/{id}/user/{id} per group). */
-  loadTasksByGroupsAndUser(groupIds: number[], userId: number): void {
-    this.tasksSignal.set([]);
+  /**
+   * Mis tareas en todos mis grupos con una sola petición (GET /tasks/user, AUDIT PERF-03).
+   * También deja en assignedGroupIds los grupos donde tengo alguna tarea.
+   */
+  loadMyTasks(): void {
     this.errorSignal.set(null);
-    if (groupIds.length === 0) return;
     this.loadingSignal.set(true);
-    let failed = false;
-    forkJoin(
-      groupIds.map((groupId) =>
-        this.tasksApi.getTasksByGroupAndUser(groupId, userId).pipe(
-          retry(2),
-          catchError(() => {
-            failed = true;
-            return of([] as Task[]);
-          }),
-        ),
-      ),
-    ).subscribe((lists) => {
-      this.tasksSignal.set(lists.flat().sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime()));
-      if (failed) this.setError('Failed to load user tasks');
-      this.loadingSignal.set(false);
-    });
-  }
-
-  /** Detects, among the given groups, the ones where the user has at least one assigned task. */
-  loadAssignedGroupIds(groupIds: number[], userId: number): void {
-    if (groupIds.length === 0) {
-      this.assignedGroupIdsSignal.set([]);
-      return;
-    }
-    forkJoin(
-      groupIds.map((groupId) =>
-        this.tasksApi.getTasksByGroupAndUser(groupId, userId).pipe(
-          map((tasks) => (tasks.length > 0 ? groupId : null)),
-          catchError(() => of(null)),
-        ),
-      ),
-    ).subscribe((ids) => this.assignedGroupIdsSignal.set(ids.filter((id): id is number => id !== null)));
+    this.tasksApi
+      .getMyTasks()
+      .pipe(retry(2))
+      .subscribe({
+        next: (tasks) => {
+          this.tasksSignal.set(tasks);
+          this.assignedGroupIdsSignal.set([
+            ...new Set(
+              tasks.map((task) => task.group?.id).filter((id): id is number => id != null),
+            ),
+          ]);
+          this.loadingSignal.set(false);
+        },
+        error: (err) => {
+          this.setError(this.formatError(err, 'Failed to load your tasks'));
+          this.loadingSignal.set(false);
+        },
+      });
   }
 
   /** Obtiene una tarea individual desde el backend y actualiza el estado local */
@@ -257,7 +246,7 @@ export class TasksStore {
       });
   }
 
-  private formatError(error: any, fallback: string): string {
+  private formatError(error: unknown, fallback: string): string {
     if (error instanceof Error) {
       return error.message.includes('Resource not found')
         ? `${fallback}: Not found`

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { GroupsStore } from '../../../application/groups.store';
 import { GroupList } from '../../components/group-list/group-list';
@@ -9,7 +10,7 @@ import { InvitationsStore } from '../../../../invitations/application/invitation
 @Component({
   selector: 'app-member-groups',
   standalone: true,
-  imports: [CommonModule, MatIconModule, GroupList, NoGroupMember],
+  imports: [CommonModule, FormsModule, MatIconModule, GroupList, NoGroupMember],
   templateUrl: './member-groups.html',
   styleUrl: './member-groups.css',
 })
@@ -17,6 +18,7 @@ export class MemberGroups implements OnInit {
   readonly groupsStore = inject(GroupsStore);
   readonly invitationsStore = inject(InvitationsStore);
   readonly showJoinPanel = signal(false);
+  joinCode = '';
 
   get invitations(): ReturnType<InvitationsStore['invitations']> {
     return this.invitationsStore.invitations();
@@ -42,8 +44,11 @@ export class MemberGroups implements OnInit {
     this.invitationsStore.declineInvitation(invitationId);
   }
 
-  /*
-   * TODO: Reactivar cuando el backend exponga la búsqueda de grupos por código
-   * y el flujo de solicitud para unirse a un grupo.
-   */
+  joinByCode(): void {
+    if (!this.joinCode.trim()) return;
+    this.groupsStore.joinGroupByCode(this.joinCode, () => {
+      this.joinCode = '';
+      this.showJoinPanel.set(false);
+    });
+  }
 }

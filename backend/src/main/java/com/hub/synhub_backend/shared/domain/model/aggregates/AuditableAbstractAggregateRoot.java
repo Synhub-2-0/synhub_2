@@ -1,16 +1,15 @@
 package com.hub.synhub_backend.shared.domain.model.aggregates;
 
 import jakarta.persistence.*;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import lombok.Getter;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-
 @EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
-public class AuditableAbstractAggregateRoot <T extends AbstractAggregateRoot<T>> extends AbstractAggregateRoot<T>{
+public class AuditableAbstractAggregateRoot<T extends AbstractAggregateRoot<T>> extends AbstractAggregateRoot<T> {
     @Id
     @Getter
     @GeneratedValue(strategy = GenerationType.IDENTITY)

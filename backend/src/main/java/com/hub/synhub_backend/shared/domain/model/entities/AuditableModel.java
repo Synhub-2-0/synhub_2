@@ -1,13 +1,11 @@
 package com.hub.synhub_backend.shared.domain.model.entities;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.Instant;
-import java.time.OffsetDateTime;
 
 @Getter
 @EntityListeners(AuditingEntityListener.class)

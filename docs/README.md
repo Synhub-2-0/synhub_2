@@ -10,7 +10,8 @@ Punto de entrada de toda la documentación del monorepo. Tiene dos partes:
 ```text
 docs/
 ├── README.md                          ← este índice
-├── AUDITORIA.md                       hallazgos a corregir, soluciones y plan de ejecución
+├── AUDITORIA.md                       auditoría: hallazgos, soluciones aplicadas y cierre
+├── AUDIT_RESULTS.md                   resultado de la auditoría: qué se corrigió y qué queda pendiente
 ├── architecture/
 │   ├── README.md                      visión general, stack, principios, recorrido de una petición
 │   ├── backend.md                     DDD, capas, CQRS, ACL, persistencia, errores, seguridad
@@ -39,7 +40,7 @@ docs/
 | **tasks** | Tareas, tablero Kanban, ciclo de estados y vencimiento automático | `/tasks` | `tasks` | `tasks/` | [README](features/tasks/README.md) · [backend](features/tasks/backend/README.md) · [frontend](features/tasks/frontend/README.md) |
 | **requests** | Entregas de tareas y validación por el líder | `/tasks/{id}/requests`, `/groups/{id}/requests` | `requests` | `requests/` | [README](features/requests/README.md) · [backend](features/requests/backend/README.md) · [frontend](features/requests/frontend/README.md) |
 | **ai** | Clasificación de tareas e informe de grupo con Bedrock | `/ai` | `ai` | `ai/` | [README](features/ai/README.md) · [backend](features/ai/backend/README.md) · [frontend](features/ai/frontend/README.md) |
-| **metrics** | Cálculos de productividad (uso interno del informe de IA) | `/metrics` (sin endpoints) | `metrics` | — | [README](features/metrics/README.md) · [backend](features/metrics/backend/README.md) · [frontend](features/metrics/frontend/README.md) |
+| **metrics** | Cálculos de productividad (API base de solo lectura; los usa el informe de IA) | `/metrics` | `metrics` | — | [README](features/metrics/README.md) · [backend](features/metrics/backend/README.md) · [frontend](features/metrics/frontend/README.md) |
 | **tour** | Video de recorrido por capítulos | — | — | `tour/` | [README](features/tour/README.md) · [backend](features/tour/backend/README.md) · [frontend](features/tour/frontend/README.md) |
 
 ⚠ = el recurso REST y el código del backend pertenecen a contextos distintos.
@@ -65,7 +66,8 @@ docs/
 | Convenciones REST y catálogo de endpoints | [architecture/rest-api.md](architecture/rest-api.md) |
 | Propiedad del código compartido | [architecture/cross-feature-ownership.md](architecture/cross-feature-ownership.md) |
 | Docker, variables de entorno y CI/CD | [architecture/deployment.md](architecture/deployment.md) |
-| **Auditoría: puntos a corregir y plan** | [AUDITORIA.md](AUDITORIA.md) |
+| **Resultado de la auditoría y pendientes** | [AUDIT_RESULTS.md](AUDIT_RESULTS.md) |
+| **Auditoría: hallazgos, resolución y pendientes de despliegue** | [AUDITORIA.md](AUDITORIA.md#cierre) · prueba de humo: [`scripts/audit-smoke.py`](../scripts/audit-smoke.py) |
 | **Inventario de pruebas y su estado** | [TESTS.md](../TESTS.md) |
 | Desviaciones conocidas (deuda técnica) | [backend §10](architecture/backend.md#10-desviaciones-conocidas-respecto-a-la-estructura-canónica) · [frontend §8](architecture/frontend.md#8-desviaciones-conocidas) · [deuda de integración](architecture/cross-feature-ownership.md#deuda-de-integración) |
 

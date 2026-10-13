@@ -42,7 +42,7 @@ sequenceDiagram
     participant M as Miembro (MemberGroups)
     L->>IS: inviteByUsername("ana", groupId)
     IS->>IAM: GET ?username=ana
-    IAM-->>IS: UserResource { id }
+    IAM-->>IS: PublicUserResource { id }
     IS->>INV: POST { userId, groupId }
     INV-->>IS: InvitationResource
     M->>INV: GET /invitations/user
@@ -52,5 +52,5 @@ sequenceDiagram
 
 ## Dependencias
 
-- **Backend**: depende de IAM (`UserRepository`, para cargar al invitado) y de las membresías de groups (`GroupProfileRepository`).
+- **Backend**: depende de IAM (`IamContextFacade`, para cargar al invitado) y de las membresías de groups (`GroupProfileRepository`).
 - **Frontend**: `InvitationsStore` depende de `IamApi` (buscar el usuario) y de `IamStore`; `InvitationsAssembler` reutiliza `GroupsAssembler` y `ProfilesAssembler`.

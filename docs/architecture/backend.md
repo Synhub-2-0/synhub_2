@@ -13,7 +13,7 @@ Cada paquete de primer nivel es un **bounded context** con su propio modelo y su
 | `tasks` | Tareas, su ciclo de estados y su vencimiento automático | `Task` | [tasks](../features/tasks/README.md) |
 | `requests` | Solicitudes sobre tareas (entregas, modificaciones, vencimientos) y su revisión | `Request` | [requests](../features/requests/README.md) |
 | `ai` | Clasificación de tareas e informes con Amazon Bedrock (sin persistencia) | — (value object `TaskClassification`) | [ai](../features/ai/README.md) |
-| `metrics` | Cálculos de productividad sobre tareas (sin persistencia propia) | `GroupMetrics` (POJO) | [metrics](../features/metrics/README.md) |
+| `metrics` | Cálculos de productividad sobre tareas (sin persistencia propia) | — (resources de solo lectura) | [metrics](../features/metrics/README.md) |
 | `shared` | Clases base, manejo global de errores, OpenAPI y estrategia de nombres JPA | `AuditableAbstractAggregateRoot`, `AuditableModel` | — |
 
 ### Mapa de contextos
@@ -26,21 +26,22 @@ flowchart TB
     requests((requests))
     ai((ai))
     metrics((metrics))
-    groups -- "JPA: GroupProfile.user, Invitation.user<br/>repo: UserRepository" --> iam
-    tasks -- "JPA: Task.profile → GroupProfile<br/>repos: Group*, UserRepository" --> groups
+    groups -- "JPA: GroupProfile.user, Invitation.user<br/>ACL: IamContextFacade" --> iam
+    tasks -- "JPA: Task.profile → GroupProfile<br/>ACL: GroupsContextFacade" --> groups
+    tasks -- "ACL: IamContextFacade" --> iam
     requests -- "ACL: TasksContextFacade" --> tasks
     requests -- "ACL: GroupsContextFacade" --> groups
     tasks -- "scheduler → RequestCommandService" --> requests
+    tasks -- "ACL: RequestsContextFacade (borrado)" --> requests
+    groups -- "ACL: TasksContextFacade (borrar grupo)" --> tasks
     ai -- "TaskQueryService" --> tasks
     ai -- "TaskMetricsQueryService" --> metrics
     ai -- "GroupQueryService" --> groups
-    metrics -- "TaskRepository" --> tasks
-    metrics -- "UserRepository" --> iam
+    metrics -- "ACL: TasksContextFacade" --> tasks
     metrics -- "GroupQueryService" --> groups
-    iam -. "repo: GroupProfileRepository" .-> groups
 ```
 
-Las flechas con "ACL" usan una fachada formal; las demás son dependencias directas. Ver [cross-feature-ownership.md](cross-feature-ownership.md).
+Las flechas con "ACL" usan una fachada formal; las demás son dependencias directas a servicios de dominio. Ningún contexto usa los repositorios de otro (AUDIT ARC-01, lo verifica `architecture/BoundedContextIsolationTest`). Ver [cross-feature-ownership.md](cross-feature-ownership.md).
 
 ## 2. Capas dentro de un contexto (Clean Architecture / hexagonal)
 
@@ -136,20 +137,27 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
   - `AuditableAbstractAggregateRoot<T>`: extiende `AbstractAggregateRoot` de Spring Data, con `id` autoincremental y `createdAt`/`updatedAt` (`OffsetDateTime` UTC, vía `@PrePersist`/`@PreUpdate`). La usan todos los agregados.
   - `AuditableModel`: `id`, `createdAt` y `updatedAt` (`Instant`, vía `@CreatedDate`/`@LastModifiedDate`). La usa la entidad `GroupProfile`.
 - **Nombres de tablas**: `SnakeCaseWithPluralizedTablePhysicalNamingStrategy` convierte a *snake_case* y pluraliza (`GroupProfile` → `group_profiles`).
-- **Esquema**: `spring.jpa.hibernate.ddl-auto=update`. No hay migraciones (Flyway/Liquibase).
+- **Borrado lógico** (decisión HUM-03): `Group`, `GroupProfile`, `Invitation`, `Task` y `Request` llevan `@SoftDelete(strategy = TIMESTAMP, columnName = "deleted_at")` de Hibernate. Un `delete` del repositorio (o una cascada) hace `UPDATE … SET deleted_at = now()`, y Hibernate excluye esas filas de todas las consultas, cargas por id y colecciones: lo borrado no es visible en ninguna parte de la API, pero los datos quedan en la base. `User` y `Role` no se borran. Una tarea borrada conserva su `profile_id` (responsable y grupo) como historial.
+- **Consultas** (AUDIT PERF-01): `hibernate.default_batch_fetch_size=100` carga asociaciones y colecciones en lotes, así un listado ejecuta un número constante de consultas (lo verifica `api/QueryCountApiTests`). Los query services son `@Transactional(readOnly = true)`.
+- **Paginación** (AUDIT PERF-02): `shared/interfaces/rest/Pagination` y `PageResource`; opcional, ver [rest-api.md](rest-api.md).
+- **Esquema** (AUDIT ARC-04): lo crean las migraciones de **Flyway** en [`src/main/resources/db/migration`](../../backend/src/main/resources/db/migration) (`V1__init.sql`, con nombres de restricciones e índices propios). Hibernate solo valida que las entidades coincidan (`ddl-auto=validate`): un cambio de entidad sin su migración `V2__…` hace fallar el arranque y las pruebas.
+- **Sin Open Session In View** (`open-in-view=false`): cada caso de uso es una transacción (`@Transactional` en los command services, `readOnly` en los query services). `Group.userProfiles` se carga siempre (EAGER, por lotes) porque el líder y la cantidad de integrantes forman parte de cualquier representación del grupo.
+- **SQL en logs**: `show-sql=false`; el perfil `dev` lo activa.
 - **Auditoría y scheduling** se activan en `SynhubBackendApplication` (`@EnableJpaAuditing`, `@EnableScheduling`).
 
 ## 6. Errores
 
-`shared/interfaces/rest/exceptions/GlobalExceptionHandler` (`@RestControllerAdvice`) convierte las excepciones en `ErrorResponse { timestamp, status, error, message, path }`:
+`shared/interfaces/rest/exceptions/GlobalExceptionHandler` (`@RestControllerAdvice`) convierte las excepciones en `ErrorResponse { timestamp, status, error, message, path }` (`timestamp` en UTC con zona, BUG-14):
 
 | Excepción | HTTP |
 |---|---|
+| `MethodArgumentNotValidException` (`@Valid` sobre el cuerpo; el mensaje lista los campos), `ConstraintViolationException`, `HttpMessageNotReadableException` (JSON mal formado), `MethodArgumentTypeMismatchException` (por ejemplo, un enum desconocido en `?status=`), `MissingServletRequestParameterException` | 400 |
 | `IllegalArgumentException` (incluye enums inválidos y value objects que no validan) | 400 |
 | `BadCredentialsException` | 401 |
 | `AccessDeniedException` (permisos de negocio: "solo el líder…") | 403 |
 | `ResourceNotFoundException` y sus subclases | 404 |
 | `BusinessRuleViolationException` y sus subclases | 409 |
+| `DataIntegrityViolationException` (restricción única o FK; red de seguridad, sin detalles de la base) | 409 |
 | Cualquier otra `Exception` | 500 |
 
 **Convención**: una regla de negocio nueva lanza una subclase de `BusinessRuleViolationException` (409) en `domain/exceptions` de su contexto. El frontend traduce esos códigos a mensajes en español en cada `*ApiEndpoint`.
@@ -159,54 +167,52 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
 ```mermaid
 flowchart LR
     R[Request] --> F[BearerAuthorizationRequestFilter]
-    F -->|token válido| SC[SecurityContext<br/>UserDetailsImpl]
+    F -->|"token válido (Bearer o cookie SYNHUB_SESSION)"| SC[SecurityContext<br/>UserDetailsImpl]
     F -->|sin token| AZ{¿ruta pública?}
     SC --> C[Controller<br/>@AuthenticationPrincipal]
     AZ -->|sí| C
     AZ -->|no| E[UnauthorizedRequestHandlerEntryPoint → 401]
 ```
 
-- `WebSecurityConfiguration`: sesión `STATELESS`, CSRF deshabilitado, CORS abierto y `@EnableMethodSecurity`.
-- Rutas públicas: `/api/v1/authentication/**`, `/actuator/health`, `/v3/api-docs/**`, `/swagger-ui/**`, `/swagger-resources/**` y `/webjars/**`.
+- `WebSecurityConfiguration`: sesión `STATELESS`, CSRF deshabilitado, CORS solo para `app.cors.allowed-origins` (con credenciales) y `@EnableMethodSecurity`.
+- Rutas públicas: `/api/v1/authentication/**`, `/actuator/health`, `/v3/api-docs/**`, `/swagger-ui/**`, `/swagger-resources/**` y `/webjars/**`. Swagger solo existe con el perfil `dev`.
 - **La autorización de negocio** (ser líder, ser el asignado o ser el invitado) no usa roles de Spring: la verifica cada command o query service y responde con `AccessDeniedException`.
 
 ## 8. Otros elementos transversales
 
 | Elemento | Dónde |
 |---|---|
-| OpenAPI / Swagger UI | `shared/domain/model/infrastructure/documentation/openapi/configuration/OpenApiConfiguration` ("SynHub API", esquema bearer). Disponible en `/swagger-ui.html`. |
+| OpenAPI / Swagger UI | `shared/infrastructure/documentation/openapi/configuration/OpenApiConfiguration` ("SynHub API", esquema bearer). Disponible en `/swagger-ui.html` solo con el perfil `dev`. |
 | Seed de roles | `iam/application/internal/eventhandlers/ApplicationReadyEventHandler` |
-| Tarea programada | `tasks/domain/services/TaskStatusScheduler` (cada 30 s) |
+| Tarea programada | `tasks/application/internal/schedulers/TaskStatusScheduler` (cada 60 s, `app.tasks.expiration-check-ms`; segura con varias instancias) |
 | Salud | Actuator `/actuator/health` (lo usan el ALB y el `HEALTHCHECK` de Docker) |
-| Configuración | `application.properties`, con variables de entorno: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, `AWS_REGION`, `BEDROCK_MODEL_ID` |
+| Configuración | `application.properties` (sin secretos por defecto; perfil `dev` en `application-dev.properties`), con variables de entorno: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, `AWS_REGION`, `BEDROCK_MODEL_ID` |
 
 ## 9. Pruebas
 
 - Unitarias con JUnit 5 y Mockito sobre los servicios de aplicación (`requests`, `tasks`, `ai`).
 - `SynhubBackendApplicationTests` levanta el contexto completo y necesita PostgreSQL.
 - `*IT` contra servicios externos, condicionadas por variables de entorno (`RUN_BEDROCK_IT=1`).
-- En CI: `./mvnw verify` con un servicio `postgres:16` (ver [deployment.md](deployment.md)).
+- Pruebas de API (`api/*ApiTests`): levantan la aplicación completa contra PostgreSQL en Testcontainers, con Flyway, y la ejercitan por HTTP con la cookie de sesión.
+- `architecture/BoundedContextIsolationTest`: ningún contexto importa los repositorios de otro.
+- En CI: `./mvnw verify` (pruebas y formato con Spotless; ver [deployment.md](deployment.md)).
 
 ## 10. Desviaciones conocidas respecto a la estructura canónica
 
-Están documentadas para no copiarlas en código nuevo:
+Las desviaciones de la auditoría (erratas de paquetes, capas mal ubicadas, repositorios ajenos) están resueltas. Quedan, a propósito:
 
-| Desviación | Ubicación |
-|---|---|
-| Errata `aplication` | `tasks/aplication/` |
-| Erratas `persistenence` y `queryservice` | `metrics/infrastructure/persistenence/`, `metrics/application/internal/queryservice/` |
-| Infraestructura compartida dentro de `domain` | `shared/domain/model/infrastructure/` (OpenAPI y estrategia de nombres) |
-| Proceso programado en `domain/services` | `tasks/domain/services/TaskStatusScheduler` |
-| Servicio de dominio que devuelve DTOs REST | `metrics/domain/model/services/TaskMetricsQueryService` |
-| Repositorios de otro contexto usados directamente | `TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`, `GroupCommandServiceImpl`, `InvitationCommandServiceImpl` |
-| Controlador de depuración de IAM en tasks | `tasks/interfaces/rest/TestController` (`@Profile("!prod")`) |
-| ACL definidas pero sin uso | `ExternalIamService` (shared), `ExternalTasksService` (groups) |
+| Desviación | Ubicación | Motivo |
+|---|---|---|
+| Relaciones JPA entre contextos | `Task.profile → GroupProfile`, `GroupProfile.user`, `Invitation.user` | Cambiarlas por ids es una refactorización mayor. |
+| Excepciones de negocio en `shared/interfaces/rest/exceptions` | `BusinessRuleViolationException`, `ResourceNotFoundException`, usadas también por el dominio | Simplifica el mapeo a HTTP en `GlobalExceptionHandler`. |
+| Usuario de la sesión resuelto con `UserQueryService` en cada controlador | todos los controladores | Patrón repetido; no pasa por la ACL de iam. |
 
 ## 11. Cómo agregar un caso de uso
 
 1. Crear el `record` `XCommand` o `XQuery` en `domain/model/commands|queries` del contexto dueño (ver [cross-feature-ownership.md](cross-feature-ownership.md)).
 2. Agregar `handle(XCommand)` a la interfaz de `domain/services` e implementarlo en `application/internal/...`. El comportamiento va en el agregado; el servicio carga el agregado, verifica permisos y persiste.
 3. Si se necesitan datos de otro contexto, usar o ampliar su `*ContextFacade` en lugar de inyectar sus repositorios.
-4. Exponer el caso de uso con un `*Resource` y su assembler en `interfaces/rest`.
-5. Lanzar las excepciones adecuadas (`ResourceNotFoundException`, `AccessDeniedException` o una subclase de `BusinessRuleViolationException`).
-6. Documentar el endpoint en `docs/features/<feature>/backend/README.md` y en [rest-api.md](rest-api.md).
+4. Exponer el caso de uso con un `*Resource` (con anotaciones de Bean Validation) y su assembler en `interfaces/rest`; el `@RequestBody` lleva `@Valid`.
+5. Si cambia una entidad, agregar la migración `V<n>__descripcion.sql` en `src/main/resources/db/migration`.
+6. Lanzar las excepciones adecuadas (`ResourceNotFoundException`, `AccessDeniedException` o una subclase de `BusinessRuleViolationException`).
+7. Documentar el endpoint en `docs/features/<feature>/backend/README.md` y en [rest-api.md](rest-api.md).

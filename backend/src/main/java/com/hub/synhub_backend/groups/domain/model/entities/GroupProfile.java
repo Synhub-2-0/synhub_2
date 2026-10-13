@@ -6,11 +6,18 @@ import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.shared.domain.model.entities.AuditableModel;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import jakarta.persistence.*;
-import lombok.Getter;
-
+import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
+/**
+ * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila
+ * de todas las consultas, cargas y colecciones. Los datos siguen en la base.
+ */
 @Entity
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 public class GroupProfile extends AuditableModel {
 
     @ManyToOne()
@@ -27,13 +34,12 @@ public class GroupProfile extends AuditableModel {
     private GroupRole roleInGroup;
 
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL)
-    private List<Task> tasks;
+    private List<Task> tasks = new ArrayList<>();
 
     public GroupProfile() {
         this.user = null;
         this.group = null;
         this.roleInGroup = null;
-        this.tasks = null;
     }
 
     public GroupProfile(User user, Group group, GroupRole roleInGroup) {
@@ -50,5 +56,13 @@ public class GroupProfile extends AuditableModel {
     public void removeTask(Task task) {
         this.tasks.remove(task);
         task.setProfile(null);
+    }
+
+    /**
+     * Saca la tarea de la colección sin desvincularla: una tarea borrada (soft delete) conserva su perfil
+     * y, por lo tanto, su grupo y su responsable en el historial.
+     */
+    public void detachTask(Task task) {
+        this.tasks.remove(task);
     }
 }

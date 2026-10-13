@@ -20,19 +20,14 @@ En orden de prioridad:
 | `RequestRepository.findByTask_Profile_Group_Id` | `requests` | requests → tasks → groups | **requests** | Consulta de requests; navega las relaciones JPA. |
 | `TaskRepository.findByProfile_Group_Id…` / `…_User_Id` | `tasks` | tasks → groups → iam | **tasks** | Consulta de tareas filtrada por membresía. |
 | `GroupProfile.tasks` / `Task.profile` | `groups` / `tasks` | groups ↔ tasks | **tasks** es dueño de la asignación; **groups**, de la membresía | La tarea se asigna a una membresía; la membresía no tiene reglas sobre tareas. |
-| `TaskStatusScheduler` | `tasks/domain/services` | tasks, requests | **tasks** (proceso) · **requests** (dato creado) | El vencimiento es una regla de la tarea; la request `EXPIRED` es una consecuencia. |
+| `TaskStatusScheduler` | `tasks/application/internal/schedulers` | tasks, requests | **tasks** (proceso) · **requests** (dato creado) | El vencimiento es una regla de la tarea; la request `EXPIRED` es una consecuencia. |
 | `TasksContextFacade.applySubmissionReview` | `tasks` | tasks | **tasks** | Única vía hacia `DONE`; requests solo la invoca. |
-| `UserQueryServiceImpl.handle(GetUsersByGroupIdQuery)` | `iam` | iam, groups | **groups** (conceptualmente) | Es una consulta de membresía; hoy vive en iam porque devuelve `User`. |
-| `TaskCommandServiceImpl` (usa `GroupRepository`, `GroupProfileRepository`, `UserRepository`) | `tasks` | tasks, groups, iam | **tasks** | Escribe `Task`; las lecturas a otros contextos deberían pasar por ACL. |
-| `GroupCommandServiceImpl` / `InvitationCommandServiceImpl` (usan `UserRepository`) | `groups` | groups, iam | **groups** | Escriben grupos y membresías. |
+| `TaskCommandServiceImpl` (usa `GroupsContextFacade` e `IamContextFacade`) | `tasks` | tasks, groups, iam | **tasks** | Escribe `Task`; la membresía y el usuario llegan por las ACL. |
+| `GroupCommandServiceImpl` / `InvitationCommandServiceImpl` (usan `IamContextFacade`) | `groups` | groups, iam | **groups** | Escriben grupos y membresías. |
 | `TaskMetricsQueryServiceImpl` | `metrics` | tasks, iam, groups | **metrics** | Solo lee; el cálculo es de metrics. |
-| `GroupsClient` (`GroupMetricsRepository`) | `metrics/infrastructure/client` | groups | **metrics** | Adaptador de salida de metrics hacia groups. |
 | `GroupReportQueryServiceImpl` | `ai` | metrics, tasks | **ai** | Orquesta datos de otros contextos para el informe. |
 | `AiController.getGroupReport` (valida al líder) | `ai` | groups, iam | **ai** | La regla "solo el líder" se *consulta* en groups, pero el caso de uso es de ai. |
 | Campos de IA en `Task` (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`) | `tasks` | tasks, ai | **tasks** (persistencia) · **ai** (valores y significado) | ai sugiere y tasks guarda. |
-| `ExternalTasksService` | `groups/application/external` | groups → tasks | **groups** | Cliente de groups hacia la ACL de tasks (sin uso todavía). |
-| `ExternalIamService` | `shared/application/external` | → iam | **iam** (debería vivir en el consumidor) | Cliente genérico hacia la ACL de iam (sin uso). |
-| `TestController` (`/api/v1/tests`) | `tasks/interfaces/rest` | iam | **iam** | Lee el usuario del token y emite tokens; solo para depuración. |
 | Resolución del usuario actual en los controladores | todos | iam | **iam** | Patrón repetido: `UserQueryService` + `GetUserByUsernameQuery`. |
 
 ## Matriz del frontend
@@ -59,13 +54,11 @@ En orden de prioridad:
 
 1. Se documenta **en detalle** en la feature dueña (backend o frontend, según corresponda).
 2. En el README de cada feature que toca, se agrega una línea en **"Propiedad compartida"** con un enlace al dueño.
-3. Si la propiedad cambia (por ejemplo, al mover `GetUsersByGroupIdQuery` a groups), se actualiza esta matriz.
+3. Si la propiedad cambia, se actualiza esta matriz.
 
 ## Deuda de integración
 
-Pendientes para alinear el código con estos criterios:
+Resuelta en AUDIT ARC-01: ningún contexto usa los repositorios de otro; todo pasa por las fachadas `*ContextFacade` (`architecture/BoundedContextIsolationTest` lo verifica). Quedan, a propósito:
 
-- Reemplazar los accesos directos a repositorios de otros contextos (`TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`) por métodos de las fachadas `*ContextFacade`.
-- Mover `GetUsersByGroupIdQuery` a groups.
-- Mover `TestController` a iam (o eliminarlo).
-- Llamar a `ExternalTasksService.deleteTasksByUserIdAndGroupId` cuando se exponga la expulsión de miembros (`RemoveMemberUserFromGroupCommand`).
+- Relaciones JPA entre contextos (`Task.profile → GroupProfile`, `GroupProfile.user`, `Invitation.user`): cambiarlas por ids es una refactorización mayor.
+- Servicios de dominio usados directamente: `UserQueryService` en los controladores (resolver el usuario de la sesión), `GroupQueryService` y `TaskQueryService` en ai y metrics.

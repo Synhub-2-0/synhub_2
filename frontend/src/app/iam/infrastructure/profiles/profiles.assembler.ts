@@ -10,7 +10,8 @@ export class ProfilesAssembler implements BaseAssembler<Profile, ProfileResource
       surname: resource.surname,
       email: resource.email,
       imgUrl: resource.imgUrl,
-      userId: resource.userId,
+      // El backend no envía userId: el perfil es el propio usuario (AUDIT BUG-15).
+      userId: resource.id,
       username: resource.username,
     })
   }
@@ -22,7 +23,6 @@ export class ProfilesAssembler implements BaseAssembler<Profile, ProfileResource
       surname: entity.surname,
       email: entity.email,
       imgUrl: entity.imgUrl,
-      userId: entity.userId,
       username: entity.username,
     } as ProfileResource;
   }

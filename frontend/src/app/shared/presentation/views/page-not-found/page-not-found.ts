@@ -11,10 +11,10 @@ import {MatButton} from '@angular/material/button';
   templateUrl: './page-not-found.html',
 })
 export class PageNotFound implements OnInit, OnDestroy {
-  protected invalidPath: string = '';
+  protected invalidPath = '';
   private route: ActivatedRoute = inject(ActivatedRoute);
   private router: Router = inject(Router);
-  private countdownInterval: any;
+  private countdownInterval?: ReturnType<typeof setInterval>;
 
   ngOnInit() {
     this.invalidPath = this.route.snapshot.url.map(url => url.path).join('/');

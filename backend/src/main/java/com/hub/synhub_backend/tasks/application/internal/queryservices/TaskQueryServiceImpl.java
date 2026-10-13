@@ -1,0 +1,77 @@
+package com.hub.synhub_backend.tasks.application.internal.queryservices;
+
+import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
+import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
+import com.hub.synhub_backend.tasks.domain.model.queries.*;
+import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
+import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional(readOnly = true)
+public class TaskQueryServiceImpl implements TaskQueryService {
+
+    private final TaskRepository taskRepository;
+    private final GroupsContextFacade groupsContextFacade;
+
+    public TaskQueryServiceImpl(TaskRepository taskRepository, GroupsContextFacade groupsContextFacade) {
+        this.taskRepository = taskRepository;
+        this.groupsContextFacade = groupsContextFacade;
+    }
+
+    private void requireMember(Long groupId, Long requesterId) {
+        if (!groupsContextFacade.isMember(groupId, requesterId)) {
+            throw new AccessDeniedException("Only members of the group can see its tasks");
+        }
+    }
+
+    @Override
+    public Optional<Task> handle(GetTaskByIdQuery query) {
+        var task = this.taskRepository.findById(query.taskId());
+        task.ifPresent(found -> requireMember(found.getProfile().getGroup().getId(), query.requesterId()));
+        return task;
+    }
+
+    @Override
+    public List<Task> handle(GetAllTasksByUserId query) {
+        return this.taskRepository.findByProfile_User_IdOrderByDueDateAscIdAsc(query.userId());
+    }
+
+    @Override
+    public List<Task> handle(GetAllTasksByGroupIdQuery query) {
+        return taskRepository.findByProfile_Group_Id(query.groupId());
+    }
+
+    @Override
+    public List<Task> handle(GetTasksByGroupIdAndStatus query) {
+        requireMember(query.groupId(), query.requesterId());
+        if (query.status() == null) {
+            return taskRepository.findByProfile_Group_Id(query.groupId());
+        }
+        return taskRepository.findByProfile_Group_IdAndStatus(query.groupId(), query.status());
+    }
+
+    @Override
+    public Page<Task> handle(GetTasksByGroupIdAndStatus query, Pageable pageable) {
+        requireMember(query.groupId(), query.requesterId());
+        var sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("dueDate", "id"));
+        if (query.status() == null) {
+            return taskRepository.findByProfile_Group_Id(query.groupId(), sorted);
+        }
+        return taskRepository.findByProfile_Group_IdAndStatus(query.groupId(), query.status(), sorted);
+    }
+
+    @Override
+    public List<Task> handle(GetTasksByGroupIdAndUserIdQuery query) {
+        requireMember(query.groupId(), query.requesterId());
+        return taskRepository.findByProfile_Group_IdAndProfile_User_Id(query.groupId(), query.userId());
+    }
+}

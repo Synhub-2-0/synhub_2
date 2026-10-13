@@ -1,13 +1,13 @@
 package com.hub.synhub_backend.ai;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hub.synhub_backend.ai.application.internal.queryservices.TaskClassificationQueryServiceImpl;
 import com.hub.synhub_backend.ai.domain.model.queries.ClassifyTaskQuery;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 // Llama a Bedrock de verdad: correr con RUN_BEDROCK_IT=1 y credenciales AWS.
 @EnabledIfEnvironmentVariable(named = "RUN_BEDROCK_IT", matches = "1")
@@ -20,7 +20,8 @@ class TaskClassificationQueryServiceImplIT {
 
         var result = service.handle(new ClassifyTaskQuery(
                 "Migrar la tabla de usuarios a UUID",
-                "Cambiar PK de bigint a uuid en PostgreSQL con migración sin downtime, urgente para el release", null));
+                "Cambiar PK de bigint a uuid en PostgreSQL con migración sin downtime, urgente para el release",
+                null));
 
         assertTrue(result.isPresent());
         System.out.println(result.get());

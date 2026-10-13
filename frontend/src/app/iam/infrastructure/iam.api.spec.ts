@@ -19,13 +19,13 @@ describe('IamApi (HTTP)', () => {
   afterEach(() => backend.verify());
 
   it('sign-in hace POST con usuario y contraseña', () => {
-    let token = '';
-    api.signIn(new SignInCommand({ username: 'ana', password: 'x' })).subscribe((r) => (token = r.token));
+    let expiresAt = '';
+    api.signIn(new SignInCommand({ username: 'ana', password: 'x' })).subscribe((r) => (expiresAt = r.expiresAt));
     const req = backend.expectOne(`${base}/authentication/sign-in`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ username: 'ana', password: 'x' });
-    req.flush({ id: 5, username: 'ana', token: 'jwt', role: [] });
-    expect(token).toBe('jwt');
+    req.flush({ id: 5, username: 'ana', role: [], expiresAt: '2099-01-01T00:00:00Z' });
+    expect(expiresAt).toBe('2099-01-01T00:00:00Z');
   });
 
   it('un error de sign-in se traduce a un mensaje con el código', () => {

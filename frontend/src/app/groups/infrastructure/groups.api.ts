@@ -1,23 +1,19 @@
-import {Injectable} from '@angular/core';
-import {BaseApi} from '../../shared/infrastructure/base-api';
-import {GroupsApiEndpoint} from './groups.api-endpoint';
-import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
-import {Group} from '../domain/model/group.entity';
-import {CreateGroupCommand} from '../domain/model/create-group.command';
-import {GroupUser} from '../domain/model/group-user.entity';
+import { Injectable, inject } from '@angular/core';
+import { GroupsApiEndpoint } from './groups.api-endpoint';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Group } from '../domain/model/group.entity';
+import { CreateGroupCommand } from '../domain/model/create-group.command';
+import { GroupUser } from '../domain/model/group-user.entity';
 
-@Injectable({providedIn: 'root'})
-export class GroupsApi extends BaseApi {
+@Injectable({ providedIn: 'root' })
+export class GroupsApi {
   private readonly groupsEndpoint: GroupsApiEndpoint;
 
-  constructor(http: HttpClient) {
-    super();
-    this.groupsEndpoint = new GroupsApiEndpoint(http);
-  }
+  constructor() {
+    const http = inject(HttpClient);
 
-  getGroup(id: number): Observable<Group> {
-    return this.groupsEndpoint.getById(id);
+    this.groupsEndpoint = new GroupsApiEndpoint(http);
   }
 
   getGroupMembers(groupId: number): Observable<GroupUser[]> {
@@ -32,10 +28,6 @@ export class GroupsApi extends BaseApi {
     return this.groupsEndpoint.update(group, group.id);
   }
 
-  getGroupsByUser(): Observable<Group[]> {
-    return this.groupsEndpoint.getGroupsByUser();
-  }
-
   getLeaderGroups(): Observable<Group[]> {
     return this.groupsEndpoint.getGroupsByUserGroupRole('GROUP_LEADER');
   }
@@ -44,15 +36,11 @@ export class GroupsApi extends BaseApi {
     return this.groupsEndpoint.getGroupsByUserGroupRole('GROUP_MEMBER');
   }
 
-  /*
-   * TODO: Reactivar cuando el backend exponga la búsqueda de grupos por código.
-   *
-   * searchByCode(code: string): Observable<Group> {
-   *   return this.groupsEndpoint.searchByCode(code);
-   * }
-   */
+  joinGroupByCode(code: string): Observable<Group> {
+    return this.groupsEndpoint.joinByCode(code);
+  }
 
-  getGroupsByUserGroupRole(role: 'GROUP_LEADER' | 'GROUP_MEMBER'): Observable<Group[]> {
-    return this.groupsEndpoint.getGroupsByUserGroupRole(role);
+  removeMember(groupId: number, userId: number): Observable<void> {
+    return this.groupsEndpoint.removeMember(groupId, userId);
   }
 }

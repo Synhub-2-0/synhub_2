@@ -25,21 +25,20 @@ Todos requieren token.
 | `POST` | `/api/v1/invitations/accept` | `?invitationId=` | `200` (sin cuerpo) | Solo el invitado (403). 409 si ya es miembro. |
 | `DELETE` | `/api/v1/invitations/{invitationId}` | — | `204` | El invitado (rechaza) o el líder del grupo (cancela); cualquier otro usuario recibe 403. |
 | `GET` | `/api/v1/invitations/user` | — | `200 InvitationResource[]` | Invitaciones recibidas por el usuario del token. |
-| `GET` | `/api/v1/invitations/group` | `?groupId=` | `200 InvitationResource[]` | Invitaciones pendientes de un grupo. **No valida** que quien consulta sea el líder. |
+| `GET` | `/api/v1/invitations/group` | `?groupId=` | `200 InvitationResource[]` · `403` · `404` | Invitaciones pendientes de un grupo. Solo el líder. |
 
-`InvitationResource = { id, group: GroupResourceReduced, user: UserResource }`
+`InvitationResource = { id, group: GroupResourceReduced, user: PublicUserResource }`
 
 ## Modelo de dominio
 
-`Invitation` (agregado, extiende `AuditableAbstractAggregateRoot`): `user` (`@ManyToOne` hacia el `User` de IAM, columna `member_id`) y `group` (`@ManyToOne` hacia `Group`). No tiene estado: **existir** equivale a "pendiente". Aceptarla o rechazarla la borra.
+`Invitation` (agregado, extiende `AuditableAbstractAggregateRoot`): `user` (`@ManyToOne` hacia el `User` de IAM, columna `member_id`) y `group` (`@ManyToOne` hacia `Group`). No tiene estado: **existir** (sin `deleted_at`) equivale a "pendiente". Aceptarla o rechazarla la borra de forma lógica (HUM-03): deja de verse, pero queda como historial.
 
 ## Reglas (`InvitationCommandServiceImpl`)
 
-1. **Crear**: carga el usuario (`UserRepository` de IAM) y el grupo; exige que el solicitante sea `group.getLeader()`; rechaza duplicados (`existsByUser_IdAndGroup_Id`) y miembros existentes (`GroupProfileRepository.existsByGroup_IdAndUser_Id`).
+1. **Crear**: carga el usuario (`IamContextFacade.fetchUserById` de IAM) y el grupo; exige que el solicitante sea `group.getLeader()`; rechaza duplicados (`existsByUser_IdAndGroup_Id`) y miembros existentes (`GroupProfileRepository.existsByGroup_IdAndUser_Id`).
 2. **Aceptar**: exige que el solicitante sea el invitado y crea `new GroupProfile(user, group, GROUP_MEMBER)`. **Aquí se crea la membresía**, por eso la feature le pertenece a groups.
 3. **Cancelar**: exige que el solicitante sea el invitado o el líder.
 
 ## Observaciones
 
-- `GET /invitations/group` no comprueba el rol del solicitante: cualquier usuario autenticado puede ver a quién se invitó a un grupo.
-- `InvitationRepository.findByUser_IdAndGroup_Id` no se usa.
+- `InvitationRepository.findByUser_IdAndGroup_Id` lo usa unirse por código (`JoinGroupByCodeCommand`) para consumir la invitación pendiente.

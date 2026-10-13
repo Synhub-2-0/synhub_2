@@ -51,7 +51,7 @@ flowchart LR
     Store -->|Command / Entity| Api["*Api<br/>(fachada)"]
     Api --> EP["*ApiEndpoint<br/>(extiende BaseApiEndpoint)"]
     EP -->|"assembler.toRequestFrom…"| HTTP[HttpClient]
-    HTTP -->|"+ Bearer (iamInterceptor)"| BE[(API REST)]
+    HTTP -->|"+ cookie de sesión (iamInterceptor)"| BE[(API REST)]
     BE -->|JSON Resource| EP
     EP -->|"assembler.toEntityFromResource"| Store
 ```
@@ -62,7 +62,6 @@ flowchart LR
 | `BaseAssembler` | Contrato `toEntityFromResource`, `toResourceFromEntity` y `toEntitiesFromResponse`. |
 | `BaseResource` / `BaseResponse` | Tipos base del JSON. Varios métodos aceptan tanto un arreglo como un objeto envoltorio (`TResponse \| TResource[]`). |
 | `ErrorHandlingEnabledBaseType` | `handleError` para endpoints que no son CRUD (sign-in, sign-up). |
-| `BaseApi` | Clase base vacía para las fachadas `*Api`. |
 
 **URLs**: se construyen desde `src/environments/environment*.ts` con `platformProviderApiBaseUrl` más el path de cada recurso (`platformProviderTasksEndpointPath`, etc.).
 
@@ -87,7 +86,7 @@ flowchart LR
 |---|---|---|
 | Rutas de primer nivel | `app.routes.ts` | `auth`, `home`, `groups`, `tasks`, `validations` y `recorrido`, cargadas de forma diferida con `loadChildren`/`loadComponent`. `''` → `/auth/sign-in`; `**` → `PageNotFound`. |
 | Guard | `iam/infrastructure/iam.guard.ts` | `iamGuard` protege todo salvo `auth`. |
-| Interceptor | `iam/infrastructure/iam.interceptor.ts` | Agrega `Authorization: Bearer` desde `localStorage.token`, salvo en sign-in y sign-up. |
+| Interceptor | `iam/infrastructure/iam.interceptor.ts` | Envía las peticiones a la API con `withCredentials` (cookie `HttpOnly` de sesión). Ante un 401 cierra la sesión y redirige al login. |
 | Restaurar la sesión | `app.config.ts` → `provideAppInitializer` | `IamStore.restoreSession()` antes del primer render. |
 | HTTP | `app.config.ts` | `provideHttpClient(withFetch(), withInterceptors([iamInterceptor]))` |
 
@@ -105,15 +104,14 @@ Los parámetros de contexto viajan en **query params** (`?groupId=`, `?id=&role=
 - Vitest mediante el builder `@angular/build:unit-test` (`npx ng test --watch=false`).
 - Las pruebas son `*.spec.ts` junto al archivo que prueban. Ver la sección "Pruebas" de cada feature.
 
+**Mensajes de error.** Los `*ApiEndpoint` lanzan errores técnicos en inglés (`Failed to …: 404`); `ToastStore.error` los traduce a un mensaje en español según el código HTTP, así que el usuario nunca los ve en inglés (FE-02). Los mensajes de negocio que ya están en español se muestran tal cual. No se usa `console.*` en el código de la app (FE-01).
+
 ## 8. Desviaciones conocidas
 
 | Desviación | Detalle |
 |---|---|
 | `invitations` sin capa `presentation` | Su UI vive en `groups/presentation`. |
-| `profiles` sin recurso propio en el backend | `ProfilesApiEndpoint` lee `/users`; `Profile.userId` siempre queda `undefined`. |
-| Código comentado en espera del backend | `searchByCode` (el backend **ya lo expone**) e `inviteUserToGroup` (el backend no lo soporta). |
-| `IamStore.loadUsers()` incompleto | Solo activa un flag. |
-| `BaseApiEndpoint.getAll` deja un `console.log` | — |
+| `profiles` sin recurso propio en el backend | `ProfilesApiEndpoint` lee `/users`; `Profile.userId` es el mismo `id` del usuario. |
 | `AiApi` no usa `BaseApiEndpoint` ni assembler | Es intencional: las respuestas se mapean 1 a 1. |
 
 ## 9. Cómo agregar una feature

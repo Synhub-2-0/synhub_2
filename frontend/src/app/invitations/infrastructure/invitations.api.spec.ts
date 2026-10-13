@@ -10,7 +10,7 @@ describe('InvitationsApi (HTTP)', () => {
   const resource = {
     id: 50,
     group: { id: 10, name: 'Equipo', imgUrl: '', description: '', code: 'ABC123XYZ', memberCount: 1 },
-    user: { id: 9, name: 'Luis', surname: 'T', email: '', imgUrl: '', userId: 9, username: 'luis' },
+    user: { id: 9, name: 'Luis', surname: 'T', email: '', imgUrl: '', username: 'luis' },
   };
   let api: InvitationsApi;
   let backend: HttpTestingController;

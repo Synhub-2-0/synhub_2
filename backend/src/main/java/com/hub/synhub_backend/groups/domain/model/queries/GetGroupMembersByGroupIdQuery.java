@@ -1,3 +1,4 @@
 package com.hub.synhub_backend.groups.domain.model.queries;
 
-public record GetGroupMembersByGroupIdQuery(Long groupId) {}
+/** Integrantes de un grupo; solo los puede ver alguien del grupo. */
+public record GetGroupMembersByGroupIdQuery(Long groupId, Long requesterId) {}

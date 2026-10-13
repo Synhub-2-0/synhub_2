@@ -13,7 +13,8 @@ describe('GroupsAssembler', () => {
   });
 
   it('memberCount ausente vale 0', () => {
-    const { memberCount, ...withoutCount } = resource;
+    const withoutCount: Partial<GroupResource> = { ...resource };
+    delete withoutCount.memberCount;
     expect(assembler.toEntityFromResource(withoutCount as GroupResource).memberCount).toBe(0);
   });
 
@@ -24,7 +25,7 @@ describe('GroupsAssembler', () => {
 
   it('integrantes con su perfil y rol', () => {
     const [member] = assembler.toGroupUsersFromResources([
-      { user: { id: 2, name: 'Ana', surname: 'Torres', email: 'a@x', imgUrl: '', userId: 2, username: 'ana' }, roleInGroup: 'GROUP_LEADER' },
+      { user: { id: 2, name: 'Ana', surname: 'Torres', email: 'a@x', imgUrl: '', username: 'ana' }, roleInGroup: 'GROUP_LEADER' },
     ]);
     expect(member.user.username).toBe('ana');
     expect(member.roleInGroup).toBe('GROUP_LEADER');

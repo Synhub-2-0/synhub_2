@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { BaseApi } from '../../shared/infrastructure/base-api';
+import { Injectable, inject } from '@angular/core';
 import { TasksApiEndpoint } from './tasks.api-endpoint';
 import { HttpClient } from '@angular/common/http';
 import { Task, TaskStatus } from '../domain/model/task.entity';
@@ -8,11 +7,12 @@ import { UpdateTaskCommand } from '../domain/model/update-task.command';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
-export class TasksApi extends BaseApi {
+export class TasksApi {
   private readonly tasksEndpoint: TasksApiEndpoint;
 
-  constructor(http: HttpClient) {
-    super();
+  constructor() {
+    const http = inject(HttpClient);
+
     this.tasksEndpoint = new TasksApiEndpoint(http);
   }
 
@@ -38,6 +38,10 @@ export class TasksApi extends BaseApi {
 
   getTasksByGroup(groupId: number, status?: TaskStatus): Observable<Task[]> {
     return this.tasksEndpoint.getTasksByGroup(groupId, status);
+  }
+
+  getMyTasks(): Observable<Task[]> {
+    return this.tasksEndpoint.getMyTasks();
   }
 
   getTasksByGroupAndUser(groupId: number, userId: number): Observable<Task[]> {

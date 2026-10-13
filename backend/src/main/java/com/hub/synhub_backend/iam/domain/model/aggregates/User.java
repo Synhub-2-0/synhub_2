@@ -1,17 +1,16 @@
 package com.hub.synhub_backend.iam.domain.model.aggregates;
 
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.iam.domain.model.entities.Role;
+import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
-import com.hub.synhub_backend.iam.domain.model.entities.Role;
-import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -57,12 +56,8 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     public User() {
         this.accountRoles = new HashSet<>();
     }
-    public User(String username,
-                String name,
-                String surname,
-                String imgUrl,
-                String email,
-                String password) {
+
+    public User(String username, String name, String surname, String imgUrl, String email, String password) {
         this.username = username;
         this.name = name;
         this.surname = surname;
@@ -80,22 +75,14 @@ public class User extends AuditableAbstractAggregateRoot<User> {
             String email,
             String password,
             List<Role> accountRoles) {
-        this(
-                username,
-                name,
-                surname,
-                imgUrl,
-                email,
-                password);
+        this(username, name, surname, imgUrl, email, password);
         addRoles(accountRoles);
     }
-
 
     public User addRole(Role role) {
         this.accountRoles.add(role);
         return this;
     }
-
 
     public User addRoles(List<Role> roles) {
         var validatedRoleSet = Role.validateRoleSet(roles);

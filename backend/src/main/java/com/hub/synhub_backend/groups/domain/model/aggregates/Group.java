@@ -1,22 +1,28 @@
 package com.hub.synhub_backend.groups.domain.model.aggregates;
 
+import com.hub.synhub_backend.groups.domain.model.commands.UpdateGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.ImgUrl;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
+import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.hub.synhub_backend.groups.domain.model.commands.UpdateGroupCommand;
-import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
-import com.hub.synhub_backend.groups.domain.model.valueobjects.ImgUrl;
-import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila
+ * de todas las consultas, cargas y colecciones. Los datos siguen en la base.
+ */
 @Entity
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 @NoArgsConstructor
 @Setter
 @Getter
@@ -36,7 +42,12 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     @Embedded
     private ImgUrl imgUrl;
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    /**
+     * Membresías. Se cargan siempre (EAGER): el líder y la cantidad de integrantes forman parte de cualquier
+     * representación del grupo, también fuera de una transacción (sin OSIV, AUDIT ARC-04). La carga por lotes
+     * (default_batch_fetch_size) evita una consulta por grupo.
+     */
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<GroupProfile> userProfiles = new ArrayList<>();
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
@@ -66,8 +77,13 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     }
 
     public void updateInformation(UpdateGroupCommand command) {
-        this.name = command.name().isEmpty() ? this.name : command.name();
-        this.description = command.description().isEmpty() ? this.description : command.description();
-        this.imgUrl = command.imgUrl().isEmpty() ? this.imgUrl : new ImgUrl(command.imgUrl());
+        // Un campo ausente (null) o vacío no cambia.
+        this.name = isBlank(command.name()) ? this.name : command.name();
+        this.description = isBlank(command.description()) ? this.description : command.description();
+        this.imgUrl = isBlank(command.imgUrl()) ? this.imgUrl : new ImgUrl(command.imgUrl());
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

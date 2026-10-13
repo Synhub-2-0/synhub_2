@@ -30,13 +30,6 @@ export class GroupsApiEndpoint extends BaseApiEndpoint<Group, GroupResource, Gro
     );
   }
 
-  getGroupsByUser(): Observable<Group[]> {
-    return this.http.get<GroupResource[]>(`${groupsEndpointUrl}/user`).pipe(
-      map(resources => resources.map(resource => this.assembler.toEntityFromResource(resource))),
-      catchError(this.handleError('Failed to fetch groups for the current user'))
-    );
-  }
-
   getGroupsByUserGroupRole(role: string): Observable<Group[]> {
     return this.http.get<GroupsResponse | GroupResource[]>(`${groupsEndpointUrl}/user/role?groupRole=${role}`).pipe(
       map(response => {
@@ -48,14 +41,18 @@ export class GroupsApiEndpoint extends BaseApiEndpoint<Group, GroupResource, Gro
     );
   }
 
-  /*
-   * TODO: Reactivar cuando el backend exponga este endpoint.
-   *
-   * searchByCode(code: string): Observable<Group> {
-   *   return this.http.get<GroupResource>(`${groupsEndpointUrl}/search?code=${encodeURIComponent(code)}`).pipe(
-   *     map(resource => this.assembler.toEntityFromResource(resource)),
-   *     catchError(this.handleError('Failed to search group by code')),
-   *   );
-   * }
-   */
+  /** Unirse a un grupo con su código (HUM-05). */
+  joinByCode(code: string): Observable<Group> {
+    return this.http.post<GroupResource>(`${groupsEndpointUrl}/join`, { code }).pipe(
+      map(resource => this.assembler.toEntityFromResource(resource)),
+      catchError(this.handleError('Failed to join group')),
+    );
+  }
+
+  /** El líder quita a un integrante, o un integrante sale del grupo (HUM-05). */
+  removeMember(groupId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${groupsEndpointUrl}/${groupId}/members/${userId}`).pipe(
+      catchError(this.handleError('Failed to remove member')),
+    );
+  }
 }

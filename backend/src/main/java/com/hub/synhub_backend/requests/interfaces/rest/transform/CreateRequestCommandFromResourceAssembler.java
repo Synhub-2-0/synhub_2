@@ -4,12 +4,8 @@ import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestComman
 import com.hub.synhub_backend.requests.interfaces.rest.resources.CreateRequestResource;
 
 public class CreateRequestCommandFromResourceAssembler {
-    public static CreateRequestCommand toCommandFromResource(CreateRequestResource resource, Long taskId, Long requesterId) {
-        return new CreateRequestCommand(
-                resource.description(),
-                resource.requestType(),
-                taskId,
-                requesterId
-        );
+    public static CreateRequestCommand toCommandFromResource(
+            CreateRequestResource resource, Long taskId, Long requesterId) {
+        return new CreateRequestCommand(resource.description(), resource.requestType(), taskId, requesterId);
     }
 }

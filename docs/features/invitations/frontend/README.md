@@ -30,7 +30,7 @@ Carpeta: [`frontend/src/app/invitations`](../../../../frontend/src/app/invitatio
 | Archivo | Rol |
 |---|---|
 | `invitations.api.ts` (`InvitationsApi`) | Fachada: `createInvitation`, `acceptInvitation`, `declineInvitation`, `getInvitationsByGroupId`, `getInvitationsByAuthenticatedUser`. |
-| `invitations.api-endpoint.ts` | Extiende `BaseApiEndpoint`. `createInvitation` traduce los códigos HTTP a mensajes en español (403 → "Solo el líder…", 409 → "ya es miembro" / "ya tiene una invitación pendiente"). Tiene comentado `inviteUserToGroup` (solicitud de unión iniciada por el usuario), que el backend no soporta. |
+| `invitations.api-endpoint.ts` | Extiende `BaseApiEndpoint`. `createInvitation` traduce los códigos HTTP a mensajes en español (403 → "Solo el líder…", 409 → "ya es miembro" / "ya tiene una invitación pendiente"). Unirse por iniciativa propia se hace con el código del grupo (`GroupsStore.joinGroupByCode`, ver [groups](../../groups/frontend/README.md)). |
 | `invitations.assembler.ts` | `InvitationResource` → `Invitation`, usando `GroupsAssembler` (groups) y `ProfilesAssembler` (iam). |
 
 ## Modelo

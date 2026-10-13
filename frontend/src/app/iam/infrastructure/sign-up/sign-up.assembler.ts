@@ -23,7 +23,6 @@ export class SignUpAssembler {
       imgUrl: command.imgUrl,
       email: command.email,
       password: command.password,
-      accountRoles: command.accountRoles,
     } as SignUpRequest;
   }
 }

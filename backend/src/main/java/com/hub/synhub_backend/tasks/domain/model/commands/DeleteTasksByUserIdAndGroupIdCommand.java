@@ -1,4 +1,3 @@
 package com.hub.synhub_backend.tasks.domain.model.commands;
 
-public record DeleteTasksByUserIdAndGroupIdCommand(Long userId, Long groupId) {
-}
+public record DeleteTasksByUserIdAndGroupIdCommand(Long userId, Long groupId) {}

@@ -13,5 +13,4 @@ public class SynhubBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(SynhubBackendApplication.class, args);
     }
-
 }

@@ -5,7 +5,7 @@
 | **Fecha** | 2026-10-13 |
 | **Alcance** | Monorepo completo: `backend/`, `frontend/`, Docker, CI/CD y documentación |
 | **Commit auditado** | `68536da` (rama `main`) |
-| **Estado** | 48 hallazgos pendientes y 6 decisiones humanas |
+| **Estado** | Corregida en la rama `audit`: 49 hallazgos resueltos (48 originales + BUG-18). Quedan HUM-01 y HUM-02, que requieren acceso a AWS y GitHub. Ver [Cierre](#cierre). |
 
 ## Cómo usar este documento (instrucciones para el prompt de corrección)
 
@@ -57,54 +57,55 @@ Los riesgos principales son tres:
 
 | ID | Sev. | Área | Título | Verificación | Estado |
 |---|---|---|---|---|---|
-| [SEC-01](#sec-01) | Crítica | Backend · seguridad | Lecturas sin control de pertenencia al grupo (IDOR) | Reproducido | Pendiente |
-| [SEC-02](#sec-02) | Crítica | Backend · seguridad | Cualquier usuario puede borrar requests ajenas | Reproducido | Pendiente |
-| [SEC-03](#sec-03) | Alta | Backend · seguridad | El JWT completo se escribe en los logs | Reproducido | Pendiente |
-| [SEC-04](#sec-04) | Alta | Config · seguridad | Secretos por defecto versionados (JWT y BD) | Código | Pendiente |
-| [DEP-01](#dep-01) | Alta | Frontend · dependencias | 5 vulnerabilidades npm (2 críticas, 3 altas) | `npm audit` | Pendiente |
-| [BUG-01](#bug-01) | Alta | Backend · tasks/requests | Borrar una tarea con requests → 500 | Reproducido | Pendiente |
-| [BUG-02](#bug-02) | Alta | Backend · groups | Borrar un grupo con tareas → 500 | Reproducido | Pendiente |
-| [BUG-03](#bug-03) | Alta | Backend · tasks | Se crean tareas sin título (null persistido) | Reproducido | Pendiente |
-| [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Pendiente |
-| [SEC-05](#sec-05) | Media | Backend · iam | El registro permite autoasignarse `ROLE_ADMIN` | Código | Pendiente |
-| [SEC-06](#sec-06) | Media | Backend · iam | `/users` expone a todos los usuarios con su email | Reproducido | Pendiente |
-| [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Pendiente |
-| [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Pendiente |
-| [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Pendiente |
-| [SEC-10](#sec-10) | Media | Frontend · sesión | Sesión: el 401 no cierra la sesión; token de 7 días en `localStorage` | Código | Pendiente |
-| [BUG-04](#bug-04) | Media | Backend · iam | Email duplicado → 500 (la validación compara el username) | Reproducido | Pendiente |
-| [BUG-05](#bug-05) | Media | Backend · iam | Rol inexistente en el registro → 500 | Reproducido | Pendiente |
-| [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Pendiente |
-| [BUG-07](#bug-07) | Media | Backend · shared | El handler de 500 no registra la excepción | Código | Pendiente |
-| [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Pendiente |
-| [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Pendiente |
-| [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Pendiente |
-| [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Pendiente |
-| [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Pendiente |
-| [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Pendiente |
+| [SEC-01](#sec-01) | Crítica | Backend · seguridad | Lecturas sin control de pertenencia al grupo (IDOR) | Reproducido | Resuelto |
+| [SEC-02](#sec-02) | Crítica | Backend · seguridad | Cualquier usuario puede borrar requests ajenas | Reproducido | Resuelto |
+| [SEC-03](#sec-03) | Alta | Backend · seguridad | El JWT completo se escribe en los logs | Reproducido | Resuelto |
+| [SEC-04](#sec-04) | Alta | Config · seguridad | Secretos por defecto versionados (JWT y BD) | Código | Resuelto (falta HUM-01) |
+| [DEP-01](#dep-01) | Alta | Frontend · dependencias | 5 vulnerabilidades npm (2 críticas, 3 altas) | `npm audit` | Resuelto |
+| [BUG-01](#bug-01) | Alta | Backend · tasks/requests | Borrar una tarea con requests → 500 | Reproducido | Resuelto |
+| [BUG-02](#bug-02) | Alta | Backend · groups | Borrar un grupo con tareas → 500 | Reproducido | Resuelto (soft delete, HUM-03) |
+| [BUG-03](#bug-03) | Alta | Backend · tasks | Se crean tareas sin título (null persistido) | Reproducido | Resuelto |
+| [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Resuelto |
+| [SEC-05](#sec-05) | Media | Backend · iam | El registro permite autoasignarse `ROLE_ADMIN` | Código | Resuelto |
+| [SEC-06](#sec-06) | Media | Backend · iam | `/users` expone a todos los usuarios con su email | Reproducido | Resuelto (email visible por HUM-06) |
+| [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Resuelto (frontend: FE-03) |
+| [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Resuelto |
+| [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Resuelto (ECS: HUM-02) |
+| [SEC-10](#sec-10) | Media | Frontend · sesión | Sesión: el 401 no cierra la sesión; token de 7 días en `localStorage` | Código | Resuelto (cookie HttpOnly, HUM-04) |
+| [BUG-04](#bug-04) | Media | Backend · iam | Email duplicado → 500 (la validación compara el username) | Reproducido | Resuelto |
+| [BUG-05](#bug-05) | Media | Backend · iam | Rol inexistente en el registro → 500 | Reproducido | Resuelto (por SEC-05) |
+| [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Resuelto (por SEC-07) |
+| [BUG-07](#bug-07) | Media | Backend · shared | El handler de 500 no registra la excepción | Código | Resuelto |
+| [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Resuelto |
+| [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Resuelto |
+| [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Resuelto |
+| [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Resuelto |
+| [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Resuelto |
+| [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Resuelto |
 | [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Resuelto (ver [TESTS.md](../TESTS.md)) |
-| [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Pendiente |
-| [SEC-12](#sec-12) | Baja | Docker · nginx | Faltan cabeceras de seguridad HTTP | Código | Pendiente |
-| [DEP-02](#dep-02) | Baja | Backend · dependencias | Versiones de JJWT desalineadas | Código | Pendiente |
-| [DEP-03](#dep-03) | Baja | Dependencias | Sin escaneo automático de dependencias | Código | Pendiente |
-| [BUG-10](#bug-10) | Baja | Backend · groups | `LeaderCannotBeRemovedException` responde 500 | Código | Pendiente |
-| [BUG-11](#bug-11) | Baja | Backend · groups | `findByLeaderId` derivado de una propiedad inexistente | Código | Pendiente |
-| [BUG-12](#bug-12) | Baja | Backend · groups | `GroupProfile.tasks` es `null` en los constructores | Código | Pendiente |
-| [BUG-13](#bug-13) | Baja | Backend · iam | `@Data` en la entidad JPA `Role` | Código | Pendiente |
-| [BUG-14](#bug-14) | Baja | Backend · shared | `ErrorResponse.timestamp` sin zona horaria | Reproducido | Pendiente |
-| [BUG-15](#bug-15) | Baja | Frontend · iam | `Profile.userId` siempre `undefined` | Código | Pendiente |
-| [BUG-16](#bug-16) | Baja | API · tasks | `UpdateTaskResource.requesterId` se ignora | Código | Pendiente |
-| [BUG-17](#bug-17) | Baja | Frontend · groups | Búsqueda por código comentada aunque el backend la expone | Código | Pendiente |
-| [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Pendiente |
-| [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Pendiente |
-| [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Pendiente |
-| [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Pendiente |
-| [FE-01](#fe-01) | Baja | Frontend | `console.log` y `console.error` en producción | Código | Pendiente |
-| [FE-02](#fe-02) | Baja | Frontend | Mensajes de error mezclados en inglés y español | Código | Pendiente |
-| [FE-03](#fe-03) | Baja | Frontend · iam | El registro no exige una contraseña mínima | Código | Pendiente |
-| [FE-04](#fe-04) | Baja | Repositorio | Archivos sobrantes (README genérico, `.vscode`, `package-lock` en el backend) | Código | Pendiente |
-| [OPS-03](#ops-03) | Baja | CI/CD | Sin lint ni formato en CI | Código | Pendiente |
-| [TEST-02](#test-02) | Baja | Pruebas | El test de contexto depende de un PostgreSQL local | Código | Pendiente |
+| [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Resuelto (Docker; AWS: HUM-02) |
+| [SEC-12](#sec-12) | Baja | Docker · nginx | Faltan cabeceras de seguridad HTTP | Código | Resuelto |
+| [DEP-02](#dep-02) | Baja | Backend · dependencias | Versiones de JJWT desalineadas | Código | Resuelto (0.12.7) |
+| [DEP-03](#dep-03) | Baja | Dependencias | Sin escaneo automático de dependencias | Código | Resuelto |
+| [BUG-10](#bug-10) | Baja | Backend · groups | `LeaderCannotBeRemovedException` responde 500 | Código | Resuelto |
+| [BUG-11](#bug-11) | Baja | Backend · groups | `findByLeaderId` derivado de una propiedad inexistente | Código | Resuelto |
+| [BUG-12](#bug-12) | Baja | Backend · groups | `GroupProfile.tasks` es `null` en los constructores | Código | Resuelto |
+| [BUG-13](#bug-13) | Baja | Backend · iam | `@Data` en la entidad JPA `Role` | Código | Resuelto |
+| [BUG-14](#bug-14) | Baja | Backend · shared | `ErrorResponse.timestamp` sin zona horaria | Reproducido | Resuelto |
+| [BUG-15](#bug-15) | Baja | Frontend · iam | `Profile.userId` siempre `undefined` | Código | Resuelto |
+| [BUG-16](#bug-16) | Baja | API · tasks | `UpdateTaskResource.requesterId` se ignora | Código | Resuelto |
+| [BUG-17](#bug-17) | Baja | Frontend · groups | Búsqueda por código comentada aunque el backend la expone | Código | Resuelto (unirse por código, HUM-05) |
+| [BUG-18](#bug-18) | Media | Backend · tasks | Una tarea `DONE` se puede editar, mover o borrar por API | Reproducido | Resuelto |
+| [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Resuelto |
+| [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Resuelto |
+| [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Resuelto |
+| [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Resuelto |
+| [FE-01](#fe-01) | Baja | Frontend | `console.log` y `console.error` en producción | Código | Resuelto |
+| [FE-02](#fe-02) | Baja | Frontend | Mensajes de error mezclados en inglés y español | Código | Resuelto (traducción centralizada en `ToastStore`) |
+| [FE-03](#fe-03) | Baja | Frontend · iam | El registro no exige una contraseña mínima | Código | Resuelto |
+| [FE-04](#fe-04) | Baja | Repositorio | Archivos sobrantes (README genérico, `.vscode`, `package-lock` en el backend) | Código | Resuelto |
+| [OPS-03](#ops-03) | Baja | CI/CD | Sin lint ni formato en CI | Código | Resuelto |
+| [TEST-02](#test-02) | Baja | Pruebas | El test de contexto depende de un PostgreSQL local | Código | Resuelto |
 
 Rutas abreviadas: `B/` = `backend/src/main/java/com/hub/synhub_backend/` y `F/` = `frontend/src/app/`.
 
@@ -218,6 +219,8 @@ El archivo figura en `backend/.gitignore`, pero **está versionado**. Si un ento
 
 **Criterios de aceptación.** `GET /users` con `ROLE_USER` → 403. Ninguna respuesta incluye el email de otro usuario. La web sigue mostrando nombres y avatares.
 
+**Resolución.** Por la decisión HUM-06, el email **sí** es visible para los demás. Se creó `PublicUserResource { id, username, name, surname, imgUrl, email }` para `/users/{id}`, `/users/username` y los usuarios anidados; solo `/users/me` incluye `accountRoles`. `GET /users` requiere `ROLE_ADMIN`.
+
 ### SEC-07
 
 **No hay validación de entrada** · Media · Reproducido
@@ -229,6 +232,8 @@ El archivo figura en `backend/.gitignore`, pero **está versionado**. Si un ento
 - Un enum inválido en un parámetro (`PUT /tasks/{id}/status?status=ARCHIVED`) → **500**: `MethodArgumentTypeMismatchException` cae en el handler genérico.
 
 Hay pruebas que lo cubren en `api/ValidationApiTests`.
+
+Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: registro sin imagen (ahora usa `/default-avatar.jpg`), grupo sin descripción, edición de grupo con campos ausentes, JSON mal formado y parámetro obligatorio ausente.
 
 **Solución propuesta.**
 
@@ -261,6 +266,8 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 
 **Criterios de aceptación.** Una petición con `Origin: https://evil.example` no recibe `Access-Control-Allow-Origin`. Con el perfil `prod`, `/swagger-ui.html` → 404.
 
+**Resolución.** CORS lee `app.cors.allowed-origins` (`CORS_ALLOWED_ORIGINS`), con credenciales para la cookie de sesión (HUM-04). Si la lista está vacía (producción, mismo origen), **no se procesa CORS**: la prueba en Docker mostró que, con una configuración vacía, Spring rechazaba el login con 403 porque nginx reenviaba el Host sin puerto y el `Origin` del navegador no coincidía. Además nginx reenvía ahora `$http_host` (`api/SameOriginApiTests`). Swagger está apagado en la configuración base y solo lo enciende el perfil `dev`.
+
 ### SEC-09
 
 **`TestController` activo en todos los despliegues** · Media · Código
@@ -270,6 +277,8 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 **Solución propuesta.** **Eliminar `TestController`** (recomendado: no tiene uso). Además, definir `SPRING_PROFILES_ACTIVE=prod` en el `Dockerfile` raíz, en `backend/Dockerfile` y en compose (ver [HUM-02](#decisiones-humanas-no-automatizar) para ECS).
 
 **Criterios de aceptación.** `/api/v1/tests/*` → 404 o 401 en el contenedor.
+
+**Resolución.** `TestController` eliminado; `SPRING_PROFILES_ACTIVE=prod` en ambos Dockerfile y en compose. Al probarlo apareció otro 500: cualquier ruta inexistente (`NoResourceFoundException`) o método no soportado caía en el handler genérico. Ahora responden 404, 405 o 415 (`api/HardeningApiTests`).
 
 ### SEC-10
 
@@ -289,6 +298,13 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 
 **Criterios de aceptación.** Con un token vencido, al navegar a `/home` se redirige al login. Un 401 en cualquier petición limpia `localStorage` y redirige. Hay specs del interceptor y del guard.
 
+**Resolución (HUM-04: cookie `HttpOnly` de 1 día).**
+
+- Backend: el login responde `Set-Cookie: SYNHUB_SESSION=<jwt>; HttpOnly; Secure; SameSite=Strict; Path=/api; Max-Age=86400` y ya no devuelve el token en el cuerpo, sino `expiresAt`. Nuevo `POST /authentication/sign-out` que borra la cookie. El filtro acepta la cookie o el header `Bearer` (clientes de API). La expiración del JWT pasó de 7 días a 1.
+- Frontend: el JWT no se guarda en ningún lado; `localStorage` solo tiene `userId` y `sessionExpiresAt`. El interceptor envía `withCredentials` a la API y ante un 401 cierra la sesión y lleva a `/auth/sign-in?expired=1`. El guard rechaza una sesión vencida. `signOut` llama al backend.
+- CSRF: la cookie es `SameSite=Strict` y CORS solo admite los orígenes configurados (SEC-08).
+- Despliegue: CloudFront debe reenviar la cookie en `/api/*` (HUM-02).
+
 ### SEC-11
 
 **Sin límite de intentos de login** · Baja · Código
@@ -296,6 +312,8 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 **Solución propuesta.** Aplicar `limit_req` en nginx para `/api/v1/authentication/` (por ejemplo, 5 r/min por IP con `burst=10`) en `docker/nginx.conf`. En AWS, usar una regla equivalente de WAF ([HUM-02](#decisiones-humanas-no-automatizar)). Alternativa en la app: Bucket4j.
 
 **Criterios de aceptación.** El intento número 11 en un minuto desde la misma IP → 429.
+
+**Resolución.** `docker/nginx.conf` limita `sign-in` y `sign-up` a 5 por minuto por IP con ráfaga de 10 (`limit_req_status 429`). Verificado con `docker compose`: tras 11 peticiones seguidas, la siguiente responde 429. En AWS el tráfico no pasa por este nginx: hace falta una regla de WAF (HUM-02).
 
 ### SEC-12
 
@@ -306,6 +324,8 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 **Solución propuesta.** Agregar `X-Content-Type-Options nosniff`, `X-Frame-Options DENY`, `Referrer-Policy strict-origin-when-cross-origin` y una `Content-Security-Policy` compatible con Angular (`default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; connect-src 'self'`). Usar `always` y repetirlas en el `location` que ya define `add_header`, porque nginx no las hereda.
 
 **Criterios de aceptación.** `curl -I http://localhost:8080/` muestra las cuatro cabeceras y la web carga sin errores de CSP en la consola.
+
+**Resolución.** Las cuatro cabeceras, con `always`, más `server_tokens off`. La CSP agrega Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`), `object-src 'none'`, `base-uri 'self'` y `frame-ancestors 'none'`. El build de producción desactiva `inlineCritical` (`angular.json`): ese modo inserta un `<script>` en línea que `script-src 'self'` bloquearía y dejaría la página sin estilos. Verificado en el navegador con `docker compose`: login, recarga y cierre de sesión sin violaciones de CSP.
 
 ---
 
@@ -451,6 +471,8 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 
 **Criterios de aceptación.** Tests unitarios: un usuario con tareas en dos grupos obtiene solo las del grupo pedido.
 
+**Resolución.** Hecho junto con los endpoints base de metrics (HUM-05). Además, las métricas de una tarea respondían 400 (no existe) o 500 (estado no aplicable): ahora 404 y 409 (`MetricNotAvailableException`). Se quitó el `UserRepository.findAll()` que cargaba a todos los usuarios para obtener nombres.
+
 ### BUG-09
 
 **Scheduler de vencimiento** · Media · Código
@@ -470,6 +492,8 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 4. Mover el scheduler a `tasks/application/internal/schedulers/` ([ARC-02](#arc-02)).
 
 **Criterios de aceptación.** Test: dos ejecuciones concurrentes sobre la misma tarea vencida crean **una** sola request `EXPIRED`.
+
+**Resolución.** `UPDATE` condicional (`markExpiredIfInProgress`) en una transacción por tarea; solo crea la request quien cambió la fila. Logger en `DEBUG`, frecuencia en `app.tasks.expiration-check-ms` (60 s) y la clase movida a `tasks/aplication/internal/schedulers`. `api/TaskExpirationApiTests` corre dos ejecuciones a la vez contra PostgreSQL y verifica una sola request.
 
 ### BUG-10
 
@@ -551,6 +575,18 @@ Hay pruebas que lo cubren en `api/ValidationApiTests`.
 
 **Criterios de aceptación.** No queda código comentado que contradiga el backend.
 
+**Resolución (HUM-05: terminar la función).** Nuevo `POST /groups/join { code }`: el código funciona como invitación abierta y el usuario entra como miembro. La web lo ofrece en "Mis grupos" (panel "Unirse a un grupo"). Se eliminaron el `searchByCode` y el `inviteUserToGroup` comentados.
+
+### BUG-18
+
+**Una tarea `DONE` se puede editar, mover o borrar por API** · Media · Reproducido (hallado durante la corrección, 2026-10-13)
+
+**Evidencia.** La web bloquea las tareas `DONE` (`TasksStore.isDone`, `TaskBoard`), pero `PUT /tasks/{id}`, `PUT /tasks/{id}/status` y `DELETE /tasks/{id}` las aceptaban: en la prueba en Docker, editar una tarea aprobada respondió 200.
+
+**Resolución.** Regla en el dominio: `Task.ensureNotFinished()` lanza `TaskFinishedException` (409) y la usan los tres casos de uso, después de revisar los permisos (un no autorizado sigue recibiendo 403). Borrar el grupo o quitar al integrante sigue borrando sus tareas `DONE` (borrado lógico).
+
+**Criterios de aceptación.** Las tres operaciones sobre una tarea `DONE` responden 409 (`api/TaskLifecycleApiTests`, `tasks/TaskTest`).
+
 ---
 
 ## Arquitectura y persistencia
@@ -578,6 +614,8 @@ La relación JPA `Task.profile → GroupProfile` se **mantiene**: cambiarla por 
 
 **Criterios de aceptación.** `grep` de `…\.groups\.infrastructure` dentro de `tasks/`, `iam/` y `metrics/` (y equivalentes) sin resultados, salvo las entidades JPA. Los tests pasan.
 
+**Resolución.** Los siete accesos se reemplazaron por las fachadas: groups usa `IamContextFacade.fetchUserById`; tasks usa `GroupsContextFacade` (`fetchLeaderIdByGroupId`, `isLeader` y el nuevo `fetchMembership`) e `IamContextFacade`; metrics usa `TasksContextFacade` (nuevos `fetchTasksByGroupId` y `fetchTasksByGroupIdAndUserId`). `GetUsersByGroupIdQuery` no se movió sino que se eliminó, junto con `IamContextFacade.fetchUsersByGroupId`, porque no tenía consumidores. `architecture/BoundedContextIsolationTest` falla si un contexto vuelve a importar la infraestructura de otro.
+
 ### ARC-02
 
 **Erratas de paquetes y capas mal ubicadas** · Baja
@@ -595,6 +633,8 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 **Criterios de aceptación.** Compila, los tests pasan y la documentación no menciona las rutas viejas.
 
+**Resolución.** `tasks/aplication` → `tasks/application`; `metrics/.../queryservice` → `queryservices`; `metrics/domain/model/services` → `metrics/domain/services`; `shared/domain/model/infrastructure` → `shared/infrastructure` (con el FQCN de la estrategia de nombres). El scheduler ya se había movido a `tasks/application/internal/schedulers` (BUG-09) y `persistenence` desapareció con ARC-03. `TaskMetricsQueryService` devuelve value objects de dominio y `MetricsResourceFromValueAssembler` arma los recursos REST; el JSON no cambia (`api/MetricsApiTests`).
+
 ### ARC-03
 
 **Código muerto o incompleto** · Baja
@@ -607,6 +647,10 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 **Solución propuesta.** Eliminar todo lo que no tenga un uso planificado. Conservar `DeleteAllRequestsByTaskIdCommand`, que se usará en [BUG-01](#bug-01). Para `RemoveMemberUserFromGroupCommand` y `MetricsController`, ver [HUM-05](#decisiones-humanas-no-automatizar): por defecto, eliminar el controlador vacío y conservar el comando.
 
 **Criterios de aceptación.** Compila, los tests pasan y la documentación de features queda actualizada.
+
+**Resolución.** Por HUM-05, `RemoveMemberUserFromGroupCommand` y `MetricsController` se completaron en lugar de borrarse, y `ExternalTasksService` y `findByLeaderId` se eliminaron antes (HUM-05, BUG-11). Ahora se eliminaron:
+- Backend: `ExternalIamService`, `UpdateUserInfoCommand`, `GetUserByLeaderId`, `GetUserByMemberId`, `CreateUserLeaderCommandFromResourceAssembler`, `GroupMemberResource`, `GroupMetrics`/`GroupsClient`/`GroupMetricsRepository` (con el paquete `persistenence`), `GetAllRequestsQuery`, `GetAllTasksQuery`, `GetAllTaskByStatusQuery` (con `findByStatus`) y `DeleteAllRequestsByTaskIdCommand` (lo reemplazó `RequestsContextFacade` en BUG-01).
+- Frontend: `BaseApi`, `IamStore.loadUsers`, `GroupsApi.getGroup`/`getGroupsByUser`/`getGroupsByUserGroupRole` e `IamApi.getUser`/`getUserByUsername`. El código comentado ya se había quitado con BUG-17.
 
 ### ARC-04
 
@@ -625,6 +669,10 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 3. `open-in-view=false` **después** de [PERF-01](#perf-01), corrigiendo los `LazyInitializationException` con `@Transactional(readOnly = true)` en los query services o con fetch joins.
 
 **Criterios de aceptación.** La app arranca contra una base vacía (migraciones) y contra una existente (baseline). Los tests de integración pasan con OSIV desactivado.
+
+**Decisión (2026-10-13).** Se adopta Flyway. El entorno se volverá a desplegar desde cero, así que no hace falta *baseline* de una base existente: basta con `V1__init.sql` desde una base vacía.
+
+**Resolución.** Flyway con `V1__init.sql`, generado desde las entidades (Hibernate 7) y revisado: restricciones con nombre e índices para las FK y para el scheduler. `ddl-auto=validate`, `open-in-view=false` y `show-sql=false` (activo en `dev`). Sin OSIV fallaban 30 pruebas por carga lazy: los command services pasaron a `@Transactional` y `Group.userProfiles` a EAGER (por lotes). `api/SchemaMigrationApiTests` lo verifica; además se probó en Docker sobre una base vacía recorriendo todos los endpoints de la web, sin errores en los logs.
 
 ### PERF-01
 
@@ -646,6 +694,8 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 **Criterios de aceptación.** Test con `spring.jpa.properties.hibernate.generate_statistics` (o un contador de sentencias): listar las tareas de un grupo de N tareas ejecuta un número constante de consultas.
 
+**Resolución.** La medición confirmó el N+1 en cinco listados (por ejemplo, `GET /groups/user/role`: 7 sentencias con 1 grupo y 17 con 4). Con `hibernate.default_batch_fetch_size=100` los cinco quedan constantes (`api/QueryCountApiTests`). La bandeja de requests filtra y ordena en SQL (`findByGroupFiltered`), los query services son `@Transactional(readOnly = true)` y el `findAll()` de usuarios en metrics ya se había quitado con BUG-08.
+
 ### PERF-02
 
 **Listas sin paginación** · Baja
@@ -653,6 +703,8 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 **Solución propuesta.** Agregar `Pageable` opcional (`?page&size`, con un `size` máximo de 100) a `GET /tasks/group/{id}` y `GET /groups/{id}/requests`, conservando la respuesta en forma de arreglo cuando no se pide paginación, para no romper la web.
 
 **Criterios de aceptación.** `?size=1` devuelve un elemento y sin parámetros el comportamiento no cambia.
+
+**Decisión (2026-10-13).** Aprobada tal como se propone: paginación opcional; sin parámetros la respuesta sigue siendo un arreglo.
 
 ### PERF-03
 
@@ -766,6 +818,10 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 **Criterios de aceptación.** CI ejecuta lint y formato y falla si hay errores.
 
+**Resolución.**
+- Frontend: `angular-eslint` 22 (reglas recomendadas de TypeScript, plantillas y accesibilidad); `ng lint` corre en `frontend-deploy.yml`. Corregir los 89 errores implicó la migración oficial a `inject()`, tarjetas de grupo y de tarea usables con teclado (foco y Enter), etiquetas asociadas a sus campos en el formulario de tareas y tipos en lugar de `any`. Se desactivó `adjacent-overload-signatures`, que contradice la convención de las entidades (getters agrupados y luego setters).
+- Backend: Spotless con palantir-java-format en `verify` (por lo tanto en `backend.yml`). El formato se aplicó en un commit propio, sin cambios de comportamiento.
+
 ---
 
 ## Pruebas
@@ -800,14 +856,14 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 ## Decisiones humanas (no automatizar)
 
-| ID | Decisión / acción | Relacionado | Recomendación |
-|---|---|---|---|
-| HUM-01 | **Rotar** `JWT_SECRET` y las credenciales de BD en todos los entornos que hayan usado los valores por defecto. Cargar el secreto en SSM. | SEC-04 | Hacerlo antes de desplegar la fase 1. |
-| HUM-02 | Configurar AWS: `SPRING_PROFILES_ACTIVE=prod` en la task definition de ECS, la *trust policy* OIDC de `synhub_2`, las variables `AWS_DEPLOY_ROLE_ARN`/`AWS_ACCOUNT_ID` del repo y WAF o rate limit en CloudFront/ALB. | SEC-09, SEC-11, OPS-01 | — |
-| HUM-03 | Semántica del borrado de grupos y tareas: borrado físico o *soft delete* (archivar). | BUG-01, BUG-02 | Borrado físico ordenado ahora; evaluar *soft delete* si se necesita historial. |
-| HUM-04 | Estrategia de sesión: token corto + refresh token, o cookie `HttpOnly`. | SEC-10 | Token de 1 día + logout ante un 401 ahora; cookie `HttpOnly` en una iteración posterior. |
-| HUM-05 | Funciones a medio hacer: unión a un grupo por código, expulsar miembros (`RemoveMemberUserFromGroupCommand`) y endpoints de metrics. | BUG-17, ARC-03 | Eliminar lo que no esté en el roadmap. |
-| HUM-06 | Privacidad: qué datos de un usuario pueden ver los demás (por ejemplo, el email dentro del grupo). | SEC-06 | Ocultar el email fuera de `/users/me`. |
+| ID | Decisión / acción | Relacionado | Recomendación | Decisión tomada (2026-10-13) |
+|---|---|---|---|---|
+| HUM-01 | **Rotar** `JWT_SECRET` y las credenciales de BD en todos los entornos que hayan usado los valores por defecto. Cargar el secreto en SSM. | SEC-04 | Hacerlo antes de desplegar la fase 1. | Pendiente (requiere acceso a AWS). |
+| HUM-02 | Configurar AWS: `SPRING_PROFILES_ACTIVE=prod` en la task definition de ECS, reenvío de cookies (sin caché) en el *behavior* `/api/*` de CloudFront (sesión HUM-04), la *trust policy* OIDC de `synhub_2`, las variables `AWS_DEPLOY_ROLE_ARN`/`AWS_ACCOUNT_ID` del repo y WAF o rate limit en CloudFront/ALB. | SEC-09, SEC-11, OPS-01 | — | Pendiente (requiere acceso a AWS y GitHub). |
+| HUM-03 | Semántica del borrado de grupos y tareas: borrado físico o *soft delete* (archivar). | BUG-01, BUG-02 | Borrado físico ordenado ahora; evaluar *soft delete* si se necesita historial. | **Soft delete.** Grupos, tareas, requests y membresías borrados se marcan y dejan de ser visibles en toda la API; los datos quedan en la base. Implementado: `@SoftDelete` (`deleted_at`) en `Group`, `GroupProfile`, `Invitation`, `Task` y `Request` (`api/SoftDeleteApiTests`). |
+| HUM-04 | Estrategia de sesión: token corto + refresh token, o cookie `HttpOnly`. | SEC-10 | Token de 1 día + logout ante un 401 ahora; cookie `HttpOnly` en una iteración posterior. | **Cookie `HttpOnly` válida por 1 día.** El JWT deja de guardarse en `localStorage`; un 401 cierra la sesión. |
+| HUM-05 | Funciones a medio hacer: unión a un grupo por código, expulsar miembros (`RemoveMemberUserFromGroupCommand`) y endpoints de metrics. | BUG-17, ARC-03 | Eliminar lo que no esté en el roadmap. | **Terminarlas.** Unirse por código y expulsar miembros quedan completos (API y web); metrics recibe una implementación base de sus endpoints. Hecho: `POST /groups/join` y `DELETE /groups/{id}/members/{userId}` (API y web) y 11 endpoints `GET /metrics/...` con control de acceso. |
+| HUM-06 | Privacidad: qué datos de un usuario pueden ver los demás (por ejemplo, el email dentro del grupo). | SEC-06 | Ocultar el email fuera de `/users/me`. | **Los demás ven nombre, correo y foto** (además de `id` y `username`). Roles y grupos ajenos no se exponen; `GET /users` queda solo para administradores. |
 
 ## Plan de ejecución
 
@@ -822,28 +878,46 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 | 6 | Refactorización de arquitectura | ARC-01, ARC-02, ARC-03, OPS-03 | Commits de refactorización pura; el formato (OPS-03) va al final para no ensuciar los diffs. |
 | 7 | Cierre | — | Actualizar `docs/` (secciones "Observaciones" y "Desviaciones conocidas"), poner este índice en `Resuelto` y volver a ejecutar el anexo. |
 
+## Cierre
+
+Corrección completada en la rama `audit` (2026-10-13), por fases y con un commit por hallazgo:
+
+| Indicador | Al auditar | Tras la corrección |
+|---|---|---|
+| Hallazgos abiertos | 48 | 0 (+ BUG-18, hallado y resuelto durante la corrección) |
+| Pruebas del backend | 28 | 262 (unitarias, de API contra PostgreSQL en Testcontainers y de arquitectura), con formato verificado (Spotless) |
+| Pruebas del frontend | 25 | 202, con ESLint sin errores |
+| Pruebas `AUDIT` deshabilitadas (documentaban defectos) | todas las del inventario | 0: todas habilitadas y pasando |
+| `npm audit` (altas o críticas) | 5 | 0 |
+| Casos del anexo con el resultado esperado | 2 de 17 | 18 de 18 (`scripts/audit-smoke.py`) |
+
+Decisiones humanas aplicadas: HUM-03 (soft delete), HUM-04 (cookie `HttpOnly` de 1 día), HUM-05 (unirse por código, quitar integrantes y métricas base) y HUM-06 (nombre, correo y foto visibles). Además se decidió paginación opcional (PERF-02) y Flyway desde una base vacía (ARC-04).
+
+**Pendiente antes de desplegar (HUM-01, HUM-02):** rotar `JWT_SECRET` y `DATABASE_PASSWORD` en SSM; en la task definition de ECS, `SPRING_PROFILES_ACTIVE=prod` y esas variables; en CloudFront, reenviar las cookies y no cachear `/api/*`; una regla de WAF para limitar los intentos de login; y la *trust policy* OIDC más las variables `AWS_DEPLOY_ROLE_ARN` y `AWS_ACCOUNT_ID` del repositorio. La base de datos debe empezar vacía (Flyway crea el esquema).
+
 ## Anexo: scripts de verificación
 
-**Reproducción de seguridad y defectos.** Script Python usado en la auditoría, adaptable como test de humo. Con el stack levantado (`docker compose up`), registrar los usuarios `leader`, `member`, `outsider` y `xuser`, y ejecutar las peticiones de la tabla. Resultados al momento de la auditoría (esperados tras la corrección entre paréntesis):
+**Reproducción de seguridad y defectos.** El script está en [`scripts/audit-smoke.py`](../scripts/audit-smoke.py) (`docker compose up --build -d` y luego `python scripts/audit-smoke.py`). La última columna muestra la ejecución sobre la rama `audit`, con todos los casos como se esperaba. Con el stack levantado (`docker compose up`), registrar los usuarios `leader`, `member`, `outsider` y `xuser`, y ejecutar las peticiones de la tabla. Resultados al momento de la auditoría (esperados tras la corrección entre paréntesis):
 
-| Caso | Obtenido | Esperado |
-|---|---|---|
-| Registro con email duplicado | 500 | 409 |
-| Registro con contraseña `"1"` y email inválido | 201 | 400 |
-| Registro con un rol inexistente | 500 | 201 con `ROLE_USER` (SEC-05) |
-| `POST /groups` sin `name` | 500 | 400 |
-| `POST /tasks` sin `title` | 200 | 400 |
-| Ajeno: `GET /invitations/group?groupId=` | 200 | 403 |
-| Ajeno: `GET /groups/{id}/members` | 200 | 403 |
-| Ajeno: `GET /tasks/group/{id}` | 200 | 403 |
-| Ajeno: `GET /tasks/{id}` | 200 | 403 |
-| Ajeno: `GET /tasks/{id}/requests` | 200 | 403 |
-| Ajeno: `GET /users` | 200 | 403 |
-| Ajeno: `DELETE /tasks/{t}/requests/{r}` | 204 | 403 |
-| Líder: `DELETE /tasks/{id}` con requests | 500 | 204 |
-| Líder: `DELETE /groups/{id}` con tareas | 500 | 204 |
-| Líder: `DELETE /groups/{id}` vacío | 204 | 204 |
-| Token alterado | 401 | 401 |
-| Tokens completos en `docker logs` | 22 | 0 |
+| Caso | Al auditar | Esperado | Rama `audit` |
+|---|---|---|---|
+| Registro con email duplicado | 500 | 409 | ✓ |
+| Registro con contraseña `"1"` y email inválido | 201 | 400 | ✓ |
+| Registro con un rol inexistente | 500 | 201 con `ROLE_USER` (SEC-05) | ✓ |
+| `POST /groups` sin `name` | 500 | 400 | ✓ |
+| `POST /tasks` sin `title` | 200 | 400 | ✓ |
+| Ajeno: `GET /invitations/group?groupId=` | 200 | 403 | ✓ |
+| Ajeno: `GET /groups/{id}/members` | 200 | 403 | ✓ |
+| Ajeno: `GET /tasks/group/{id}` | 200 | 403 | ✓ |
+| Ajeno: `GET /tasks/{id}` | 200 | 403 | ✓ |
+| Ajeno: `GET /tasks/{id}/requests` | 200 | 403 | ✓ |
+| Ajeno: `GET /users` | 200 | 403 | ✓ |
+| Ajeno: `DELETE /tasks/{t}/requests/{r}` | 204 | 403 | ✓ |
+| Líder: `DELETE /tasks/{id}` con requests | 500 | 204 | ✓ |
+| Líder: `DELETE /groups/{id}` con tareas | 500 | 204 | ✓ |
+| Líder: `DELETE /groups/{id}` vacío | 204 | 204 | ✓ |
+| Token alterado | 401 | 401 | ✓ |
+| Tokens completos en `docker logs` | 22 | 0 | ✓ |
+| Errores 500 en los logs durante la prueba | — | 0 | ✓ |
 
 **Enlaces de la documentación.** Comprobar que todos los enlaces Markdown relativos de los `.md` apunten a archivos existentes y que las anclas `#…` coincidan con encabezados (slug de GitHub: minúsculas, sin puntuación y espacios → `-`). Al momento de la auditoría: 238 enlaces, 0 rotos.

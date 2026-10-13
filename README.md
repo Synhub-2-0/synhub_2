@@ -17,6 +17,8 @@ Toda la documentación está en **[`docs/`](docs/README.md)** y se divide en dos
 - **[`docs/architecture/`](docs/architecture/README.md)**: organización técnica del proyecto. El backend aplica **DDD** con un bounded context por feature y capas al estilo **Clean Architecture / hexagonal** (`interfaces → application → domain ← infrastructure`), **CQRS** a nivel de servicio y **ACL** entre contextos. El frontend replica esos contextos como módulos con capas `domain / infrastructure / application / presentation`, stores con **signals** y un patrón **endpoint + assembler** para consumir la API **REST**. También incluye el catálogo de endpoints, los criterios de propiedad del código compartido y el despliegue.
 - **[`docs/features/<feature>/`](docs/README.md#features)**: una carpeta por feature, definida según los recursos REST. Cada una tiene un `README.md` (qué hace y cómo se comunican frontend y backend), `backend/README.md` y `frontend/README.md`.
 
+Además, **[`docs/AUDIT_RESULTS.md`](docs/AUDIT_RESULTS.md)** resume la auditoría técnica: qué se corrigió y qué queda pendiente antes del despliegue.
+
 ### Features
 
 | Feature | Resumen | Docs |
@@ -27,7 +29,7 @@ Toda la documentación está en **[`docs/`](docs/README.md)** y se divide en dos
 | tasks | Tareas, Kanban, ciclo de estados, vencimiento automático | [README](docs/features/tasks/README.md) · [backend](docs/features/tasks/backend/README.md) · [frontend](docs/features/tasks/frontend/README.md) |
 | requests | Entregas y validación por el líder | [README](docs/features/requests/README.md) · [backend](docs/features/requests/backend/README.md) · [frontend](docs/features/requests/frontend/README.md) |
 | ai | Clasificación de tareas e informe de grupo | [README](docs/features/ai/README.md) · [backend](docs/features/ai/backend/README.md) · [frontend](docs/features/ai/frontend/README.md) |
-| metrics | Métricas de productividad (uso interno) | [README](docs/features/metrics/README.md) · [backend](docs/features/metrics/backend/README.md) · [frontend](docs/features/metrics/frontend/README.md) |
+| metrics | Métricas de productividad (API base de solo lectura) | [README](docs/features/metrics/README.md) · [backend](docs/features/metrics/backend/README.md) · [frontend](docs/features/metrics/frontend/README.md) |
 | tour | Video de recorrido por capítulos (solo frontend) | [README](docs/features/tour/README.md) · [backend](docs/features/tour/backend/README.md) · [frontend](docs/features/tour/frontend/README.md) |
 
 ### Documentación técnica
@@ -49,7 +51,7 @@ Los agentes de código (Claude Code, Gemini CLI, Codex) tienen sus instrucciones
 
 ```bash
 # Backend (requiere PostgreSQL en localhost:5432)
-cd backend && ./mvnw spring-boot:run
+cd backend && SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run   # el perfil dev trae credenciales locales
 
 # Frontend → http://localhost:4200 (llama a http://localhost:8080/api/v1)
 cd frontend && npm ci && npx ng serve
@@ -58,7 +60,7 @@ cd frontend && npm ci && npx ng serve
 Pruebas:
 
 ```bash
-cd backend && ./mvnw verify          # necesita PostgreSQL
+cd backend && ./mvnw verify          # necesita Docker (Testcontainers) o DATABASE_URL
 cd frontend && npx ng test --watch=false
 ```
 
@@ -67,6 +69,7 @@ cd frontend && npx ng test --watch=false
 El `Dockerfile` de la raíz genera una sola imagen: compila el frontend y el backend, y en ejecución nginx sirve la web en el puerto 80 y reenvía `/api/` al backend (Spring Boot, puerto interno 8080).
 
 ```bash
+cp .env.example .env   # completa DATABASE_PASSWORD y JWT_SECRET
 docker compose up --build
 ```
 
@@ -76,6 +79,6 @@ Esto levanta la app y PostgreSQL; la web queda en http://localhost:8080. Variabl
 
 Los workflows están en `.github/workflows/` y solo se disparan cuando cambian archivos de su carpeta:
 
-- `frontend-deploy.yml`: tests y build del frontend; en `main` despliega a S3/CloudFront.
-- `backend-ci.yml`: `mvnw verify` con PostgreSQL.
-- `backend-deploy.yml`: en `main` construye la imagen, la sube a ECR y redepliega en ECS.
+- `frontend-deploy.yml`: `npm audit`, tests y build del frontend; en `main`, si pasan, despliega a S3/CloudFront.
+- `backend.yml`: `mvnw verify` (PostgreSQL con Testcontainers); en `main`, si pasan, construye la imagen con el jar probado, la sube a ECR y redepliega en ECS.
+- `dependabot.yml`: actualizaciones semanales de dependencias.

@@ -5,5 +5,4 @@ export interface SignUpRequest {
   imgUrl: string;
   email: string;
   password: string;
-  accountRoles: string[];
 }

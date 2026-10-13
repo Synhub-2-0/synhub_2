@@ -1,31 +1,23 @@
-import {Injectable} from '@angular/core';
-import {BaseApi} from '../../shared/infrastructure/base-api';
-import {InvitationsApiEndpoint} from './invitations.api-endpoint';
-import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
-import {Invitation} from '../domain/model/invitation.entity';
-import {CreateInvitationCommand} from '../domain/model/create-invitation.command';
+import { Injectable, inject } from '@angular/core';
+import { InvitationsApiEndpoint } from './invitations.api-endpoint';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Invitation } from '../domain/model/invitation.entity';
+import { CreateInvitationCommand } from '../domain/model/create-invitation.command';
 
-@Injectable({providedIn: 'root'})
-export class InvitationsApi extends BaseApi {
+@Injectable({ providedIn: 'root' })
+export class InvitationsApi {
   private readonly invitationsEndpoint: InvitationsApiEndpoint;
 
-  constructor(http: HttpClient) {
-    super();
+  constructor() {
+    const http = inject(HttpClient);
+
     this.invitationsEndpoint = new InvitationsApiEndpoint(http);
   }
 
   createInvitation(command: CreateInvitationCommand): Observable<Invitation> {
     return this.invitationsEndpoint.createInvitation(command);
   }
-
-  /*
-   * TODO: Reactivar cuando el backend permita solicitar la unión a un grupo.
-   *
-   * inviteUserToGroup(groupId: number, userId: number) {
-   *   return this.invitationsEndpoint.inviteUserToGroup(groupId, userId);
-   * }
-   */
 
   acceptInvitation(id: number) {
     return this.invitationsEndpoint.acceptInvitation(id);

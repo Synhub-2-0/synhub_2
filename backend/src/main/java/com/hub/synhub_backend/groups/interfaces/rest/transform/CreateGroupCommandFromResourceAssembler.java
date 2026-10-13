@@ -8,8 +8,7 @@ public class CreateGroupCommandFromResourceAssembler {
         return new CreateGroupCommand(
                 resource.name(),
                 resource.imgUrl(),
-                resource.description(),
-                leaderId
-        );
+                resource.description() == null ? "" : resource.description(),
+                leaderId);
     }
 }

@@ -64,7 +64,6 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
 
   toUpdateRequestFromCommand(command: UpdateTaskCommand): UpdateTaskRequest {
     return {
-      requesterId: command.requesterId,
       title: command.title,
       description: command.description,
       dueDate: command.dueDate.toISOString(),

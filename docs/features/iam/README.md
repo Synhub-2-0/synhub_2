@@ -13,8 +13,8 @@ Registro de cuentas, inicio de sesión con JWT, consulta de usuarios y roles de 
 ## Qué resuelve
 
 - **Registro** (`sign-up`): crea un `User` con contraseña hasheada (BCrypt) y uno o más roles de cuenta.
-- **Inicio de sesión** (`sign-in`): valida credenciales y devuelve un JWT válido por 7 días.
-- **Sesión en la web**: el token se guarda en `localStorage`, un interceptor lo agrega a cada petición y un guard protege las rutas privadas.
+- **Inicio de sesión** (`sign-in`): valida credenciales y abre una sesión de 1 día: el JWT viaja en la cookie `HttpOnly` `SYNHUB_SESSION` (HUM-04). `sign-out` la borra.
+- **Sesión en la web**: el JWT viaja en una cookie `HttpOnly` de 1 día que el JavaScript no puede leer (decisión HUM-04). Un interceptor envía las peticiones con credenciales y cierra la sesión ante un 401; un guard protege las rutas privadas.
 - **Consulta de usuarios**: `/users/me`, `/users/{id}` y `/users/username?username=`; otras features las usan para resolver perfiles.
 
 ## Comunicación frontend ↔ backend
@@ -39,17 +39,16 @@ sequenceDiagram
     API->>C: { username, password }
     C->>CS: handle(SignInCommand)
     CS-->>C: (User, token JWT)
-    C-->>API: 200 { id, username, token, role }
+    C-->>API: 200 { id, username, role, expiresAt } + Set-Cookie SYNHUB_SESSION (HttpOnly)
     API-->>S: SignInResource
-    S->>S: localStorage token + userId
-    S->>API: GET /api/v1/users/{id} (con Bearer)
+    S->>S: localStorage userId + sessionExpiresAt (nunca el token)
+    S->>API: GET /api/v1/users/{id} (la cookie viaja sola)
     S-->>UI: navega a /home
 ```
 
 ## Propiedad compartida
 
 - **`User` es referenciado por otros contextos**: `GroupProfile.user` e `Invitation.user` (groups) apuntan directamente a la entidad JPA de IAM. El dueño del agregado sigue siendo IAM.
-- **`GetUsersByGroupIdQuery`** vive en IAM (`UserQueryServiceImpl`), pero lee `GroupProfileRepository` de **groups**. Conceptualmente es una consulta de *membresía*, así que le pertenece a [groups](../groups/README.md); hoy solo se expone mediante `IamContextFacade.fetchUsersByGroupId`.
 - **Usuario actual en los controladores**: todos los controladores (groups, tasks, requests, ai) resuelven el usuario autenticado con `UserQueryService` + `GetUserByUsernameQuery`. Es una dependencia directa hacia IAM, no mediante la ACL.
 - **Frontend**: `InvitationsStore` usa `IamApi` (de IAM) para buscar usuarios por nombre; `GroupsStore`, `TasksStore` y `RequestsStore` inyectan `IamStore` para conocer al usuario actual.
 

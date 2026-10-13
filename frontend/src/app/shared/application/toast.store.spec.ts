@@ -56,4 +56,14 @@ describe('ToastStore', () => {
     store.error('Solo el líder del grupo puede enviar invitaciones.');
     expect(store.toasts()[0].message).toBe('Solo el líder del grupo puede enviar invitaciones.');
   });
+
+  it('AUDIT FE-02: ningún error técnico llega en inglés al usuario', () => {
+    const technical = [
+      'Failed to fetch entities: 500', 'Failed to create group: 400', 'Failed to join group: Resource not found',
+      'Failed to remove member: 409', 'Failed to load group tasks: 403', 'Failed to sign-out: 0',
+      'Failed to fetch members of group with id 4: Unexpected error',
+    ];
+    for (const message of technical) store.error(message);
+    for (const toast of store.toasts()) expect(toast.message).not.toMatch(/failed|resource|unexpected|error/i);
+  });
 });

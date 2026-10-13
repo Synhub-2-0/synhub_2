@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {BaseForm} from '../../../../shared/presentation/components/base-form/base-form';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {IamStore} from '../../../application/iam.store';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {SignInCommand} from '../../../domain/model/sign-in.command';
@@ -23,6 +23,9 @@ import {MatIcon} from '@angular/material/icon';
 export class SignInPage extends BaseForm {
   private router = inject(Router);
   private store = inject(IamStore);
+
+  /** El interceptor redirige aquí con ?expired=1 cuando el backend rechaza la sesión (401). */
+  readonly sessionExpired = inject(ActivatedRoute, {optional: true})?.snapshot.queryParamMap.get('expired') === '1';
 
   form = new FormGroup({
     username: new FormControl('', {nonNullable: true, validators: [Validators.required]}),

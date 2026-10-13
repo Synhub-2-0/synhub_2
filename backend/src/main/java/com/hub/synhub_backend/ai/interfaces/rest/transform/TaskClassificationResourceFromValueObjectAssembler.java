@@ -5,7 +5,11 @@ import com.hub.synhub_backend.ai.interfaces.rest.resources.TaskClassificationRes
 
 public class TaskClassificationResourceFromValueObjectAssembler {
     public static TaskClassificationResource toResourceFromValueObject(TaskClassification classification) {
-        return new TaskClassificationResource(classification.labels(), classification.urgency(),
-                classification.difficulty(), classification.context(), classification.rationale());
+        return new TaskClassificationResource(
+                classification.labels(),
+                classification.urgency(),
+                classification.difficulty(),
+                classification.context(),
+                classification.rationale());
     }
 }
