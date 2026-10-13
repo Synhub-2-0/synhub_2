@@ -145,7 +145,7 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
 
 ## 6. Errores
 
-`shared/interfaces/rest/exceptions/GlobalExceptionHandler` (`@RestControllerAdvice`) convierte las excepciones en `ErrorResponse { timestamp, status, error, message, path }`:
+`shared/interfaces/rest/exceptions/GlobalExceptionHandler` (`@RestControllerAdvice`) convierte las excepciones en `ErrorResponse { timestamp, status, error, message, path }` (`timestamp` en UTC con zona, BUG-14):
 
 | Excepción | HTTP |
 |---|---|

@@ -19,13 +19,13 @@ Todos requieren token.
 ```text
 CreateTaskResource = { title, description, dueDate (OffsetDateTime), userId, groupId,
                        difficulty?, context?, urgency?, labels?, aiAccepted? }
-UpdateTaskResource = { requesterId, title, description, dueDate, userId }
+UpdateTaskResource = { title, description, dueDate, userId }
 TaskResource       = { id, title, description, dueDate, createdAt, updatedAt, status,
                        group: GroupResourceReduced, assignedTo: PublicUserResource,
                        difficulty, context, urgency, labels, aiAccepted }
 ```
 
-`UpdateTaskResource.requesterId` se ignora: el solicitante siempre se toma del token.
+Quien edita se toma siempre de la sesión; el cuerpo no lo incluye (BUG-16).
 
 
 ## Modelo de dominio

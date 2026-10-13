@@ -88,21 +88,21 @@ Los riesgos principales son tres:
 | [DEP-02](#dep-02) | Baja | Backend · dependencias | Versiones de JJWT desalineadas | Código | Resuelto (0.12.7) |
 | [DEP-03](#dep-03) | Baja | Dependencias | Sin escaneo automático de dependencias | Código | Resuelto |
 | [BUG-10](#bug-10) | Baja | Backend · groups | `LeaderCannotBeRemovedException` responde 500 | Código | Resuelto |
-| [BUG-11](#bug-11) | Baja | Backend · groups | `findByLeaderId` derivado de una propiedad inexistente | Código | Pendiente |
+| [BUG-11](#bug-11) | Baja | Backend · groups | `findByLeaderId` derivado de una propiedad inexistente | Código | Resuelto |
 | [BUG-12](#bug-12) | Baja | Backend · groups | `GroupProfile.tasks` es `null` en los constructores | Código | Resuelto |
-| [BUG-13](#bug-13) | Baja | Backend · iam | `@Data` en la entidad JPA `Role` | Código | Pendiente |
-| [BUG-14](#bug-14) | Baja | Backend · shared | `ErrorResponse.timestamp` sin zona horaria | Reproducido | Pendiente |
-| [BUG-15](#bug-15) | Baja | Frontend · iam | `Profile.userId` siempre `undefined` | Código | Pendiente |
-| [BUG-16](#bug-16) | Baja | API · tasks | `UpdateTaskResource.requesterId` se ignora | Código | Pendiente |
+| [BUG-13](#bug-13) | Baja | Backend · iam | `@Data` en la entidad JPA `Role` | Código | Resuelto |
+| [BUG-14](#bug-14) | Baja | Backend · shared | `ErrorResponse.timestamp` sin zona horaria | Reproducido | Resuelto |
+| [BUG-15](#bug-15) | Baja | Frontend · iam | `Profile.userId` siempre `undefined` | Código | Resuelto |
+| [BUG-16](#bug-16) | Baja | API · tasks | `UpdateTaskResource.requesterId` se ignora | Código | Resuelto |
 | [BUG-17](#bug-17) | Baja | Frontend · groups | Búsqueda por código comentada aunque el backend la expone | Código | Resuelto (unirse por código, HUM-05) |
 | [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Pendiente |
 | [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Pendiente |
 | [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Pendiente |
 | [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Pendiente |
-| [FE-01](#fe-01) | Baja | Frontend | `console.log` y `console.error` en producción | Código | Pendiente |
-| [FE-02](#fe-02) | Baja | Frontend | Mensajes de error mezclados en inglés y español | Código | Pendiente |
-| [FE-03](#fe-03) | Baja | Frontend · iam | El registro no exige una contraseña mínima | Código | Pendiente |
-| [FE-04](#fe-04) | Baja | Repositorio | Archivos sobrantes (README genérico, `.vscode`, `package-lock` en el backend) | Código | Pendiente |
+| [FE-01](#fe-01) | Baja | Frontend | `console.log` y `console.error` en producción | Código | Resuelto |
+| [FE-02](#fe-02) | Baja | Frontend | Mensajes de error mezclados en inglés y español | Código | Resuelto (traducción centralizada en `ToastStore`) |
+| [FE-03](#fe-03) | Baja | Frontend · iam | El registro no exige una contraseña mínima | Código | Resuelto |
+| [FE-04](#fe-04) | Baja | Repositorio | Archivos sobrantes (README genérico, `.vscode`, `package-lock` en el backend) | Código | Resuelto |
 | [OPS-03](#ops-03) | Baja | CI/CD | Sin lint ni formato en CI | Código | Pendiente |
 | [TEST-02](#test-02) | Baja | Pruebas | El test de contexto depende de un PostgreSQL local | Código | Resuelto |
 

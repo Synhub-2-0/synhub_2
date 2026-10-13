@@ -36,7 +36,7 @@ Todos requieren token. El usuario actual se obtiene del token (`@AuthenticationP
 | Servicio | Mensajes |
 |---|---|
 | `GroupCommandServiceImpl` | `CreateGroupCommand`, `UpdateGroupCommand`, `DeleteGroupCommand`, `JoinGroupByCodeCommand(code, userId)` y `RemoveMemberUserFromGroupCommand(requesterId, userId, groupId)` (lanza `LeaderCannotBeRemovedException` si se intenta quitar al líder). |
-| `GroupQueryServiceImpl` | `GetGroupByIdQuery`, `GetGroupByCodeQuery`, `GetGroupsByUserIdQuery`, `GetGroupsByUserRoleQuery`, `GetGroupMembersByGroupIdQuery`, `GetGroupsByLeaderIdQuery` (sin uso). |
+| `GroupQueryServiceImpl` | `GetGroupByIdQuery`, `GetGroupByCodeQuery`, `GetGroupsByUserIdQuery`, `GetGroupsByUserRoleQuery` y `GetGroupMembersByGroupIdQuery`. |
 
 Las reglas de autorización (por ejemplo, "solo el líder") se validan en los command services y lanzan `AccessDeniedException` (403).
 
@@ -53,7 +53,7 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 
 ## Persistencia
 
-`GroupRepository` (`findByCode`, `existsByCode`, `findByLeaderId`) y `GroupProfileRepository` (`findByGroup_IdAndUser_Id`, `existsByGroup_IdAndUser_Id`, `findByUser_Id`, `findByGroup_Id`). Las tablas siguen `SnakeCaseWithPluralizedTablePhysicalNamingStrategy` (por ejemplo, `group_profiles`).
+`GroupRepository` (`findByCode`, `existsByCode`) y `GroupProfileRepository` (`findByGroup_IdAndUser_Id`, `existsByGroup_IdAndUser_Id`, `findByUser_Id`, `findByGroup_Id`). Las tablas siguen `SnakeCaseWithPluralizedTablePhysicalNamingStrategy` (por ejemplo, `group_profiles`).
 
 ## Errores
 
@@ -65,4 +65,3 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 
 ## Observaciones
 
-- `GroupRepository.findByLeaderId` está derivado de una propiedad `leader` que `Group` no tiene como campo: el líder se calcula desde `userProfiles`. Solo lo usa `GetGroupsByLeaderIdQuery`, que tampoco se invoca. Revisarlo antes de usarlo.

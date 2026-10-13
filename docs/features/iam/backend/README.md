@@ -24,7 +24,7 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 | Tipo | Clase | Notas |
 |---|---|---|
 | Agregado | `User` | `username` (único, ≤50), `name`, `surname`, `imgUrl` (≤1024), `email` (único), `password` (hash BCrypt), `accountRoles` (`@ManyToMany` EAGER con `Role`, tabla `user_roles`), `groupProfiles` (relación inversa hacia groups). |
-| Entidad | `Role` | `name: AccountRole`. `Role.validateRoleSet` asigna `ROLE_USER` si la lista llega vacía. |
+| Entidad | `Role` | `name: AccountRole`. `Role.validateRoleSet` asigna `ROLE_USER` si la lista llega vacía. `equals`/`hashCode` usan `name` (único), no el `id` que asigna la base: es seguro dentro del `Set` `User.accountRoles` (BUG-13). |
 | Value object | `AccountRole` | `ROLE_USER`, `ROLE_ADMIN`. Son roles **de cuenta**; los roles dentro de un grupo (`GROUP_LEADER`/`GROUP_MEMBER`) son de [groups](../../groups/backend/README.md). |
 
 ## Capa de aplicación (CQRS)
