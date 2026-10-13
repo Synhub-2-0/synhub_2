@@ -5,14 +5,23 @@ import { SignInCommand } from '../domain/model/sign-in.command';
 import { SignUpCommand } from '../domain/model/sign-up.command';
 import { IamApi } from '../infrastructure/iam.api';
 import { ToastStore } from '../../shared/application/toast.store';
-import { clearStoredSession, hasActiveSession, saveSession, storedUserId } from '../infrastructure/session';
+import {
+  clearStoredSession,
+  hasActiveSession,
+  saveSession,
+  storedUserId,
+} from '../infrastructure/session';
 
 @Injectable({ providedIn: 'root' })
 export class IamStore {
+  private readonly iamApi = inject(IamApi);
+
   // El JWT vive en una cookie HttpOnly (HUM-04); aquí solo se conoce si hay una sesión vigente.
   private readonly isSignedInSignal = signal(hasActiveSession());
   private readonly currentUsernameSignal = signal<string | null>(null);
-  private readonly currentUserIdSignal = signal<number | null>(hasActiveSession() ? storedUserId() : null);
+  private readonly currentUserIdSignal = signal<number | null>(
+    hasActiveSession() ? storedUserId() : null,
+  );
   private readonly currentProfileSignal = signal<Profile | null>(null);
 
   readonly isSignedIn = this.isSignedInSignal.asReadonly();
@@ -22,24 +31,22 @@ export class IamStore {
 
   private readonly toastStore = inject(ToastStore);
 
-  constructor(private readonly iamApi: IamApi) {}
-
   signIn(command: SignInCommand, router: Router): void {
     this.clearSession();
     this.iamApi.signIn(command).subscribe({
-      next: resource => {
+      next: (resource) => {
         saveSession(resource.id, resource.expiresAt);
         this.isSignedInSignal.set(true);
         this.currentUsernameSignal.set(resource.username);
         this.currentUserIdSignal.set(resource.id);
 
         this.iamApi.getProfileByUserId(resource.id).subscribe({
-          next: profile => this.currentProfileSignal.set(profile),
+          next: (profile) => this.currentProfileSignal.set(profile),
           error: () => this.currentProfileSignal.set(null),
         });
         router.navigate(['/home']).then();
       },
-      error: err => {
+      error: (err) => {
         this.toastStore.error(err.message);
         this.clearSession();
         router.navigate(['/auth/sign-in']).then();
@@ -50,8 +57,12 @@ export class IamStore {
   signUp(command: SignUpCommand, router: Router): void {
     this.iamApi.signUp(command).subscribe({
       // The new account is signed in right away with the credentials just registered.
-      next: () => this.signIn(new SignInCommand({ username: command.username, password: command.password }), router),
-      error: err => {
+      next: () =>
+        this.signIn(
+          new SignInCommand({ username: command.username, password: command.password }),
+          router,
+        ),
+      error: (err) => {
         this.toastStore.error(err.message);
         this.clearSession();
         router.navigate(['/auth/sign-up']).then();
@@ -79,14 +90,14 @@ export class IamStore {
       return Promise.resolve();
     }
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.iamApi.autoSignIn().subscribe({
-        next: user => {
+        next: (user) => {
           this.isSignedInSignal.set(true);
           this.currentUsernameSignal.set(user.username);
           this.currentUserIdSignal.set(user.id);
           this.iamApi.getProfileByUserId(user.id).subscribe({
-            next: profile => this.currentProfileSignal.set(profile),
+            next: (profile) => this.currentProfileSignal.set(profile),
             error: () => this.currentProfileSignal.set(null),
             complete: () => resolve(),
           });

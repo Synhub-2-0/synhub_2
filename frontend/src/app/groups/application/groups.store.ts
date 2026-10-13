@@ -11,6 +11,10 @@ import { IamStore } from '../../iam/application/iam.store';
 
 @Injectable({ providedIn: 'root' })
 export class GroupsStore {
+  private groupsApi = inject(GroupsApi);
+  private iamStore = inject(IamStore);
+  private location = inject(Location);
+
   private readonly toastStore = inject(ToastStore);
   private readonly groupsSignal = signal<Group[]>([]);
   private readonly leaderGroupsSignal = signal<Group[]>([]);
@@ -32,11 +36,7 @@ export class GroupsStore {
 
   readonly groupCount = computed(() => this.groups().length);
 
-  constructor(
-    private groupsApi: GroupsApi,
-    private iamStore: IamStore,
-    private location: Location,
-  ) {
+  constructor() {
     // Root stores outlive the session: drop the previous user's data as soon as the session ends.
     effect(() => {
       if (!this.iamStore.isSignedIn()) this.reset();
@@ -161,11 +161,17 @@ export class GroupsStore {
       },
       error: (err) => {
         this.joiningSignal.set(false);
-        this.setError(this.membershipErrorMessage(err, {
-          404: 'No existe un grupo con ese código.',
-          409: 'Ya perteneces a este grupo.',
-          400: 'El código no es válido.',
-        }, 'No se pudo unir al grupo. Inténtalo nuevamente.'));
+        this.setError(
+          this.membershipErrorMessage(
+            err,
+            {
+              404: 'No existe un grupo con ese código.',
+              409: 'Ya perteneces a este grupo.',
+              400: 'El código no es válido.',
+            },
+            'No se pudo unir al grupo. Inténtalo nuevamente.',
+          ),
+        );
       },
     });
   }
@@ -182,11 +188,18 @@ export class GroupsStore {
         this.loadGroups();
         onSuccess?.();
       },
-      error: (err) => this.setError(this.membershipErrorMessage(err, {
-        403: 'Solo el líder puede quitar integrantes.',
-        404: 'Esa persona ya no pertenece al grupo.',
-        409: 'El líder no puede salir del grupo.',
-      }, 'No se pudo quitar al integrante. Inténtalo nuevamente.')),
+      error: (err) =>
+        this.setError(
+          this.membershipErrorMessage(
+            err,
+            {
+              403: 'Solo el líder puede quitar integrantes.',
+              404: 'Esa persona ya no pertenece al grupo.',
+              409: 'El líder no puede salir del grupo.',
+            },
+            'No se pudo quitar al integrante. Inténtalo nuevamente.',
+          ),
+        ),
     });
   }
 
@@ -200,19 +213,32 @@ export class GroupsStore {
         this.loadGroups();
         router.navigate(['/groups/member']).then();
       },
-      error: (err) => this.setError(this.membershipErrorMessage(err, {
-        409: 'El líder no puede salir del grupo.',
-      }, 'No se pudo salir del grupo. Inténtalo nuevamente.')),
+      error: (err) =>
+        this.setError(
+          this.membershipErrorMessage(
+            err,
+            {
+              409: 'El líder no puede salir del grupo.',
+            },
+            'No se pudo salir del grupo. Inténtalo nuevamente.',
+          ),
+        ),
     });
   }
 
-  private membershipErrorMessage(error: unknown, byStatus: Record<number, string>, fallback: string): string {
+  private membershipErrorMessage(
+    error: unknown,
+    byStatus: Record<number, string>,
+    fallback: string,
+  ): string {
     const message = error instanceof Error ? error.message : '';
-    const status = message.includes('Resource not found') ? 404 : Number(/:\s*(\d{3})\s*$/.exec(message)?.[1]);
+    const status = message.includes('Resource not found')
+      ? 404
+      : Number(/:\s*(\d{3})\s*$/.exec(message)?.[1]);
     return byStatus[status] ?? fallback;
   }
 
-  private formatError(error: any, fallback: string): string {
+  private formatError(error: unknown, fallback: string): string {
     if (error instanceof Error) {
       return error.message.includes('Resource not found')
         ? `${fallback}: Not found`

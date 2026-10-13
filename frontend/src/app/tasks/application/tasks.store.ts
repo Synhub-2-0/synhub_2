@@ -9,6 +9,8 @@ import { retry } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TasksStore {
+  private tasksApi = inject(TasksApi);
+
   private readonly toastStore = inject(ToastStore);
   private readonly iamStore = inject(IamStore);
   private readonly tasksSignal = signal<Task[]>([]);
@@ -33,7 +35,7 @@ export class TasksStore {
     return filter === 'ALL' ? all : all.filter((t) => t.status === filter);
   });
 
-  constructor(private tasksApi: TasksApi) {
+  constructor() {
     // Root stores outlive the session: drop the previous user's data as soon as the session ends.
     effect(() => {
       if (!this.iamStore.isSignedIn()) this.reset();
@@ -109,7 +111,11 @@ export class TasksStore {
       .subscribe({
         next: (tasks) => {
           this.tasksSignal.set(tasks);
-          this.assignedGroupIdsSignal.set([...new Set(tasks.map((task) => task.group?.id).filter((id): id is number => id != null))]);
+          this.assignedGroupIdsSignal.set([
+            ...new Set(
+              tasks.map((task) => task.group?.id).filter((id): id is number => id != null),
+            ),
+          ]);
           this.loadingSignal.set(false);
         },
         error: (err) => {
@@ -240,7 +246,7 @@ export class TasksStore {
       });
   }
 
-  private formatError(error: any, fallback: string): string {
+  private formatError(error: unknown, fallback: string): string {
     if (error instanceof Error) {
       return error.message.includes('Resource not found')
         ? `${fallback}: Not found`

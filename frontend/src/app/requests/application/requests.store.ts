@@ -1,13 +1,15 @@
 import { IamStore } from '../../iam/application/iam.store';
 import { ToastStore } from '../../shared/application/toast.store';
-import {Injectable, signal, inject, effect } from '@angular/core';
-import {Observable} from 'rxjs';
-import {RequestStatus, TaskRequest} from '../domain/model/task-request.entity';
-import {CreateRequestCommand} from '../domain/model/create-request.command';
-import {RequestsApi} from '../infrastructure/requests.api';
+import { Injectable, signal, inject, effect } from '@angular/core';
+import { Observable } from 'rxjs';
+import { RequestStatus, TaskRequest } from '../domain/model/task-request.entity';
+import { CreateRequestCommand } from '../domain/model/create-request.command';
+import { RequestsApi } from '../infrastructure/requests.api';
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class RequestsStore {
+  private requestsApi = inject(RequestsApi);
+
   private readonly toastStore = inject(ToastStore);
   private readonly iamStore = inject(IamStore);
   private readonly submissionsSignal = signal<TaskRequest[]>([]);
@@ -24,7 +26,7 @@ export class RequestsStore {
   readonly processing = this.processingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
 
-  constructor(private requestsApi: RequestsApi) {
+  constructor() {
     // Root stores outlive the session: drop the previous user's data as soon as the session ends.
     effect(() => {
       if (!this.iamStore.isSignedIn()) this.reset();
@@ -43,19 +45,17 @@ export class RequestsStore {
     this.statusFilterSignal.set(status);
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
-    this.requestsApi
-      .getRequestsByGroup(groupId, status, 'SUBMISSION')
-      .subscribe({
-        next: (requests) => {
-          this.submissionsSignal.set(requests);
-          this.loadingSignal.set(false);
-        },
-        error: (err) => {
-          this.submissionsSignal.set([]);
-          this.setError(err.message);
-          this.loadingSignal.set(false);
-        }
-      });
+    this.requestsApi.getRequestsByGroup(groupId, status, 'SUBMISSION').subscribe({
+      next: (requests) => {
+        this.submissionsSignal.set(requests);
+        this.loadingSignal.set(false);
+      },
+      error: (err) => {
+        this.submissionsSignal.set([]);
+        this.setError(err.message);
+        this.loadingSignal.set(false);
+      },
+    });
   }
 
   approveSubmission(request: TaskRequest): void {
@@ -71,30 +71,35 @@ export class RequestsStore {
     this.processingSignal.set(true);
     this.errorSignal.set(null);
     this.requestsApi
-      .createRequest(new CreateRequestCommand({taskId, description, requestType: 'SUBMISSION'}))
+      .createRequest(new CreateRequestCommand({ taskId, description, requestType: 'SUBMISSION' }))
       .subscribe({
         next: (created) => {
-          this.requestsByTaskSignal.update((cache) => ({...cache, [taskId]: [...(cache[taskId] ?? []), created]}));
+          this.requestsByTaskSignal.update((cache) => ({
+            ...cache,
+            [taskId]: [...(cache[taskId] ?? []), created],
+          }));
           this.processingSignal.set(false);
           onSuccess?.();
         },
         error: (err) => {
           this.setError(err.message);
           this.processingSignal.set(false);
-        }
+        },
       });
   }
 
   loadTaskRequests(taskId: number): void {
     this.requestsApi.getRequestsByTask(taskId).subscribe({
-      next: (requests) => this.requestsByTaskSignal.update((cache) => ({...cache, [taskId]: requests})),
-      error: () => this.requestsByTaskSignal.update((cache) => ({...cache, [taskId]: []})),
+      next: (requests) =>
+        this.requestsByTaskSignal.update((cache) => ({ ...cache, [taskId]: requests })),
+      error: () => this.requestsByTaskSignal.update((cache) => ({ ...cache, [taskId]: [] })),
     });
   }
 
   isUnderReview(taskId: number): boolean {
-    return (this.requestsByTask()[taskId] ?? [])
-      .some((request) => request.requestType === 'SUBMISSION' && request.requestStatus === 'PENDING');
+    return (this.requestsByTask()[taskId] ?? []).some(
+      (request) => request.requestType === 'SUBMISSION' && request.requestStatus === 'PENDING',
+    );
   }
 
   clearError(): void {
@@ -107,15 +112,17 @@ export class RequestsStore {
     call$.subscribe({
       next: (reviewed) => {
         // A reviewed request leaves the pending inbox; in the other tabs it just takes its new status.
-        this.submissionsSignal.update((requests) => this.statusFilterSignal() === 'PENDING'
-          ? requests.filter((r) => r.id !== reviewed.id)
-          : requests.map((r) => (r.id === reviewed.id ? reviewed : r)));
+        this.submissionsSignal.update((requests) =>
+          this.statusFilterSignal() === 'PENDING'
+            ? requests.filter((r) => r.id !== reviewed.id)
+            : requests.map((r) => (r.id === reviewed.id ? reviewed : r)),
+        );
         this.processingSignal.set(false);
       },
       error: (err) => {
         this.setError(err.message);
         this.processingSignal.set(false);
-      }
+      },
     });
   }
 

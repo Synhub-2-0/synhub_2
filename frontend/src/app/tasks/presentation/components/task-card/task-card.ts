@@ -15,6 +15,8 @@ import { DIFFICULTY_SCALE } from '../../../../ai/domain/model/task-classificatio
   styleUrl: './task-card.css',
 })
 export class TaskCard implements OnInit {
+  private readonly router = inject(Router);
+
   readonly requestsStore = inject(RequestsStore);
   readonly showSubmitForm = signal(false);
   readonly submissionMessage = signal('');
@@ -26,8 +28,6 @@ export class TaskCard implements OnInit {
   @Output() statusChangeRequested = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 
   readonly difficultyScale = DIFFICULTY_SCALE;
-
-  constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
     // A COMPLETED task of the member may already have a submission waiting for the leader.
@@ -43,7 +43,9 @@ export class TaskCard implements OnInit {
   }
 
   // A task approved by the leader is final: it cannot be edited or deleted.
-  get isLocked(): boolean { return this.task.status === 'DONE'; }
+  get isLocked(): boolean {
+    return this.task.status === 'DONE';
+  }
 
   get statusBadgeClass(): string {
     const classes: Record<TaskStatus, string> = {
@@ -103,7 +105,9 @@ export class TaskCard implements OnInit {
 
   onReviewSubmission(event: Event): void {
     event.stopPropagation();
-    this.router.navigate(['/validations'], { queryParams: { groupId: this.task.group?.id } }).then();
+    this.router
+      .navigate(['/validations'], { queryParams: { groupId: this.task.group?.id } })
+      .then();
   }
 
   toggleSubmitForm(event: Event): void {

@@ -8,26 +8,26 @@
   <form (ngSubmit)="save()" class="flex flex-col gap-5 rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
     @if (!isEditMode && groupsStore.leaderGroups().length > 1) {
       <div>
-        <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Grupo</label>
-        <select name="groupId" [ngModel]="groupId" (ngModelChange)="onGroupChange($any($event))"
+        <label for="taskGroup" class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Grupo</label>
+        <select id="taskGroup" name="groupId" [ngModel]="groupId" (ngModelChange)="onGroupChange($any($event))"
           class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
           @for (group of groupsStore.leaderGroups(); track group.id) { <option [ngValue]="group.id">{{ group.name }}</option> }
         </select>
       </div>
     }
     <div>
-      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Título de la tarea</label>
-      <input type="text" name="title" [(ngModel)]="title" required placeholder="Ej: Implementar integración de endpoints"
+      <label for="taskTitle" class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Título de la tarea</label>
+      <input id="taskTitle" type="text" name="title" [(ngModel)]="title" required placeholder="Ej: Implementar integración de endpoints"
         class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
     </div>
     <div>
-      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Descripción</label>
-      <textarea name="description" [(ngModel)]="description" rows="4" placeholder="Describe los entregables y criterios..."
+      <label for="taskDescription" class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Descripción</label>
+      <textarea id="taskDescription" name="description" [(ngModel)]="description" rows="4" placeholder="Describe los entregables y criterios..."
         class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]"></textarea>
     </div>
     <div>
-      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Asignar a integrante</label>
-      <select name="userId" [(ngModel)]="userId" required
+      <label for="taskAssignee" class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Asignar a integrante</label>
+      <select id="taskAssignee" name="userId" [(ngModel)]="userId" required
         class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
         <option [ngValue]="null" disabled>Selecciona un integrante del grupo</option>
         @for (entry of members(); track entry.user.id) {
@@ -38,8 +38,8 @@
       </select>
     </div>
     <div>
-      <label class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Fecha y hora de entrega</label>
-      <input type="datetime-local" name="dueDateTime" [(ngModel)]="dueDateTime" required
+      <label for="taskDueDate" class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Fecha y hora de entrega</label>
+      <input id="taskDueDate" type="datetime-local" name="dueDateTime" [(ngModel)]="dueDateTime" required
         class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
     </div>
     @if (!isEditMode) {

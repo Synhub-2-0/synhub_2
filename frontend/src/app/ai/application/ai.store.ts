@@ -1,9 +1,11 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { GroupReport, TaskClassification } from '../domain/model/task-classification.entity';
 import { AiApi } from '../infrastructure/ai.api';
 
 @Injectable({ providedIn: 'root' })
 export class AiStore {
+  private readonly aiApi = inject(AiApi);
+
   private readonly classificationSignal = signal<TaskClassification | null>(null);
   private readonly classifyingSignal = signal<boolean>(false);
   // Un informe por grupo: cambiar de grupo nunca muestra el informe de otro.
@@ -17,7 +19,7 @@ export class AiStore {
   readonly error = this.errorSignal.asReadonly();
 
   reportFor(groupId: number | null): GroupReport | null {
-    return groupId == null ? null : this.reportsSignal()[groupId] ?? null;
+    return groupId == null ? null : (this.reportsSignal()[groupId] ?? null);
   }
 
   isReportLoading(groupId: number | null): boolean {
@@ -28,8 +30,6 @@ export class AiStore {
     const error = this.reportErrorSignal();
     return error && error.groupId === groupId ? error.message : null;
   }
-
-  constructor(private readonly aiApi: AiApi) {}
 
   classifyTask(payload: { title: string; description: string; dueDate?: Date }): void {
     this.classifyingSignal.set(true);
@@ -57,11 +57,17 @@ export class AiStore {
     this.aiApi.getGroupReport(groupId).subscribe({
       next: (text) => {
         // Se guarda bajo el grupo pedido aunque el usuario ya haya cambiado de grupo.
-        this.reportsSignal.update((all) => ({ ...all, [groupId]: { text, generatedAt: new Date() } }));
+        this.reportsSignal.update((all) => ({
+          ...all,
+          [groupId]: { text, generatedAt: new Date() },
+        }));
         if (this.reportLoadingGroupSignal() === groupId) this.reportLoadingGroupSignal.set(null);
       },
       error: () => {
-        this.reportErrorSignal.set({ groupId, message: 'No se pudo generar el informe ahora. Intenta de nuevo.' });
+        this.reportErrorSignal.set({
+          groupId,
+          message: 'No se pudo generar el informe ahora. Intenta de nuevo.',
+        });
         if (this.reportLoadingGroupSignal() === groupId) this.reportLoadingGroupSignal.set(null);
       },
     });

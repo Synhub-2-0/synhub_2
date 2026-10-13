@@ -13,7 +13,8 @@ describe('GroupsAssembler', () => {
   });
 
   it('memberCount ausente vale 0', () => {
-    const { memberCount, ...withoutCount } = resource;
+    const withoutCount: Partial<GroupResource> = { ...resource };
+    delete withoutCount.memberCount;
     expect(assembler.toEntityFromResource(withoutCount as GroupResource).memberCount).toBe(0);
   });
 

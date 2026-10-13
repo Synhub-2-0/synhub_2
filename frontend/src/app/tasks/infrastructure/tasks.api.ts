@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { TasksApiEndpoint } from './tasks.api-endpoint';
 import { HttpClient } from '@angular/common/http';
 import { Task, TaskStatus } from '../domain/model/task.entity';
@@ -10,7 +10,9 @@ import { Observable } from 'rxjs';
 export class TasksApi {
   private readonly tasksEndpoint: TasksApiEndpoint;
 
-  constructor(http: HttpClient) {
+  constructor() {
+    const http = inject(HttpClient);
+
     this.tasksEndpoint = new TasksApiEndpoint(http);
   }
 

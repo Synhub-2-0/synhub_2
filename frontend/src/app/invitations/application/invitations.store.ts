@@ -1,14 +1,18 @@
 import { ToastStore } from '../../shared/application/toast.store';
-import {computed, Injectable, signal, inject, effect } from '@angular/core';
-import {Invitation} from '../domain/model/invitation.entity';
-import {CreateInvitationCommand} from '../domain/model/create-invitation.command';
-import {InvitationsApi} from '../infrastructure/invitations.api';
-import {catchError, retry, switchMap, throwError} from 'rxjs';
-import {IamApi} from '../../iam/infrastructure/iam.api';
-import {IamStore} from '../../iam/application/iam.store';
+import { computed, Injectable, signal, inject, effect } from '@angular/core';
+import { Invitation } from '../domain/model/invitation.entity';
+import { CreateInvitationCommand } from '../domain/model/create-invitation.command';
+import { InvitationsApi } from '../infrastructure/invitations.api';
+import { catchError, retry, switchMap, throwError } from 'rxjs';
+import { IamApi } from '../../iam/infrastructure/iam.api';
+import { IamStore } from '../../iam/application/iam.store';
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class InvitationsStore {
+  private invitationsApi = inject(InvitationsApi);
+  private iamApi = inject(IamApi);
+  private iamStore = inject(IamStore);
+
   private readonly toastStore = inject(ToastStore);
 
   readonly invitationCount = computed(() => this.invitations().length);
@@ -25,11 +29,7 @@ export class InvitationsStore {
   readonly inviting = this.invitingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
 
-  constructor(
-    private invitationsApi: InvitationsApi,
-    private iamApi: IamApi,
-    private iamStore: IamStore,
-  ) {
+  constructor() {
     // Root stores outlive the session: drop the previous user's data as soon as the session ends.
     effect(() => {
       if (!this.iamStore.isSignedIn()) this.reset();
@@ -52,30 +52,26 @@ export class InvitationsStore {
   loadInvitations(): void {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
-    this.invitationsApi
-      .getInvitationsByAuthenticatedUser()
-      .subscribe({
-        next: (invitations) => {
-          this.invitationsSignal.set(invitations);
-          this.loadingSignal.set(false);
-          this.errorSignal.set(null);
-        },
-        error: (err) => {
-          this.setError(this.formatError(err, 'Failed to load invitations'));
-          this.loadingSignal.set(false);
-        }
-      });
+    this.invitationsApi.getInvitationsByAuthenticatedUser().subscribe({
+      next: (invitations) => {
+        this.invitationsSignal.set(invitations);
+        this.loadingSignal.set(false);
+        this.errorSignal.set(null);
+      },
+      error: (err) => {
+        this.setError(this.formatError(err, 'Failed to load invitations'));
+        this.loadingSignal.set(false);
+      },
+    });
   }
 
   loadGroupInvitations(groupId: number): void {
     this.errorSignal.set(null);
     this.groupInvitationsSignal.set([]);
-    this.invitationsApi
-      .getInvitationsByGroupId(groupId)
-      .subscribe({
-        next: (invitations) => this.groupInvitationsSignal.set(invitations),
-        error: (err) => this.setError(this.formatError(err, 'Failed to load group invitations')),
-      });
+    this.invitationsApi.getInvitationsByGroupId(groupId).subscribe({
+      next: (invitations) => this.groupInvitationsSignal.set(invitations),
+      error: (err) => this.setError(this.formatError(err, 'Failed to load group invitations')),
+    });
   }
 
   /**
@@ -94,13 +90,20 @@ export class InvitationsStore {
     this.iamApi
       .getProfileByUsername(trimmedUsername)
       .pipe(
-        catchError((err: Error) => throwError(() => new Error(
-          err.message.includes('Resource not found')
-            ? 'No existe un usuario con ese nombre.'
-            : 'No se pudo buscar al usuario.'
-        ))),
+        catchError((err: Error) =>
+          throwError(
+            () =>
+              new Error(
+                err.message.includes('Resource not found')
+                  ? 'No existe un usuario con ese nombre.'
+                  : 'No se pudo buscar al usuario.',
+              ),
+          ),
+        ),
         switchMap((profile) =>
-          this.invitationsApi.createInvitation(new CreateInvitationCommand({groupId, userId: profile.id}))
+          this.invitationsApi.createInvitation(
+            new CreateInvitationCommand({ groupId, userId: profile.id }),
+          ),
         ),
       )
       .subscribe({
@@ -112,7 +115,7 @@ export class InvitationsStore {
         error: (err) => {
           this.setError(this.formatError(err, 'Failed to create invitation'));
           this.invitingSignal.set(false);
-        }
+        },
       });
   }
 
@@ -131,7 +134,7 @@ export class InvitationsStore {
         error: (err) => {
           this.setError(this.formatError(err, 'Failed to accept invitation'));
           this.loadingSignal.set(false);
-        }
+        },
       });
   }
 
@@ -150,7 +153,7 @@ export class InvitationsStore {
         error: (err) => {
           this.setError(this.formatError(err, 'Failed to decline invitation'));
           this.loadingSignal.set(false);
-        }
+        },
       });
   }
 
@@ -163,7 +166,7 @@ export class InvitationsStore {
     this.groupInvitationsSignal.update((invitations) => invitations.filter((i) => i.id !== id));
   }
 
-  private formatError(error: any, fallback: string): string {
+  private formatError(error: unknown, fallback: string): string {
     if (error instanceof Error) {
       return error.message.includes('Resource not found')
         ? `${fallback}: Not found`

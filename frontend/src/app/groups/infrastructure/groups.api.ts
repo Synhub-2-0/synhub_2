@@ -1,16 +1,18 @@
-import {Injectable} from '@angular/core';
-import {GroupsApiEndpoint} from './groups.api-endpoint';
-import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
-import {Group} from '../domain/model/group.entity';
-import {CreateGroupCommand} from '../domain/model/create-group.command';
-import {GroupUser} from '../domain/model/group-user.entity';
+import { Injectable, inject } from '@angular/core';
+import { GroupsApiEndpoint } from './groups.api-endpoint';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Group } from '../domain/model/group.entity';
+import { CreateGroupCommand } from '../domain/model/create-group.command';
+import { GroupUser } from '../domain/model/group-user.entity';
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class GroupsApi {
   private readonly groupsEndpoint: GroupsApiEndpoint;
 
-  constructor(http: HttpClient) {
+  constructor() {
+    const http = inject(HttpClient);
+
     this.groupsEndpoint = new GroupsApiEndpoint(http);
   }
 
@@ -41,5 +43,4 @@ export class GroupsApi {
   removeMember(groupId: number, userId: number): Observable<void> {
     return this.groupsEndpoint.removeMember(groupId, userId);
   }
-
 }
