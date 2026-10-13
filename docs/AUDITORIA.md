@@ -80,7 +80,7 @@ Los riesgos principales son tres:
 | [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Resuelto |
 | [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Pendiente |
 | [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Pendiente |
-| [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Pendiente |
+| [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Resuelto |
 | [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Resuelto |
 | [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Resuelto (ver [TESTS.md](../TESTS.md)) |
 | [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Resuelto (Docker; AWS: HUM-02) |
@@ -97,7 +97,7 @@ Los riesgos principales son tres:
 | [BUG-17](#bug-17) | Baja | Frontend · groups | Búsqueda por código comentada aunque el backend la expone | Código | Resuelto (unirse por código, HUM-05) |
 | [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Pendiente |
 | [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Pendiente |
-| [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Pendiente |
+| [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Resuelto |
 | [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Pendiente |
 | [FE-01](#fe-01) | Baja | Frontend | `console.log` y `console.error` en producción | Código | Resuelto |
 | [FE-02](#fe-02) | Baja | Frontend | Mensajes de error mezclados en inglés y español | Código | Resuelto (traducción centralizada en `ToastStore`) |
@@ -651,6 +651,8 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 **Criterios de aceptación.** La app arranca contra una base vacía (migraciones) y contra una existente (baseline). Los tests de integración pasan con OSIV desactivado.
 
+**Decisión (2026-10-13).** Se adopta Flyway. El entorno se volverá a desplegar desde cero, así que no hace falta *baseline* de una base existente: basta con `V1__init.sql` desde una base vacía.
+
 ### PERF-01
 
 **Consultas N+1 y filtrado en memoria** · Media · Código
@@ -671,6 +673,8 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 **Criterios de aceptación.** Test con `spring.jpa.properties.hibernate.generate_statistics` (o un contador de sentencias): listar las tareas de un grupo de N tareas ejecuta un número constante de consultas.
 
+**Resolución.** La medición confirmó el N+1 en cinco listados (por ejemplo, `GET /groups/user/role`: 7 sentencias con 1 grupo y 17 con 4). Con `hibernate.default_batch_fetch_size=100` los cinco quedan constantes (`api/QueryCountApiTests`). La bandeja de requests filtra y ordena en SQL (`findByGroupFiltered`), los query services son `@Transactional(readOnly = true)` y el `findAll()` de usuarios en metrics ya se había quitado con BUG-08.
+
 ### PERF-02
 
 **Listas sin paginación** · Baja
@@ -678,6 +682,8 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 **Solución propuesta.** Agregar `Pageable` opcional (`?page&size`, con un `size` máximo de 100) a `GET /tasks/group/{id}` y `GET /groups/{id}/requests`, conservando la respuesta en forma de arreglo cuando no se pide paginación, para no romper la web.
 
 **Criterios de aceptación.** `?size=1` devuelve un elemento y sin parámetros el comportamiento no cambia.
+
+**Decisión (2026-10-13).** Aprobada tal como se propone: paginación opcional; sin parámetros la respuesta sigue siendo un arreglo.
 
 ### PERF-03
 

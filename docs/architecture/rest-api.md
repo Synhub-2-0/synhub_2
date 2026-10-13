@@ -15,6 +15,7 @@
 | Verbos | `GET` lee, `POST` crea (o ejecuta una acción: `/invitations/accept`), `PUT` actualiza y `DELETE` borra. |
 | Códigos | `200`/`201` éxito, `204` borrado, `400` datos inválidos, `401` sin token, `403` sin permiso de negocio, `404` no existe, `409` regla de negocio, `503` servicio externo (Bedrock) no disponible. |
 | Errores | `{ timestamp, status, error, message, path }` (`ErrorResponse`). |
+| Paginación | Opcional en `GET /tasks/group/{id}` y `GET /groups/{id}/requests`: con `?page` (desde 0) o `?size` (por defecto 20, máximo 100) responden `PageResource { content, page, size, totalElements, totalPages }`; sin ellos, el arreglo completo. `page` negativo o `size` < 1 → 400. |
 | Documentación viva | Swagger UI en `/swagger-ui.html`; OpenAPI en `/v3/api-docs`. Solo con el perfil `dev`. |
 
 **Desviaciones**: `POST /groups`, `POST /tasks` y `POST /invitations` responden `200` en lugar de `201`. La revisión de una request usa un segmento de ruta (`PUT …/status/{status}`), mientras que en tasks el estado va como query param (`PUT /tasks/{id}/status?status=`).
@@ -49,7 +50,7 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | GET | `/groups/user/role?groupRole=` | `GroupController` | `GroupsStore.loadGroups` |
 | PUT | `/groups/{groupId}` | `GroupController` | `GroupsStore.updateGroup` |
 | DELETE | `/groups/{groupId}` | `GroupController` | — |
-| GET | `/groups/{groupId}/requests?status=&type=` | `GroupRequestController` (**requests**) | `RequestsStore.loadGroupSubmissions` |
+| GET | `/groups/{groupId}/requests?status=&type=&page=&size=` | `GroupRequestController` (**requests**) | `RequestsStore.loadGroupSubmissions` |
 
 ### Invitations: [docs](../features/invitations/README.md) (código backend en `groups`)
 
@@ -67,7 +68,7 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 |---|---|---|---|
 | POST | `/tasks` | `TaskController` | `TasksStore.addTask` |
 | GET | `/tasks/{taskId}` | `TaskController` | `TasksStore.loadTaskById` |
-| GET | `/tasks/group/{groupId}?status=` | `TaskController` | `TasksStore.loadTasksByGroup` |
+| GET | `/tasks/group/{groupId}?status=&page=&size=` | `TaskController` | `TasksStore.loadTasksByGroup` |
 | GET | `/tasks/group/{groupId}/user/{userId}` | `TaskController` | `TasksStore.loadTasksByGroupAndUser`, `loadTasksByGroupsAndUser`, `loadAssignedGroupIds` |
 | PUT | `/tasks/{taskId}` | `TaskController` | `TasksStore.updateTask` |
 | PUT | `/tasks/{taskId}/status?status=` | `TaskController` | `TasksStore.updateTaskStatus` |

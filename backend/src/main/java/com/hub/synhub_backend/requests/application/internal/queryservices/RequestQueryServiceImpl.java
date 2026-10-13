@@ -13,13 +13,16 @@ import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositori
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class RequestQueryServiceImpl implements RequestQueryService {
 
     private final RequestRepository requestRepository;
@@ -60,18 +63,29 @@ public class RequestQueryServiceImpl implements RequestQueryService {
 
     @Override
     public List<Request> handle(GetRequestsByGroupIdQuery query) {
+        requireGroupLeader(query);
+        return this.requestRepository.findByGroupFiltered(query.groupId(), statusOf(query), typeOf(query));
+    }
+
+    @Override
+    public Page<Request> handle(GetRequestsByGroupIdQuery query, Pageable pageable) {
+        requireGroupLeader(query);
+        return this.requestRepository.findByGroupFiltered(query.groupId(), statusOf(query), typeOf(query), pageable);
+    }
+
+    private void requireGroupLeader(GetRequestsByGroupIdQuery query) {
         var leaderId = groupsContextFacade.fetchLeaderIdByGroupId(query.groupId())
                 .orElseThrow(() -> new ResourceNotFoundException("Group with id " + query.groupId() + " does not exist"));
         if (!leaderId.equals(query.requesterId()))
             throw new AccessDeniedException("Only the leader of the group can list its requests");
+    }
 
-        // fromString valida los filtros: un valor desconocido responde 400 ("Unknown request status: X").
-        var status = query.status() == null ? null : RequestStatus.fromString(query.status()).name();
-        var type = query.type() == null ? null : RequestType.fromString(query.type()).name();
-        return this.requestRepository.findByTask_Profile_Group_Id(query.groupId()).stream()
-                .filter(r -> status == null || r.getRequestStatus().equals(status))
-                .filter(r -> type == null || r.getRequestType().equals(type))
-                .sorted(Comparator.comparing(Request::getId).reversed())
-                .toList();
+    // fromString valida los filtros: un valor desconocido responde 400 ("Unknown request status: X").
+    private static RequestStatus statusOf(GetRequestsByGroupIdQuery query) {
+        return query.status() == null ? null : RequestStatus.fromString(query.status());
+    }
+
+    private static RequestType typeOf(GetRequestsByGroupIdQuery query) {
+        return query.type() == null ? null : RequestType.fromString(query.type());
     }
 }

@@ -12,6 +12,10 @@ import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositori
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
+import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
@@ -43,18 +47,25 @@ class RequestQueryServiceImplTest {
         tasks = mock(TasksContextFacade.class);
         service = new RequestQueryServiceImpl(repo, groups, tasks);
         when(groups.fetchLeaderIdByGroupId(1L)).thenReturn(Optional.of(7L));
-        var all = List.of(request(1, "APPROVED", "SUBMISSION"), request(3, "PENDING", "SUBMISSION"), request(2, "PENDING", "MODIFICATION"));
-        when(repo.findByTask_Profile_Group_Id(1L)).thenReturn(all);
     }
 
-    @Test void newestFirst() {
-        var ids = service.handle(new GetRequestsByGroupIdQuery(1L, null, null, 7L)).stream().map(Request::getId).toList();
-        assertEquals(List.of(3L, 2L, 1L), ids);
+    // AUDIT PERF-01: el filtro y el orden (más nueva primero) los hace la consulta; aquí se valida qué se le pasa.
+    @Test void withoutFiltersAsksForEverything() {
+        var newestFirst = List.of(request(3, "PENDING", "SUBMISSION"), request(1, "APPROVED", "SUBMISSION"));
+        when(repo.findByGroupFiltered(1L, null, null)).thenReturn(newestFirst);
+        assertEquals(newestFirst, service.handle(new GetRequestsByGroupIdQuery(1L, null, null, 7L)));
     }
 
-    @Test void filtersCombineAndIgnoreCase() {
-        var result = service.handle(new GetRequestsByGroupIdQuery(1L, "pending", "submission", 7L));
-        assertEquals(List.of(3L), result.stream().map(Request::getId).toList());
+    @Test void filtersAreParsedIgnoringCase() {
+        service.handle(new GetRequestsByGroupIdQuery(1L, "pending", "submission", 7L));
+        verify(repo).findByGroupFiltered(1L, RequestStatus.PENDING, RequestType.SUBMISSION);
+    }
+
+    @Test void pagedVersionChecksTheLeaderToo() {
+        var pageable = PageRequest.of(0, 2);
+        when(repo.findByGroupFiltered(1L, RequestStatus.PENDING, null, pageable)).thenReturn(new PageImpl<>(List.of()));
+        assertEquals(0, service.handle(new GetRequestsByGroupIdQuery(1L, "PENDING", null, 7L), pageable).getTotalElements());
+        assertThrows(AccessDeniedException.class, () -> service.handle(new GetRequestsByGroupIdQuery(1L, null, null, 8L), pageable));
     }
 
     @Test void onlyLeader() {

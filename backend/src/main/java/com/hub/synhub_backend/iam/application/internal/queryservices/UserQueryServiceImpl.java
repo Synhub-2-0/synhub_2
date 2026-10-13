@@ -7,6 +7,7 @@ import com.hub.synhub_backend.iam.domain.model.queries.*;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import java.util.Optional;
  * Implementation of {@link UserQueryService} interface.
  */
 @Service
+@Transactional(readOnly = true)
 public class UserQueryServiceImpl implements UserQueryService {
   private final UserRepository userRepository;
   private final GroupProfileRepository groupProfileRepository;

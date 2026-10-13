@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.tasks.domain.services;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.queries.*;
 
@@ -42,5 +44,8 @@ public interface TaskQueryService {
      */
     List<Task> handle(GetAllTasksByGroupIdQuery query);
     List<Task> handle(GetTasksByGroupIdAndStatus query);
+
+    /** Página de tareas del grupo, ordenadas por fecha límite (AUDIT PERF-02). */
+    Page<Task> handle(GetTasksByGroupIdAndStatus query, Pageable pageable);
     List<Task> handle(GetTasksByGroupIdAndUserIdQuery query);
 }

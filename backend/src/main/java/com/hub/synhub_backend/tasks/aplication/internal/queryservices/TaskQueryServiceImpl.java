@@ -7,12 +7,18 @@ import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class TaskQueryServiceImpl implements TaskQueryService {
 
     private final TaskRepository taskRepository;
@@ -65,6 +71,16 @@ public class TaskQueryServiceImpl implements TaskQueryService {
             return taskRepository.findByProfile_Group_Id(query.groupId());
         }
         return taskRepository.findByProfile_Group_IdAndStatus(query.groupId(), query.status());
+    }
+
+    @Override
+    public Page<Task> handle(GetTasksByGroupIdAndStatus query, Pageable pageable) {
+        requireMember(query.groupId(), query.requesterId());
+        var sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("dueDate", "id"));
+        if (query.status() == null) {
+            return taskRepository.findByProfile_Group_Id(query.groupId(), sorted);
+        }
+        return taskRepository.findByProfile_Group_IdAndStatus(query.groupId(), query.status(), sorted);
     }
 
     @Override

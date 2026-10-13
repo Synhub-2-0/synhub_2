@@ -11,6 +11,7 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
  * Las tareas borradas (soft delete, HUM-03) no cuentan: el repositorio ya las excluye.
  */
 @Service
+@Transactional(readOnly = true)
 public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
 
     private static final double MILLIS_PER_DAY = 1000d * 60 * 60 * 24;

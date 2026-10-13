@@ -2,6 +2,8 @@ package com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories
 
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +22,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByProfile_Group_Id(Long profileGroupId);
     List<Task> findByProfile_Group_IdAndProfile_User_Id(Long profileGroupId, Long profileUserId);
     List<Task> findByProfile_Group_IdAndStatus(Long profileGroupId, TaskStatus status);
+    Page<Task> findByProfile_Group_Id(Long profileGroupId, Pageable pageable);
+    Page<Task> findByProfile_Group_IdAndStatus(Long profileGroupId, TaskStatus status, Pageable pageable);
 
     /**
      * Marca la tarea como EXPIRED solo si sigue IN_PROGRESS. Devuelve las filas afectadas (0 o 1): con varias

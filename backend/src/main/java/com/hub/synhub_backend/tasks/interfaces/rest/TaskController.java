@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.tasks.interfaces.rest;
 
+import com.hub.synhub_backend.shared.interfaces.rest.Pagination;
+import com.hub.synhub_backend.shared.interfaces.rest.resources.PageResource;
 import jakarta.validation.Valid;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
@@ -75,12 +77,17 @@ public class TaskController {
     }
 
     @GetMapping("/group/{groupId}")
-    @Operation(summary = "Get tasks by group", description = "Retrieves all tasks belonging to a group, optionally filtered by task status.")
-    public ResponseEntity<List<TaskResource>> getByGroup(@PathVariable Long groupId, @RequestParam(required = false) TaskStatus status,
-                                                         @AuthenticationPrincipal UserDetails userDetails) {
+    @Operation(summary = "Get tasks by group", description = "Retrieves all tasks belonging to a group, optionally filtered by task status. With ?page or ?size returns a page ordered by due date")
+    public ResponseEntity<?> getByGroup(@PathVariable Long groupId, @RequestParam(required = false) TaskStatus status,
+                                        @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
+                                        @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var getTasksByGroupIdAndStatusQuery = new GetTasksByGroupIdAndStatus(groupId, status, user.getId());
+        // ?page / ?size: una página (PageResource); sin ellos, el arreglo completo de siempre (AUDIT PERF-02).
+        var pageable = Pagination.of(page, size);
+        if (pageable.isPresent())
+            return ResponseEntity.ok(PageResource.of(this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery, pageable.get()), TaskResourceFromEntityAssembler::toResourceFromEntity));
         var tasks = this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery);
         var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(taskResources);

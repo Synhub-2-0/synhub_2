@@ -10,7 +10,7 @@ Todos requieren token.
 |---|---|---|---|---|
 | `POST` | `/api/v1/tasks` | `CreateTaskResource` | `200 TaskResource` | Solo el líder del grupo; el asignado debe ser integrante (404 si no). |
 | `GET` | `/api/v1/tasks/{taskId}` | — | `200 TaskResource` · `403` · `404` | Solo integrantes del grupo de la tarea. |
-| `GET` | `/api/v1/tasks/group/{groupId}` | `?status=` (opcional, `TaskStatus`) | `200 TaskResource[]` · `403` | Solo integrantes del grupo. |
+| `GET` | `/api/v1/tasks/group/{groupId}` | `?status=` (opcional, `TaskStatus`); `?page=&size=` (opcionales) | `200 TaskResource[]`, o `PageResource<TaskResource>` ordenado por fecha límite si se pide página · `403` | Solo integrantes del grupo. |
 | `GET` | `/api/v1/tasks/group/{groupId}/user/{userId}` | — | `200 TaskResource[]` · `403` | Solo integrantes del grupo. |
 | `PUT` | `/api/v1/tasks/{taskId}` | `UpdateTaskResource` | `200 TaskResource` | Solo el líder. Puede reasignar a otro integrante. |
 | `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | Líder o asignado. `DONE` → 409. |

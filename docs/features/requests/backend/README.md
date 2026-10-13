@@ -20,7 +20,7 @@ Todos requieren token.
 
 | Método | Parámetros | Respuesta | Regla |
 |---|---|---|---|
-| `GET` | `?status=` y `?type=` (opcionales; no distinguen mayúsculas) | `200 RequestResource[]`, de la más nueva a la más antigua | Solo el líder del grupo (403). 404 si el grupo no existe. 400 si el filtro tiene un valor desconocido. |
+| `GET` | `?status=` y `?type=` (opcionales; no distinguen mayúsculas); `?page=&size=` (opcionales) | `200 RequestResource[]`, de la más nueva a la más antigua, o `PageResource<RequestResource>` si se pide página. El filtro y el orden se hacen en SQL (`RequestRepository.findByGroupFiltered`) | Solo el líder del grupo (403). 404 si el grupo no existe. 400 si el filtro tiene un valor desconocido. |
 
 `RequestResource = { id, description, requestType, requestStatus, task: TaskResource }`
 

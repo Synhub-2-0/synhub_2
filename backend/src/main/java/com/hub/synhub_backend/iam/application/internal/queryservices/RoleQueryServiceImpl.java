@@ -6,6 +6,7 @@ import com.hub.synhub_backend.iam.domain.model.queries.GetRoleByNameQuery;
 import com.hub.synhub_backend.iam.domain.services.RoleQueryService;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import java.util.Optional;
  * This class is used to handle the role queries
  */
 @Service
+@Transactional(readOnly = true)
 public class RoleQueryServiceImpl implements RoleQueryService {
   private final RoleRepository roleRepository;
 
