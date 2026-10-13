@@ -36,10 +36,10 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 
 | Capa | Archivos | LISTO / PREVIO | LISTO-PARCIAL | PENDIENTE |
 |---|---|---|---|---|
-| Backend: pruebas unitarias | 26 | 8 | 3 | 15 |
+| Backend: pruebas unitarias | 26 | 12 | 5 | 9 |
 | Backend: API (integración) | 6 | 0 | 0 | 6 |
 | Frontend | 37 | 0 | 0 | 37 |
-| **Total** | **69** | **8** | **3** | **58** |
+| **Total** | **69** | **12** | **5** | **52** |
 
 ---
 
@@ -60,12 +60,12 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 | B-GRP-03 | `groups/GroupQueryServiceImplTest.java` | `GroupQueryServiceImpl` | grupos por rol filtra por `GroupRole` · grupos por usuario · miembros de un grupo inexistente → 404 · por código con formato inválido → `IllegalArgumentException` | — | LISTO |
 | B-GRP-04 | `groups/InvitationCommandServiceImplTest.java` | `InvitationCommandServiceImpl` | crear: OK solo el líder · invitación duplicada → 409 · ya es miembro → 409 · usuario o grupo inexistente → 404 · aceptar: solo el invitado; crea `GROUP_MEMBER` y borra la invitación; ya es miembro → 409 · cancelar: el invitado o el líder sí, un tercero → 403 | — | LISTO |
 | B-GRP-05 | `groups/InvitationQueryServiceImplTest.java` | `InvitationQueryServiceImpl`, `GroupsContextFacadeImpl` | invitaciones por usuario y por grupo · `fetchLeaderIdByGroupId` (con líder, sin líder, sin grupo) | — | LISTO |
-| B-TSK-01 | `tasks/TaskTest.java` | Agregado `Task` | nace `IN_PROGRESS` · `IN_PROGRESS`→`COMPLETED` calcula `timePassed` · `COMPLETED`/`ON_HOLD`/`EXPIRED` → `IN_PROGRESS` suma `timesRearranged` · `updateTask` con fecha pasada → `EXPIRED`, con fecha futura → `IN_PROGRESS` · ignora los campos vacíos · `applySubmissionReview` → `DONE`/`IN_PROGRESS` · rechaza un título vacío | BUG-03 | PENDIENTE |
-| B-TSK-02 | `tasks/TaskCommandServiceImplTest.java` | `TaskCommandServiceImpl` | crear: solo el líder; el asignado debe ser miembro · actualizar: solo el líder, reasigna la membresía · borrar: solo el líder · estado: el líder o el asignado sí, un tercero → 403 · borrar las tareas de un miembro | — | PENDIENTE |
-| B-TSK-03 | `tasks/TaskStatusDoneBlockedTest.java` | `PUT /status` con `DONE` | `DONE` directo → 409 incluso para el líder | — | PENDIENTE |
-| B-TSK-04 | `tasks/TaskQueryServiceImplTest.java` | `TaskQueryServiceImpl` | por grupo con y sin estado · por grupo y usuario · por id · por estado (texto) | — | PENDIENTE |
-| B-TSK-05 | `tasks/TaskStatusSchedulerTest.java` | `TaskStatusScheduler` | marca `EXPIRED` las tareas vencidas y crea una request `EXPIRED` sin solicitante · sin vencidas no hace nada · ejecuciones concurrentes no duplican | BUG-09 | PENDIENTE |
-| B-TSK-06 | `tasks/TaskContextFacadeImplTest.java` | `TaskContextFacadeImpl` | `getTaskById` · `applySubmissionReview` guarda el nuevo estado · tarea inexistente → 404 · `deleteTasksByUserIdAndGroupId` delega | — | PENDIENTE |
+| B-TSK-01 | `tasks/TaskTest.java` | Agregado `Task` | nace `IN_PROGRESS` · `IN_PROGRESS`→`COMPLETED` calcula `timePassed` · `COMPLETED`/`ON_HOLD`/`EXPIRED` → `IN_PROGRESS` suma `timesRearranged` · `updateTask` con fecha pasada → `EXPIRED`, con fecha futura → `IN_PROGRESS` · ignora los campos vacíos · `applySubmissionReview` → `DONE`/`IN_PROGRESS` · rechaza un título vacío | BUG-03 | LISTO-PARCIAL |
+| B-TSK-02 | `tasks/TaskCommandServiceImplTest.java` | `TaskCommandServiceImpl` | crear: solo el líder; el asignado debe ser miembro · actualizar: solo el líder, reasigna la membresía · borrar: solo el líder · estado: el líder o el asignado sí, un tercero → 403 · borrar las tareas de un miembro | — | LISTO |
+| B-TSK-03 | `tasks/TaskStatusDoneBlockedTest.java` | `PUT /status` con `DONE` | `DONE` directo → 409 incluso para el líder | — | PREVIO |
+| B-TSK-04 | `tasks/TaskQueryServiceImplTest.java` | `TaskQueryServiceImpl` | por grupo con y sin estado · por grupo y usuario · por id · por estado (texto) | — | LISTO |
+| B-TSK-05 | `tasks/TaskStatusSchedulerTest.java` | `TaskStatusScheduler` | marca `EXPIRED` las tareas vencidas y crea una request `EXPIRED` sin solicitante · sin vencidas no hace nada · ejecuciones concurrentes no duplican | BUG-09 | LISTO-PARCIAL |
+| B-TSK-06 | `tasks/TaskContextFacadeImplTest.java` | `TaskContextFacadeImpl` | `getTaskById` · `applySubmissionReview` guarda el nuevo estado · tarea inexistente → 404 · `deleteTasksByUserIdAndGroupId` delega | — | LISTO |
 | B-REQ-01 | `requests/RequestCommandServiceImplTest.java` | `RequestCommandServiceImpl` | (18 casos previos: creación, revisión, permisos y efectos en la tarea) | — | PENDIENTE |
 | B-REQ-02 | `requests/RequestQueryServiceImplTest.java` | `RequestQueryServiceImpl` | (5 casos previos: orden, filtros, líder, grupo inexistente, filtro inválido) | — | PENDIENTE |
 | B-REQ-03 | `requests/RequestDomainAndDeleteTest.java` | `Request`, `RequestType`, `RequestStatus`, borrado | `fromString` sin distinguir mayúsculas e inválido · `Request` nace `PENDING` · borrar una request inexistente → 400 · borrado sin permisos → 403 · `DeleteAllRequestsByTaskId` | SEC-02 | PENDIENTE |

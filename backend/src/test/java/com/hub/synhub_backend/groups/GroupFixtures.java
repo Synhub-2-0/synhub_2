@@ -10,12 +10,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 
-/** Objetos de dominio reales con ids asignados, para las pruebas de groups. */
-final class GroupFixtures {
+/** Objetos de dominio reales con ids asignados, para las pruebas de groups y tasks. */
+public final class GroupFixtures {
 
     private GroupFixtures() {}
 
-    static User user(long id, String username) {
+    public static User user(long id, String username) {
         var user = new User(username, username, "Test", "img", username + "@synhub.io", "hash");
         ReflectionTestUtils.setField(user, "id", id);
         user.setGroupProfiles(new ArrayList<>());
@@ -23,7 +23,7 @@ final class GroupFixtures {
     }
 
     /** Grupo con el líder dado y, opcionalmente, miembros. */
-    static Group group(long id, User leader, User... members) {
+    public static Group group(long id, User leader, User... members) {
         var group = new Group("Equipo", "Descripción", "", new GroupCode("ABC123XYZ"));
         ReflectionTestUtils.setField(group, "id", id);
         join(group, leader, GroupRole.GROUP_LEADER);
@@ -31,14 +31,16 @@ final class GroupFixtures {
         return group;
     }
 
-    static GroupProfile join(Group group, User user, GroupRole role) {
+    public static GroupProfile join(Group group, User user, GroupRole role) {
         var profile = new GroupProfile(user, group, role);
+        // GroupProfile no inicializa su lista de tareas (AUDIT BUG-12); se fija aquí para poder asignar tareas.
+        ReflectionTestUtils.setField(profile, "tasks", new ArrayList<>());
         group.getUserProfiles().add(profile);
         user.getGroupProfiles().add(profile);
         return profile;
     }
 
-    static Invitation invitation(long id, User user, Group group) {
+    public static Invitation invitation(long id, User user, Group group) {
         var invitation = new Invitation(user, group);
         ReflectionTestUtils.setField(invitation, "id", id);
         return invitation;
