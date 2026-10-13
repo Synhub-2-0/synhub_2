@@ -14,12 +14,12 @@ describe('Assemblers de IAM', () => {
       .toEqual({ id: 5, username: 'ana', token: 'jwt', role: ['ROLE_USER'] });
   });
 
-  it('SignUp: envía todos los campos del formulario', () => {
+  it('SignUp: envía los campos del formulario y nunca roles (AUDIT SEC-05)', () => {
     const command = new SignUpCommand({
-      username: 'ana', password: 'Secret123!', name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: 'https://img', accountRoles: ['ROLE_USER'],
+      username: 'ana', password: 'Secret123!', name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: 'https://img',
     });
     expect(new SignUpAssembler().toRequestFromCommand(command)).toEqual({
-      username: 'ana', name: 'Ana', surname: 'Torres', imgUrl: 'https://img', email: 'ana@synhub.io', password: 'Secret123!', accountRoles: ['ROLE_USER'],
+      username: 'ana', name: 'Ana', surname: 'Torres', imgUrl: 'https://img', email: 'ana@synhub.io', password: 'Secret123!',
     });
   });
 

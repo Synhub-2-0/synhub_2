@@ -68,7 +68,7 @@ describe('IamStore', () => {
 
   describe('signUp', () => {
     const command = new SignUpCommand({
-      username: 'ana', password: 'Secret123!', name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: '', accountRoles: ['ROLE_USER'],
+      username: 'ana', password: 'Secret123!', name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: '',
     });
 
     beforeEach(() => (store = createStore()));

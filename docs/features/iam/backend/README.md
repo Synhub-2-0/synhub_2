@@ -7,7 +7,7 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 | Método | Ruta | Acceso | Cuerpo / parámetros | Respuesta |
 |---|---|---|---|---|
 | `POST` | `/api/v1/authentication/sign-in` | Público | `SignInResource { username, password }` | `200 AuthenticatedUserResource { id, username, token, role[] }` · `401` credenciales inválidas |
-| `POST` | `/api/v1/authentication/sign-up` | Público | `SignUpResource { username, name, surname, imgUrl, email, password, accountRoles[] }` | `201 UserResource` · `409` usuario o email repetido |
+| `POST` | `/api/v1/authentication/sign-up` | Público | `SignUpResource { username, name, surname, imgUrl, email, password }` (no acepta roles: siempre `ROLE_USER`) | `201 UserResource` · `409` usuario o email repetido |
 | `GET` | `/api/v1/users` | Autenticado | — | `200 UserResource[]` |
 | `GET` | `/api/v1/users/me` | Autenticado | — | `200 UserResource` del usuario del token |
 | `GET` | `/api/v1/users/{userId}` | Autenticado | — | `200 UserResource` · `404` |
@@ -28,7 +28,7 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 
 | Servicio | Mensajes que maneja |
 |---|---|
-| `UserCommandServiceImpl` | `SignInCommand` → valida con `HashingService`, genera el token con `TokenService` y devuelve `(User, token)`.<br>`SignUpCommand` → valida unicidad, resuelve los roles en `RoleRepository` y guarda el usuario. |
+| `UserCommandServiceImpl` | `SignInCommand` → valida con `HashingService`, genera el token con `TokenService` y devuelve `(User, token)`.<br>`SignUpCommand` → valida unicidad, resuelve los roles en `RoleRepository` y guarda el usuario. Desde el registro público el comando siempre trae `ROLE_USER` (`SignUpCommandFromResourceAssembler`). |
 | `RoleCommandServiceImpl` | `SeedRolesCommand` → crea los roles de `AccountRole` que falten. |
 | `UserQueryServiceImpl` | `GetAllUsersQuery`, `GetUserByIdQuery`, `GetUserByUsernameQuery`, `GetUsersByGroupIdQuery` (esta última lee `GroupProfileRepository` de groups). |
 | `RoleQueryServiceImpl` | `GetAllRolesQuery`, `GetRoleByNameQuery`. |
@@ -57,11 +57,9 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 |---|---|
 | `UsernameAlreadyExistsException`, `EmailAlreadyExistsException` | 409 (`BusinessRuleViolationException`) |
 | `BadCredentialsException` (sign-in) | 401 |
-| Rol inexistente en el sign-up (`RuntimeException`) | 500 |
 
 ## Observaciones
 
 - `UserCommandServiceImpl.handle(SignUpCommand)` valida el email con `existsByEmail(command.username())`, es decir, compara el **username**. Un email repetido no se detecta ahí: lo detiene la restricción `unique` de la base, y como esa excepción no está mapeada, responde 500.
-- Un `accountRoles` con un valor fuera de `AccountRole` responde 500 en lugar de 400.
 - `GET /users` devuelve todos los usuarios con su email a cualquier usuario autenticado. El frontend no lo usa.
 - `GET /roles` no lo usa el frontend.

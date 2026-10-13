@@ -4,14 +4,11 @@ import com.hub.synhub_backend.iam.domain.model.commands.SignUpCommand;
 import com.hub.synhub_backend.iam.domain.model.entities.Role;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.SignUpResource;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class SignUpCommandFromResourceAssembler {
-
+  /** El registro público siempre crea cuentas con el rol por defecto; los roles los asigna el sistema. */
   public static SignUpCommand toCommandFromResource(SignUpResource resource) {
-    var roles = resource.accountRoles() != null
-        ? resource.accountRoles().stream().map(accountRole -> Role.toRoleFromName(accountRole.name())).toList()
-        : new ArrayList<Role>();
     return new SignUpCommand(
             resource.username(),
             resource.name(),
@@ -19,6 +16,6 @@ public class SignUpCommandFromResourceAssembler {
             resource.imgUrl(),
             resource.email(),
             resource.password(),
-            roles);
+            List.of(Role.getDefaultRole()));
   }
 }

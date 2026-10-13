@@ -7,7 +7,7 @@ Carpeta: [`frontend/src/app/iam`](../../../../frontend/src/app/iam)
 | Ruta | Componente | Qué hace |
 |---|---|---|
 | `/auth/sign-in` | `SignInPage` (`presentation/views/sign-in-page`) | Formulario de login. Llama a `IamStore.signIn` y, si sale bien, navega a `/home`. |
-| `/auth/sign-up` | `SignUpPage` (`presentation/views/sign-up-page`) | Formulario de registro (contraseñas coincidentes, email válido). Envía `accountRoles: ['ROLE_USER']`; si sale bien, inicia sesión automáticamente y navega a `/home`. |
+| `/auth/sign-up` | `SignUpPage` (`presentation/views/sign-up-page`) | Formulario de registro (contraseñas coincidentes, email válido). No envía roles: el backend asigna `ROLE_USER`. Si sale bien, inicia sesión automáticamente y navega a `/home`. |
 | `''` | — | Redirige a `/auth/sign-in` (definido en `app.routes.ts`). |
 
 Las rutas de `iam.routes.ts` se cargan de forma diferida (`loadChildren`) y **no** tienen guard.

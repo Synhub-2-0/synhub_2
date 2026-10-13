@@ -56,7 +56,6 @@ export class SignUpPage extends BaseForm {
       email: this.form.value.email!,
       imgUrl: this.form.value.imgUrl!,
       password: this.form.value.password!,
-      accountRoles: ['ROLE_USER']
     });
     this.store.signUp(signUpCommand, this.router);
   }

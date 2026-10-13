@@ -61,7 +61,7 @@ class AuthApiTests extends ApiTestSupport {
         assertEquals("UP", res.text("status"));
     }
 
-    @Disabled("AUDIT SEC-05: el sign-up público acepta accountRoles del cliente y asigna ROLE_ADMIN")
+    // AUDIT SEC-05 (resuelto)
     @Test void publicSignUpCannotGrantAdmin() {
         var username = unique("admin");
         var res = post("/authentication/sign-up", null, signUpBody(username, username + "@synhub.test", "Secret123!", List.of("ROLE_ADMIN")));
@@ -76,7 +76,7 @@ class AuthApiTests extends ApiTestSupport {
         assertEquals(409, res.status(), res.raw());
     }
 
-    @Disabled("AUDIT BUG-05: un rol inexistente en el sign-up responde 500")
+    // AUDIT BUG-05 (resuelto)
     @Test void unknownRoleIsNotAServerError() {
         var username = unique("rol");
         var res = post("/authentication/sign-up", null, signUpBody(username, username + "@synhub.test", "Secret123!", List.of("ROLE_ROOT")));
