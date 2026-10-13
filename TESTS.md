@@ -38,8 +38,8 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 |---|---|---|---|---|
 | Backend: pruebas unitarias | 26 | 19 | 7 | 0 |
 | Backend: API (integración) | 6 | 2 | 4 | 0 |
-| Frontend | 37 | 3 | 3 | 31 |
-| **Total** | **69** | **24** | **14** | **31** |
+| Frontend | 37 | 8 | 4 | 25 |
+| **Total** | **69** | **29** | **15** | **25** |
 
 ---
 
@@ -101,12 +101,12 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 | F-IAM-04 | `iam/infrastructure/iam.assemblers.spec.ts` | Assemblers de sign-in, sign-up, users y profiles | comando → request · respuesta → recurso o entidad · `Profile.userId` | BUG-15 | LISTO-PARCIAL |
 | F-IAM-05 | `iam/infrastructure/iam.api.spec.ts` | `IamApi` (HTTP) | URLs y verbos: sign-in, sign-up, `/users/me`, `/users/{id}`, `/users/username?username=` codificado | — | LISTO |
 | F-IAM-06 | `iam/presentation/views/sign-in-page/sign-in-page.spec.ts` | `SignInPage` | (previo) se crea | — | PREVIO |
-| F-IAM-07 | `iam/presentation/views/sign-up-page/sign-up-page.spec.ts` | `SignUpPage` | (previo) se crea · (esperado) contraseña < 8 caracteres inválida | FE-03 | PENDIENTE |
-| F-SHR-01 | `shared/application/toast.store.spec.ts` | `ToastStore` | success, info y error agregan un toast · dismiss · los mensajes técnicos con códigos HTTP se vuelven amigables · desaparece por tiempo | — | PENDIENTE |
-| F-SHR-02 | `shared/infrastructure/base-api-endpoint.spec.ts` | `BaseApiEndpoint` | getAll (arreglo y objeto envoltorio), getById, create, update y delete: URL, verbo y mapeo · `handleError` con 404 / estado / ErrorEvent | — | PENDIENTE |
-| F-SHR-03 | `shared/presentation/components/base-form/base-form.spec.ts` | `BaseForm` | control inválido y tocado · mensajes `required` y genérico | — | PENDIENTE |
-| F-SHR-04 | `shared/presentation/components/toast-container/toast-container.spec.ts` | `ToastContainer` | renderiza los toasts del store y los cierra | — | PENDIENTE |
-| F-SHR-05 | `shared/presentation/*` previos | `Layout`, `Home`, `PageNotFound`, `App` | (previos) se crean | — | PENDIENTE |
+| F-IAM-07 | `iam/presentation/views/sign-up-page/sign-up-page.spec.ts` | `SignUpPage` | (previo) se crea · (esperado) contraseña < 8 caracteres inválida | FE-03 | LISTO-PARCIAL |
+| F-SHR-01 | `shared/application/toast.store.spec.ts` | `ToastStore` | success, info y error agregan un toast · dismiss · los mensajes técnicos con códigos HTTP se vuelven amigables · desaparece por tiempo | — | LISTO |
+| F-SHR-02 | `shared/infrastructure/base-api-endpoint.spec.ts` | `BaseApiEndpoint` | getAll (arreglo y objeto envoltorio), getById, create, update y delete: URL, verbo y mapeo · `handleError` con 404 / estado / ErrorEvent | — | LISTO |
+| F-SHR-03 | `shared/presentation/components/base-form/base-form.spec.ts` | `BaseForm` | control inválido y tocado · mensajes `required` y genérico | — | LISTO |
+| F-SHR-04 | `shared/presentation/components/toast-container/toast-container.spec.ts` | `ToastContainer` | renderiza los toasts del store y los cierra | — | LISTO |
+| F-SHR-05 | `shared/presentation/*` previos | `Layout`, `Home`, `PageNotFound`, `App` | (previos) se crean | — | PREVIO |
 | F-GRP-01 | `groups/application/groups.store.spec.ts` | `GroupsStore` | loadGroups separa líder y miembro y los une sin duplicar · error → toast + error · loadGroupMembers por grupo · addGroup agrega a líderes · updateGroup reemplaza · getGroupById | — | PENDIENTE |
 | F-GRP-02 | `groups/infrastructure/groups.assembler.spec.ts` | `GroupsAssembler` | resource ↔ entidad · `memberCount` por defecto 0 · miembros con `Profile` · comando → request | — | PENDIENTE |
 | F-GRP-03 | `groups/infrastructure/groups.api.spec.ts` | `GroupsApi` (HTTP) | `/groups/user/role?groupRole=` · POST `/groups` · PUT `/groups/{id}` · GET members | — | PENDIENTE |
