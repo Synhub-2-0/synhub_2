@@ -4,7 +4,6 @@ import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
@@ -19,17 +18,17 @@ import java.time.ZoneOffset;
 @Getter
 @Entity
 public class Task extends AuditableAbstractAggregateRoot<Task> {
-    @NonNull
+    @Column(nullable = false)
     private String title;
 
-    @NonNull
+    @Column(nullable = false)
     private String description;
 
     @Setter
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
-    @NonNull
+    @Column(nullable = false)
     private OffsetDateTime dueDate;
 
     @Setter
@@ -56,8 +55,12 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     }
 
     public Task(CreateTaskCommand command) {
+        if (command.title() == null || command.title().isBlank())
+            throw new IllegalArgumentException("A task needs a title");
+        if (command.dueDate() == null)
+            throw new IllegalArgumentException("A task needs a due date");
         this.title = command.title();
-        this.description = command.description();
+        this.description = command.description() == null ? "" : command.description();
         this.dueDate = command.dueDate();
         this.status = TaskStatus.IN_PROGRESS;
         this.difficulty = command.difficulty();

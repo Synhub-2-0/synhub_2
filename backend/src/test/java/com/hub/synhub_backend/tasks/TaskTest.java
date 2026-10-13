@@ -5,7 +5,6 @@ import com.hub.synhub_backend.tasks.domain.model.commands.CreateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -127,9 +126,13 @@ class TaskTest {
         assertThrows(IllegalArgumentException.class, () -> TaskStatus.fromString("ARCHIVED"));
     }
 
-    @Disabled("AUDIT BUG-03: el constructor acepta un título vacío o null y se persiste")
+    // AUDIT BUG-03 (resuelto)
     @Test void titleIsRequired() {
         assertThrows(IllegalArgumentException.class, () -> new Task(create(null)));
         assertThrows(IllegalArgumentException.class, () -> new Task(create("  ")));
+        var noDueDate = new CreateTaskCommand(1L, "Login", "d", null, 2L, 10L, null, null, null, null, null);
+        assertThrows(IllegalArgumentException.class, () -> new Task(noDueDate));
+        var noDescription = new CreateTaskCommand(1L, "Login", null, NOW.plusDays(1), 2L, 10L, null, null, null, null, null);
+        assertEquals("", new Task(noDescription).getDescription());
     }
 }

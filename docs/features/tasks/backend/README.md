@@ -33,7 +33,7 @@ TaskResource       = { id, title, description, dueDate, createdAt, updatedAt, st
 
 | Tipo | Clase | Notas |
 |---|---|---|
-| Agregado | `Task` | `title`, `description`, `status`, `dueDate`, `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`), y métricas (`timesRearranged`, `timePassed` en ms). |
+| Agregado | `Task` | `title` (obligatorio), `description` (vacía si no se indica), `status`, `dueDate` (obligatoria), `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`), y métricas (`timesRearranged`, `timePassed` en ms). |
 | Value object | `TaskStatus` | `ON_HOLD`, `IN_PROGRESS`, `COMPLETED`, `DONE`, `EXPIRED`. |
 
 Comportamiento del agregado:
