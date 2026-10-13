@@ -7,10 +7,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.iam.domain.model.queries.GetAllUsersQuery;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByIdQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
+import com.hub.synhub_backend.iam.interfaces.rest.resources.PublicUserResource;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
+import com.hub.synhub_backend.iam.interfaces.rest.transform.PublicUserResourceFromEntityAssembler;
 import com.hub.synhub_backend.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +21,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * This class is a REST controller that exposes the users resource.
- * It includes the following operations:
- * - GET /api/v1/users: returns all the users
- * - GET /api/v1/users/{requesterId}: returns the user with the given id
+ * Usuarios.
+ * - GET /api/v1/users: todos los usuarios, solo para ROLE_ADMIN (AUDIT SEC-06).
+ * - GET /api/v1/users/me: el usuario autenticado, con sus roles.
+ * - GET /api/v1/users/{userId} y /users/username: datos públicos (nombre, correo y foto; HUM-06).
  **/
 @RestController
 @RequestMapping(value = "/api/v1/users", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -42,6 +45,7 @@ public class UsersController {
    * @see UserResource
    */
   @GetMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<UserResource>> getAllUsers() {
     var getAllUsersQuery = new GetAllUsersQuery();
     var users = userQueryService.handle(getAllUsersQuery);
@@ -65,29 +69,29 @@ public class UsersController {
    * @param userId the user id.
    * @return the user resource with the given id
    * @throws RuntimeException if the user is not found
-   * @see UserResource
+   * @see PublicUserResource
    */
   @GetMapping(value = "/{userId}")
-  public ResponseEntity<UserResource> getUserById(@PathVariable Long userId) {
+  public ResponseEntity<PublicUserResource> getUserById(@PathVariable Long userId) {
     var getUserByIdQuery = new GetUserByIdQuery(userId);
     var user = userQueryService.handle(getUserByIdQuery);
     if (user.isEmpty()) {
       return ResponseEntity.notFound().build();
     }
-    var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user.get());
+    var userResource = PublicUserResourceFromEntityAssembler.toResourceFromEntity(user.get());
     return ResponseEntity.ok(userResource);
   }
 
   @GetMapping("/username")
   @Operation(summary = "Get user by username", description = "Get user by username")
-  public ResponseEntity<UserResource> getUserByUsername(@RequestParam String username) {
+  public ResponseEntity<PublicUserResource> getUserByUsername(@RequestParam String username) {
     var getUserByUsernameQuery = new GetUserByUsernameQuery(username);
     var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
     if (userOpt.isEmpty()) {
       return ResponseEntity.notFound().build();
     }
     var user = userOpt.get();
-    var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+    var userResource = PublicUserResourceFromEntityAssembler.toResourceFromEntity(user);
     return ResponseEntity.ok(userResource);
   }
 }

@@ -67,7 +67,7 @@ Los riesgos principales son tres:
 | [BUG-03](#bug-03) | Alta | Backend · tasks | Se crean tareas sin título (null persistido) | Reproducido | Resuelto |
 | [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Pendiente |
 | [SEC-05](#sec-05) | Media | Backend · iam | El registro permite autoasignarse `ROLE_ADMIN` | Código | Resuelto |
-| [SEC-06](#sec-06) | Media | Backend · iam | `/users` expone a todos los usuarios con su email | Reproducido | Pendiente |
+| [SEC-06](#sec-06) | Media | Backend · iam | `/users` expone a todos los usuarios con su email | Reproducido | Resuelto (email visible por HUM-06) |
 | [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Resuelto (frontend: FE-03) |
 | [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Pendiente |
 | [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Pendiente |
@@ -217,6 +217,8 @@ El archivo figura en `backend/.gitignore`, pero **está versionado**. Si un ento
 - Crear un `PublicUserResource { id, username, name, surname, imgUrl }` para `/users/{id}`, `/users/username` y los recursos anidados (`TaskResource.assignedTo`, `InvitationResource.user`, miembros). Solo `/users/me` devuelve el email.
 
 **Criterios de aceptación.** `GET /users` con `ROLE_USER` → 403. Ninguna respuesta incluye el email de otro usuario. La web sigue mostrando nombres y avatares.
+
+**Resolución.** Por la decisión HUM-06, el email **sí** es visible para los demás. Se creó `PublicUserResource { id, username, name, surname, imgUrl, email }` para `/users/{id}`, `/users/username` y los usuarios anidados; solo `/users/me` incluye `accountRoles`. `GET /users` requiere `ROLE_ADMIN`.
 
 ### SEC-07
 

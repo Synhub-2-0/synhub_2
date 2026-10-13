@@ -21,7 +21,7 @@ CreateTaskResource = { title, description, dueDate (OffsetDateTime), userId, gro
                        difficulty?, context?, urgency?, labels?, aiAccepted? }
 UpdateTaskResource = { requesterId, title, description, dueDate, userId }
 TaskResource       = { id, title, description, dueDate, createdAt, updatedAt, status,
-                       group: GroupResourceReduced, assignedTo: UserResource,
+                       group: GroupResourceReduced, assignedTo: PublicUserResource,
                        difficulty, context, urgency, labels, aiAccepted }
 ```
 

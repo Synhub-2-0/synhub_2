@@ -42,7 +42,7 @@ sequenceDiagram
     participant M as Miembro (MemberGroups)
     L->>IS: inviteByUsername("ana", groupId)
     IS->>IAM: GET ?username=ana
-    IAM-->>IS: UserResource { id }
+    IAM-->>IS: PublicUserResource { id }
     IS->>INV: POST { userId, groupId }
     INV-->>IS: InvitationResource
     M->>INV: GET /invitations/user

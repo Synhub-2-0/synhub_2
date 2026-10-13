@@ -8,7 +8,6 @@ export interface TaskUserResource {
   surname: string;
   imgUrl: string;
   email: string;
-  accountRoles: string[];
 }
 
 export interface TaskGroupReducedResource {

@@ -11,7 +11,7 @@ import { TaskRequest } from '../../../../requests/domain/model/task-request.enti
 
 const task = (status: TaskStatus, dueDate = new Date(Date.now() + 2 * 86_400_000 + 3_600_000)) => new Task({
   id: 7, title: 'Login', description: '', dueDate, createdAt: new Date(), updatedAt: new Date(), status,
-  assignedTo: { id: 5, username: 'ana', name: 'Ana', surname: 'Torres', imgUrl: '', email: '', accountRoles: [] },
+  assignedTo: { id: 5, username: 'ana', name: 'Ana', surname: 'Torres', imgUrl: '', email: '' },
 });
 
 describe('TaskCard', () => {

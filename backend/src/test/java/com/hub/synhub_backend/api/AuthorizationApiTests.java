@@ -1,6 +1,5 @@
 package com.hub.synhub_backend.api;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -94,11 +93,26 @@ class AuthorizationApiTests extends ApiTestSupport {
         assertEquals(200, get("/tasks/" + taskId + "/requests/" + requestId, team.leader().token()).status(), "la request sigue existiendo");
     }
 
-    @Disabled("AUDIT SEC-06: GET /users devuelve todos los usuarios con su email a cualquier usuario")
+    // AUDIT SEC-06 (resuelto) + HUM-06: los demás ven nombre, correo y foto, pero no los roles
     @Test void userDirectoryIsNotPublic() {
         var team = team();
         assertEquals(403, get("/users", team.stranger().token()).status());
         var other = get("/users/" + team.member().id(), team.stranger().token());
-        assertNull(other.json().get("email"), "no se expone el email de otros usuarios");
+        assertEquals(200, other.status());
+        assertNotNull(other.json().get("name"));
+        assertNotNull(other.json().get("email"));
+        assertNotNull(other.json().get("imgUrl"));
+        assertNull(other.json().get("accountRoles"), "no se exponen los roles de otros usuarios");
+        var me = get("/users/me", team.member().token());
+        assertEquals("[\"ROLE_USER\"]", me.json().get("accountRoles").toString());
+    }
+
+    @Test void nestedUsersDoNotExposeRoles() {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        var task = get("/tasks/" + taskId, team.member().token()).json();
+        assertNotNull(task.get("assignedTo").get("email"));
+        assertNull(task.get("assignedTo").get("accountRoles"));
+        assertNull(task.get("group").get("leader").get("accountRoles"));
     }
 }

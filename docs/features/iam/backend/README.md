@@ -8,13 +8,15 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 |---|---|---|---|---|
 | `POST` | `/api/v1/authentication/sign-in` | Público | `SignInResource { username, password }` | `200 AuthenticatedUserResource { id, username, token, role[] }` · `401` credenciales inválidas |
 | `POST` | `/api/v1/authentication/sign-up` | Público | `SignUpResource { username, name, surname, imgUrl?, email, password }` (no acepta roles: siempre `ROLE_USER`; `email` válido, `password` de 8 a 72 caracteres; sin `imgUrl` se usa `/default-avatar.jpg`) | `201 UserResource` · `409` usuario o email repetido |
-| `GET` | `/api/v1/users` | Autenticado | — | `200 UserResource[]` |
-| `GET` | `/api/v1/users/me` | Autenticado | — | `200 UserResource` del usuario del token |
-| `GET` | `/api/v1/users/{userId}` | Autenticado | — | `200 UserResource` · `404` |
-| `GET` | `/api/v1/users/username` | Autenticado | `?username=` | `200 UserResource` · `404` |
+| `GET` | `/api/v1/users` | Solo `ROLE_ADMIN` | — | `200 UserResource[]` · `403` para el resto |
+| `GET` | `/api/v1/users/me` | Autenticado | — | `200 UserResource` del usuario de la sesión (único que incluye los roles) |
+| `GET` | `/api/v1/users/{userId}` | Autenticado | — | `200 PublicUserResource` · `404` |
+| `GET` | `/api/v1/users/username` | Autenticado | `?username=` | `200 PublicUserResource` · `404` |
 | `GET` | `/api/v1/roles` | Autenticado | — | `200 RoleResource[] { id, name }` |
 
 `UserResource = { id, username, name, surname, imgUrl, email, accountRoles[] }`
+
+`PublicUserResource = { id, username, name, surname, imgUrl, email }`: lo que un usuario puede ver de otro (nombre, correo y foto; decisión HUM-06). Se usa en `/users/{id}`, `/users/username` y en todos los usuarios anidados (`TaskResource.assignedTo`, `GroupResourceReduced.leader`, `InvitationResource.user`, miembros de un grupo).
 
 ## Modelo de dominio
 

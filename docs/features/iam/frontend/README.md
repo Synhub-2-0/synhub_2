@@ -37,7 +37,7 @@ Store singleton (`providedIn: 'root'`) basado en signals. Funciona como "context
 | `iam.api.ts` (`IamApi`) | Fachada que compone cuatro endpoints: sign-in, sign-up, users y profiles. |
 | `sign-in/*`, `sign-up/*` | `*ApiEndpoint` (extienden `ErrorHandlingEnabledBaseType`), `*Assembler`, `*Request`, `*Response`. |
 | `users/*` | `UsersApiEndpoint` (`BaseApiEndpoint`): `getByAuthentication()` → `/users/me`, `getByUsername()`. |
-| `profiles/*` | `ProfilesApiEndpoint`: construye un `Profile` a partir de `/users/{id}` o `/users/username`. **No existe un recurso `/profiles` en el backend**: el perfil se arma con el `UserResource`. |
+| `profiles/*` | `ProfilesApiEndpoint`: construye un `Profile` a partir de `/users/{id}` o `/users/username`. **No existe un recurso `/profiles` en el backend**: el perfil se arma con el `PublicUserResource`. |
 | `iam.interceptor.ts` | `HttpInterceptorFn`: agrega `Authorization: Bearer <token>` a todas las peticiones salvo sign-in y sign-up. Se registra en `app.config.ts`. |
 | `iam.guard.ts` | `CanActivateFn`: si `isSignedIn()` es falso, redirige a `/auth/sign-in`. Protege `home`, `groups`, `tasks`, `validations` y `recorrido`. |
 
@@ -46,7 +46,7 @@ Store singleton (`providedIn: 'root'`) basado en signals. Funciona como "context
 | Clase | Campos |
 |---|---|
 | `User` | `id`, `username`, `accountRoles` |
-| `Profile` | `id`, `name`, `surname`, `email`, `imgUrl`, `userId`, `username`. `userId` queda `undefined` porque `UserResource` no lo envía; `id` es el id del usuario. |
+| `Profile` | `id`, `name`, `surname`, `email`, `imgUrl`, `userId`, `username`. `userId` queda `undefined` porque `PublicUserResource` no lo envía; `id` es el id del usuario. |
 | `SignInCommand`, `SignUpCommand` | Datos de los formularios. |
 
 ## Consumidores fuera de IAM

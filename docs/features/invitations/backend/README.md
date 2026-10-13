@@ -27,7 +27,7 @@ Todos requieren token.
 | `GET` | `/api/v1/invitations/user` | — | `200 InvitationResource[]` | Invitaciones recibidas por el usuario del token. |
 | `GET` | `/api/v1/invitations/group` | `?groupId=` | `200 InvitationResource[]` · `403` · `404` | Invitaciones pendientes de un grupo. Solo el líder. |
 
-`InvitationResource = { id, group: GroupResourceReduced, user: UserResource }`
+`InvitationResource = { id, group: GroupResourceReduced, user: PublicUserResource }`
 
 ## Modelo de dominio
 

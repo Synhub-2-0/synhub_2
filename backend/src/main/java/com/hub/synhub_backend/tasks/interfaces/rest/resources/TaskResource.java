@@ -2,7 +2,7 @@ package com.hub.synhub_backend.tasks.interfaces.rest.resources;
 
 
 import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResourceReduced;
-import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
+import com.hub.synhub_backend.iam.interfaces.rest.resources.PublicUserResource;
 
 public record TaskResource(
         Long id,
@@ -13,7 +13,7 @@ public record TaskResource(
         String updatedAt,
         String status,
         GroupResourceReduced group,
-        UserResource assignedTo,
+        PublicUserResource assignedTo,
         Integer difficulty,
         String context,
         String urgency,
