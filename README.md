@@ -17,6 +17,8 @@ Toda la documentación está en **[`docs/`](docs/README.md)** y se divide en dos
 - **[`docs/architecture/`](docs/architecture/README.md)**: organización técnica del proyecto. El backend aplica **DDD** con un bounded context por feature y capas al estilo **Clean Architecture / hexagonal** (`interfaces → application → domain ← infrastructure`), **CQRS** a nivel de servicio y **ACL** entre contextos. El frontend replica esos contextos como módulos con capas `domain / infrastructure / application / presentation`, stores con **signals** y un patrón **endpoint + assembler** para consumir la API **REST**. También incluye el catálogo de endpoints, los criterios de propiedad del código compartido y el despliegue.
 - **[`docs/features/<feature>/`](docs/README.md#features)**: una carpeta por feature, definida según los recursos REST. Cada una tiene un `README.md` (qué hace y cómo se comunican frontend y backend), `backend/README.md` y `frontend/README.md`.
 
+Además, **[`docs/AUDIT_RESULTS.md`](docs/AUDIT_RESULTS.md)** resume la auditoría técnica: qué se corrigió y qué queda pendiente antes del despliegue.
+
 ### Features
 
 | Feature | Resumen | Docs |
