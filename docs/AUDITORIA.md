@@ -76,7 +76,7 @@ Los riesgos principales son tres:
 | [BUG-05](#bug-05) | Media | Backend · iam | Rol inexistente en el registro → 500 | Reproducido | Resuelto (por SEC-05) |
 | [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Resuelto (por SEC-07) |
 | [BUG-07](#bug-07) | Media | Backend · shared | El handler de 500 no registra la excepción | Código | Resuelto |
-| [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Pendiente |
+| [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Resuelto |
 | [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Pendiente |
 | [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Pendiente |
 | [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Pendiente |
@@ -470,6 +470,8 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 
 **Criterios de aceptación.** Tests unitarios: un usuario con tareas en dos grupos obtiene solo las del grupo pedido.
 
+**Resolución.** Hecho junto con los endpoints base de metrics (HUM-05). Además, las métricas de una tarea respondían 400 (no existe) o 500 (estado no aplicable): ahora 404 y 409 (`MetricNotAvailableException`). Se quitó el `UserRepository.findAll()` que cargaba a todos los usuarios para obtener nombres.
+
 ### BUG-09
 
 **Scheduler de vencimiento** · Media · Código
@@ -827,7 +829,7 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 | HUM-02 | Configurar AWS: `SPRING_PROFILES_ACTIVE=prod` en la task definition de ECS, reenvío de cookies (sin caché) en el *behavior* `/api/*` de CloudFront (sesión HUM-04), la *trust policy* OIDC de `synhub_2`, las variables `AWS_DEPLOY_ROLE_ARN`/`AWS_ACCOUNT_ID` del repo y WAF o rate limit en CloudFront/ALB. | SEC-09, SEC-11, OPS-01 | — | Pendiente (requiere acceso a AWS y GitHub). |
 | HUM-03 | Semántica del borrado de grupos y tareas: borrado físico o *soft delete* (archivar). | BUG-01, BUG-02 | Borrado físico ordenado ahora; evaluar *soft delete* si se necesita historial. | **Soft delete.** Grupos, tareas, requests y membresías borrados se marcan y dejan de ser visibles en toda la API; los datos quedan en la base. Implementado: `@SoftDelete` (`deleted_at`) en `Group`, `GroupProfile`, `Invitation`, `Task` y `Request` (`api/SoftDeleteApiTests`). |
 | HUM-04 | Estrategia de sesión: token corto + refresh token, o cookie `HttpOnly`. | SEC-10 | Token de 1 día + logout ante un 401 ahora; cookie `HttpOnly` en una iteración posterior. | **Cookie `HttpOnly` válida por 1 día.** El JWT deja de guardarse en `localStorage`; un 401 cierra la sesión. |
-| HUM-05 | Funciones a medio hacer: unión a un grupo por código, expulsar miembros (`RemoveMemberUserFromGroupCommand`) y endpoints de metrics. | BUG-17, ARC-03 | Eliminar lo que no esté en el roadmap. | **Terminarlas.** Unirse por código y expulsar miembros quedan completos (API y web); metrics recibe una implementación base de sus endpoints. Hecho: `POST /groups/join` y `DELETE /groups/{id}/members/{userId}` (API y web). |
+| HUM-05 | Funciones a medio hacer: unión a un grupo por código, expulsar miembros (`RemoveMemberUserFromGroupCommand`) y endpoints de metrics. | BUG-17, ARC-03 | Eliminar lo que no esté en el roadmap. | **Terminarlas.** Unirse por código y expulsar miembros quedan completos (API y web); metrics recibe una implementación base de sus endpoints. Hecho: `POST /groups/join` y `DELETE /groups/{id}/members/{userId}` (API y web) y 11 endpoints `GET /metrics/...` con control de acceso. |
 | HUM-06 | Privacidad: qué datos de un usuario pueden ver los demás (por ejemplo, el email dentro del grupo). | SEC-06 | Ocultar el email fuera de `/users/me`. | **Los demás ven nombre, correo y foto** (además de `id` y `username`). Roles y grupos ajenos no se exponen; `GET /users` queda solo para administradores. |
 
 ## Plan de ejecución

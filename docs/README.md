@@ -39,7 +39,7 @@ docs/
 | **tasks** | Tareas, tablero Kanban, ciclo de estados y vencimiento automático | `/tasks` | `tasks` | `tasks/` | [README](features/tasks/README.md) · [backend](features/tasks/backend/README.md) · [frontend](features/tasks/frontend/README.md) |
 | **requests** | Entregas de tareas y validación por el líder | `/tasks/{id}/requests`, `/groups/{id}/requests` | `requests` | `requests/` | [README](features/requests/README.md) · [backend](features/requests/backend/README.md) · [frontend](features/requests/frontend/README.md) |
 | **ai** | Clasificación de tareas e informe de grupo con Bedrock | `/ai` | `ai` | `ai/` | [README](features/ai/README.md) · [backend](features/ai/backend/README.md) · [frontend](features/ai/frontend/README.md) |
-| **metrics** | Cálculos de productividad (uso interno del informe de IA) | `/metrics` (sin endpoints) | `metrics` | — | [README](features/metrics/README.md) · [backend](features/metrics/backend/README.md) · [frontend](features/metrics/frontend/README.md) |
+| **metrics** | Cálculos de productividad (API base de solo lectura; los usa el informe de IA) | `/metrics` | `metrics` | — | [README](features/metrics/README.md) · [backend](features/metrics/backend/README.md) · [frontend](features/metrics/frontend/README.md) |
 | **tour** | Video de recorrido por capítulos | — | — | `tour/` | [README](features/tour/README.md) · [backend](features/tour/backend/README.md) · [frontend](features/tour/frontend/README.md) |
 
 ⚠ = el recurso REST y el código del backend pertenecen a contextos distintos.

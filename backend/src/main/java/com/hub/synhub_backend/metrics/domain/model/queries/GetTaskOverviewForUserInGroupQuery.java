@@ -1,3 +1,3 @@
 package com.hub.synhub_backend.metrics.domain.model.queries;
 
-public record GetTaskOverviewForUserInGroupQuery(Long memberId) {}
+public record GetTaskOverviewForUserInGroupQuery(Long memberId, Long groupId) {}

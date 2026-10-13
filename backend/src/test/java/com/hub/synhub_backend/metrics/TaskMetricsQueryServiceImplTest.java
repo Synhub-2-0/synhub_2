@@ -5,14 +5,14 @@ import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import com.hub.synhub_backend.metrics.application.internal.queryservice.TaskMetricsQueryServiceImpl;
+import com.hub.synhub_backend.metrics.domain.exceptions.MetricNotAvailableException;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.metrics.domain.model.queries.*;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static com.hub.synhub_backend.groups.GroupFixtures.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /** Cálculos de métricas sobre las tareas. */
@@ -33,7 +34,6 @@ class TaskMetricsQueryServiceImplTest {
     private static final long GROUP = 10, OTHER_GROUP = 11, ANA = 2, LUIS = 3;
 
     private TaskRepository tasks;
-    private UserRepository users;
     private GroupQueryService groups;
     private TaskMetricsQueryServiceImpl service;
     private User ana, luis;
@@ -43,9 +43,8 @@ class TaskMetricsQueryServiceImplTest {
     @BeforeEach
     void setUp() {
         tasks = mock(TaskRepository.class);
-        users = mock(UserRepository.class);
         groups = mock(GroupQueryService.class);
-        service = new TaskMetricsQueryServiceImpl(tasks, users, groups);
+        service = new TaskMetricsQueryServiceImpl(tasks, groups);
         ana = user(ANA, "ana");
         luis = user(LUIS, "luis");
         group = group(GROUP, user(1, "lider"), ana, luis);
@@ -53,7 +52,6 @@ class TaskMetricsQueryServiceImplTest {
         anaProfile = group.getUserProfiles().get(1);
         luisProfile = group.getUserProfiles().get(2);
         anaOtherProfile = otherGroup.getUserProfiles().get(1);
-        when(users.findAll()).thenReturn(List.of(ana, luis));
         when(groups.handle(new GetGroupByIdQuery(GROUP))).thenReturn(Optional.of(group));
         when(groups.handle(new GetGroupByIdQuery(99L))).thenReturn(Optional.empty());
     }
@@ -135,8 +133,9 @@ class TaskMetricsQueryServiceImplTest {
         when(tasks.findById(2L)).thenReturn(Optional.of(task(anaProfile, TaskStatus.DONE, 0, Duration.ZERO)));
 
         assertEquals(48L, service.handle(new GetTaskDurationByIdQuery(1L)).durationInHours());
-        assertThrows(IllegalStateException.class, () -> service.handle(new GetTaskDurationByIdQuery(2L)));
-        assertThrows(IllegalArgumentException.class, () -> service.handle(new GetTaskDurationByIdQuery(3L)));
+        // 409 y 404 en lugar de 500 y 400
+        assertThrows(MetricNotAvailableException.class, () -> service.handle(new GetTaskDurationByIdQuery(2L)));
+        assertThrows(ResourceNotFoundException.class, () -> service.handle(new GetTaskDurationByIdQuery(3L)));
     }
 
     @Test void timePassedOnlyForFinishedTasks() {
@@ -146,10 +145,11 @@ class TaskMetricsQueryServiceImplTest {
         var result = service.handle(new GetTaskTimePassedByIdQuery(1L));
         assertEquals(ANA, result.memberId());
         assertEquals(Duration.ofHours(5).toMillis(), result.timePassed());
-        assertThrows(IllegalStateException.class, () -> service.handle(new GetTaskTimePassedByIdQuery(2L)));
+        assertThrows(MetricNotAvailableException.class, () -> service.handle(new GetTaskTimePassedByIdQuery(2L)));
+        assertThrows(ResourceNotFoundException.class, () -> service.handle(new GetTaskTimePassedByIdQuery(9L)));
     }
 
-    @Disabled("AUDIT BUG-08: las métricas 'por usuario en grupo' usan findByProfile_User_Id y mezclan todos los grupos")
+    // AUDIT BUG-08 (resuelto)
     @Test void perUserMetricsOnlyCountTheRequestedGroup() {
         var inGroup = task(anaProfile, TaskStatus.IN_PROGRESS, 1, Duration.ZERO);
         var inOtherGroup = task(anaOtherProfile, TaskStatus.IN_PROGRESS, 4, Duration.ZERO);
@@ -158,5 +158,17 @@ class TaskMetricsQueryServiceImplTest {
 
         assertEquals(1, service.handle(new GetRescheduledTasksForUserInGroupQuery(ANA, GROUP)).value());
         assertEquals(1, service.handle(new GetTaskDistributionForUserInGroupQuery(ANA, GROUP)).value());
+        assertEquals(1, service.handle(new GetTaskOverviewForUserInGroupQuery(ANA, GROUP)).value());
+        assertEquals(0, service.handle(new GetAvgCompletionTimeForUserInGroupQuery(ANA, GROUP)).details().get("completedTasks"));
+        service.handle(new GetTaskTimePassedForUserInGroupQuery(ANA, GROUP));
+        verify(tasks, never()).findByProfile_User_Id(any());
+    }
+
+    @Test void memberWithoutTasksHasEmptyMetrics() {
+        when(tasks.findByProfile_Group_IdAndProfile_User_Id(GROUP, LUIS)).thenReturn(List.of());
+        var distribution = service.handle(new GetTaskDistributionForUserInGroupQuery(LUIS, GROUP));
+        assertEquals(0, distribution.value());
+        assertTrue(distribution.details().isEmpty());
+        assertEquals(0L, service.handle(new GetTaskTimePassedForUserInGroupQuery(LUIS, GROUP)).timePassed());
     }
 }

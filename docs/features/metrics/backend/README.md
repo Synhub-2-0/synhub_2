@@ -2,35 +2,56 @@
 
 Paquete: [`com.hub.synhub_backend.metrics`](../../../../backend/src/main/java/com/hub/synhub_backend/metrics)
 
-## Endpoints
+## Endpoints (`MetricsController`)
 
-`MetricsController` está mapeado a `/api/v1/metrics`, pero **no tiene métodos**: solo TODOs que describen los endpoints previstos (resumen, distribución, reagendados, tiempo promedio, por grupo y por integrante, y duración de una tarea en curso).
+Implementación base (decisión HUM-05). Todos son `GET`, requieren sesión y son de solo lectura. El control de acceso usa las ACL de groups (`GroupsContextFacade.isMember` / `isLeader`) y de tasks (`TasksContextFacade.getTaskById`).
+
+| Ruta | Respuesta | Quién puede verla |
+|---|---|---|
+| `/api/v1/metrics/groups/{groupId}/overview` | `TaskOverviewResource` | Integrantes del grupo |
+| `/api/v1/metrics/groups/{groupId}/distribution` | `TaskDistributionResource` | Integrantes del grupo |
+| `/api/v1/metrics/groups/{groupId}/rescheduled` | `RescheduledTasksResource` | Integrantes del grupo |
+| `/api/v1/metrics/groups/{groupId}/avg-completion-time` | `AvgCompletionTimeResource` | Integrantes del grupo |
+| `/api/v1/metrics/groups/{groupId}/members/{userId}/overview` | `TaskOverviewResource` | El líder o el propio integrante |
+| `/api/v1/metrics/groups/{groupId}/members/{userId}/distribution` | `TaskDistributionResource` | El líder o el propio integrante |
+| `/api/v1/metrics/groups/{groupId}/members/{userId}/rescheduled` | `RescheduledTasksResource` | El líder o el propio integrante |
+| `/api/v1/metrics/groups/{groupId}/members/{userId}/avg-completion-time` | `AvgCompletionTimeResource` | El líder o el propio integrante |
+| `/api/v1/metrics/groups/{groupId}/members/{userId}/time-passed` | `TaskTimePassedResource` | El líder o el propio integrante |
+| `/api/v1/metrics/tasks/{taskId}/time-passed` | `TaskTimePassedResource` · `409` si la tarea no está `COMPLETED`/`DONE` | Integrantes del grupo de la tarea |
+| `/api/v1/metrics/tasks/{taskId}/duration` | `TaskDurationResource` · `409` si la tarea no está `IN_PROGRESS` | Integrantes del grupo de la tarea |
+
+Errores: `404` grupo, tarea o integrante inexistente; `403` sin permiso; `409` métrica no aplicable al estado de la tarea (`MetricNotAvailableException`).
+
+Recursos:
+
+- `TaskOverviewResource { type, value: total, details: { estado: n } }`
+- `TaskDistributionResource { type, value: total, details: { userId: { memberName, taskCount } } }`
+- `RescheduledTasksResource { type, value: total de reagendados, details: { total, rescheduled }, rescheduledMemberIds }`
+- `AvgCompletionTimeResource { type, value: días promedio de las tareas DONE, details: { completedTasks } }`
+- `TaskTimePassedResource { memberId, timePassed (ms) }`
+- `TaskDurationResource { taskId, durationInHours }` (de la creación a la fecha límite)
 
 ## Consultas (`TaskMetricsQueryService` / `TaskMetricsQueryServiceImpl`)
 
-| Query | Resultado | Fuente | ¿Se usa? |
-|---|---|---|---|
-| `GetTaskOverviewInGroupQuery(groupId)` | `TaskOverviewResource { type: "TASK_OVERVIEW", value: total, details: {estado: n} }` | `findByProfile_Group_Id` | **Sí** (informe de IA) |
-| `GetRescheduledTasksInGroupQuery(groupId)` | `RescheduledTasksResource { value: total de reagendados, details, rescheduledMemberIds }` | `findByProfile_Group_Id` | **Sí** (informe de IA) |
-| `GetTaskDistributionInGroupQuery(groupId)` | `TaskDistributionResource` (tareas por integrante) | `TaskRepository` + `UserRepository.findAll` | No |
-| `GetAvgCompletionTimeInGroupQuery(groupId)` | `AvgCompletionTimeResource` (días promedio de las tareas `DONE`) | `GroupQueryService` + `TaskRepository` | No |
-| `GetTaskOverviewForUserInGroupQuery(memberId)` | Resumen por estado del usuario | `findByProfile_User_Id` | No |
-| `GetTaskDistributionForUserInGroupQuery(userId, groupId)` | — | `findByProfile_User_Id` | No |
-| `GetRescheduledTasksForUserInGroupQuery(userId, groupId)` | — | `findByProfile_User_Id` | No |
-| `GetAvgCompletionTimeForUserInGroupQuery(userId, groupId)` | — | `findByProfile_User_Id` | No |
-| `GetTaskTimePassedForUserInGroupQuery(userId)` | `TaskTimePassedResource` (promedio de `timePassed`) | `findByProfile_User_Id` | No |
-| `GetTaskTimePassedByIdQuery(taskId)` | `timePassed` de una tarea `COMPLETED`/`DONE` | `findById` | No |
-| `GetTaskDurationByIdQuery(taskId)` | `TaskDurationResource` (horas entre la creación y la fecha límite, solo `IN_PROGRESS`) | `findById` | No |
+| Query | Fuente | Consumidores |
+|---|---|---|
+| `GetTaskOverviewInGroupQuery(groupId)` | `findByProfile_Group_Id` | `MetricsController`, informe de IA |
+| `GetRescheduledTasksInGroupQuery(groupId)` | `findByProfile_Group_Id` | `MetricsController`, informe de IA |
+| `GetTaskDistributionInGroupQuery(groupId)` | `findByProfile_Group_Id` (el nombre sale del perfil de la tarea) | `MetricsController` |
+| `GetAvgCompletionTimeInGroupQuery(groupId)` | `GroupQueryService` + `findByProfile_Group_Id` | `MetricsController` |
+| `GetTaskOverviewForUserInGroupQuery(memberId, groupId)`, `GetTaskDistributionForUserInGroupQuery`, `GetRescheduledTasksForUserInGroupQuery`, `GetAvgCompletionTimeForUserInGroupQuery`, `GetTaskTimePassedForUserInGroupQuery(userId, groupId)` | `findByProfile_Group_IdAndProfile_User_Id`: **solo el grupo pedido** (AUDIT BUG-08) | `MetricsController` |
+| `GetTaskTimePassedByIdQuery(taskId)`, `GetTaskDurationByIdQuery(taskId)` | `findById` | `MetricsController` |
 
-Las consultas "ForUserInGroup" reciben `groupId`, pero **filtran solo por usuario** (`findByProfile_User_Id`): mezclan las tareas de todos los grupos del usuario.
+Las tareas borradas (soft delete, HUM-03) no cuentan en ninguna métrica: el repositorio las excluye.
 
 ## Modelo
 
-`GroupMetrics(groupId, memberCount)`: es una clase simple, no una entidad JPA. La obtiene `GroupsClient` mediante `GroupMetricsRepository`.
+`GroupMetrics(groupId, memberCount)`: clase simple, no una entidad JPA. La obtiene `GroupsClient` mediante `GroupMetricsRepository`; hoy no la usa ningún endpoint.
 
 ## Estructura y observaciones
 
-- **Inversión de capas**: el servicio de dominio (`domain/model/services/TaskMetricsQueryService`) devuelve tipos de `interfaces/rest/resources` (`TaskOverviewResource`, etc.). Lo habitual en el resto del backend es que el dominio devuelva entidades o value objects, y que los assemblers de `interfaces/rest/transform` los conviertan.
+- **Inversión de capas**: el servicio de dominio (`domain/model/services/TaskMetricsQueryService`) devuelve tipos de `interfaces/rest/resources` (`TaskOverviewResource`, etc.). Lo habitual en el resto del backend es que el dominio devuelva entidades o value objects, y que los assemblers de `interfaces/rest/transform` los conviertan (ver ARC-02).
 - Los nombres de paquete tienen erratas: `application/internal/queryservice` (sin "s") e `infrastructure/persistenence`.
 - `TaskMetricsQueryService` está en `domain/model/services` en lugar de `domain/services`, que es donde lo ponen los demás contextos.
-- Sin pruebas propias.
+- Lee `TaskRepository` de tasks directamente (ARC-01).
+- Pruebas: `metrics/TaskMetricsQueryServiceImplTest` (cálculos) y `api/MetricsApiTests` (endpoints y permisos).

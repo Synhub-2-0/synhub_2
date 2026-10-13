@@ -27,7 +27,7 @@ Toda la documentación está en **[`docs/`](docs/README.md)** y se divide en dos
 | tasks | Tareas, Kanban, ciclo de estados, vencimiento automático | [README](docs/features/tasks/README.md) · [backend](docs/features/tasks/backend/README.md) · [frontend](docs/features/tasks/frontend/README.md) |
 | requests | Entregas y validación por el líder | [README](docs/features/requests/README.md) · [backend](docs/features/requests/backend/README.md) · [frontend](docs/features/requests/frontend/README.md) |
 | ai | Clasificación de tareas e informe de grupo | [README](docs/features/ai/README.md) · [backend](docs/features/ai/backend/README.md) · [frontend](docs/features/ai/frontend/README.md) |
-| metrics | Métricas de productividad (uso interno) | [README](docs/features/metrics/README.md) · [backend](docs/features/metrics/backend/README.md) · [frontend](docs/features/metrics/frontend/README.md) |
+| metrics | Métricas de productividad (API base de solo lectura) | [README](docs/features/metrics/README.md) · [backend](docs/features/metrics/backend/README.md) · [frontend](docs/features/metrics/frontend/README.md) |
 | tour | Video de recorrido por capítulos (solo frontend) | [README](docs/features/tour/README.md) · [backend](docs/features/tour/backend/README.md) · [frontend](docs/features/tour/frontend/README.md) |
 
 ### Documentación técnica
