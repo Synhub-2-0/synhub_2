@@ -19,6 +19,20 @@ cd frontend && npm ci && npx ng serve
 cd backend && ./mvnw spring-boot:run
 ```
 
+## Docker (solución completa)
+
+El `Dockerfile` de la raíz genera una sola imagen con todo: compila el frontend y el backend, y en
+ejecución nginx sirve la web en el puerto 80 y reenvía `/api/` al backend (Spring Boot, puerto interno 8080).
+
+```bash
+docker compose up --build
+```
+
+Esto levanta la app y PostgreSQL; la web queda en http://localhost:8080.
+
+Variables de entorno de la app: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`
+(cámbialo fuera de desarrollo) y, para las funciones de IA, credenciales de AWS (`AWS_REGION`, etc.).
+
 ## CI/CD
 
 Los workflows están en `.github/workflows/` y solo se disparan cuando cambian archivos de su carpeta:

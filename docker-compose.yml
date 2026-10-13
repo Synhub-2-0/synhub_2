@@ -1,0 +1,32 @@
+# Levanta la solución completa: la app (frontend + backend) y PostgreSQL.
+#   docker compose up --build   ->  http://localhost:8080
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: synhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/synhub
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      # JWT_SECRET: cambia el secreto por defecto fuera de desarrollo
+      # AWS_REGION / AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY: necesarios para las funciones de IA (Bedrock)
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
