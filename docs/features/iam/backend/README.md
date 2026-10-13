@@ -37,11 +37,10 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 | `RoleQueryServiceImpl` | `GetAllRolesQuery`, `GetRoleByNameQuery`. |
 | `ApplicationReadyEventHandler` | Al recibir `ApplicationReadyEvent`, ejecuta `SeedRolesCommand`: los roles siempre existen al arrancar. |
 
-**Mensajes definidos sin uso:** `UpdateUserInfoCommand`, `GetUserByLeaderId` y `GetUserByMemberId` no tienen handler. `CreateUserLeaderCommand` solo tiene un assembler.
 
 ## ACL hacia otros contextos
 
-`IamContextFacade` (interfaz en `interfaces/acl`, implementación en `application/internal/acl`) expone `createUser`, `fetchUserIdByUsername`, `fetchUsernameByUserId`, `fetchUserById` y `fetchUsersByGroupId`. `shared/application/external/outboundedservices/ExternalIamService` lo envuelve, pero ninguna clase lo consume todavía.
+`IamContextFacade` (interfaz en `interfaces/acl`, implementación en `application/internal/acl`) expone `createUser`, `fetchUserIdByUsername`, `fetchUsernameByUserId`, `fetchUserById` y `fetchUsersByGroupId`.
 
 ## Infraestructura
 

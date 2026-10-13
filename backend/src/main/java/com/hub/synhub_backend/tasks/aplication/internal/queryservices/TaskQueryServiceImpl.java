@@ -36,10 +36,6 @@ public class TaskQueryServiceImpl implements TaskQueryService {
     }
 
 
-    @Override
-    public List<Task> handle(GetAllTasksQuery query) {
-        return this.taskRepository.findAll();
-    }
 
     @Override
     public Optional<Task> handle(GetTaskByIdQuery query) {
@@ -53,11 +49,6 @@ public class TaskQueryServiceImpl implements TaskQueryService {
         return this.taskRepository.findByProfile_User_IdOrderByDueDateAscIdAsc(query.userId());
     }
 
-    @Override
-    public List<Task> handle(GetAllTaskByStatusQuery query) {
-        TaskStatus taskStatus = TaskStatus.valueOf(query.taskStatus());
-        return taskRepository.findByStatus(taskStatus);
-    }
 
     @Override
     public List<Task> handle(GetAllTasksByGroupIdQuery query) {

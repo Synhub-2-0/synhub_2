@@ -97,7 +97,7 @@ Los riesgos principales son tres:
 | [BUG-17](#bug-17) | Baja | Frontend · groups | Búsqueda por código comentada aunque el backend la expone | Código | Resuelto (unirse por código, HUM-05) |
 | [BUG-18](#bug-18) | Media | Backend · tasks | Una tarea `DONE` se puede editar, mover o borrar por API | Reproducido | Resuelto |
 | [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Pendiente |
-| [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Pendiente |
+| [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Resuelto |
 | [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Resuelto |
 | [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Resuelto |
 | [FE-01](#fe-01) | Baja | Frontend | `console.log` y `console.error` en producción | Código | Resuelto |
@@ -643,6 +643,10 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 **Solución propuesta.** Eliminar todo lo que no tenga un uso planificado. Conservar `DeleteAllRequestsByTaskIdCommand`, que se usará en [BUG-01](#bug-01). Para `RemoveMemberUserFromGroupCommand` y `MetricsController`, ver [HUM-05](#decisiones-humanas-no-automatizar): por defecto, eliminar el controlador vacío y conservar el comando.
 
 **Criterios de aceptación.** Compila, los tests pasan y la documentación de features queda actualizada.
+
+**Resolución.** Por HUM-05, `RemoveMemberUserFromGroupCommand` y `MetricsController` se completaron en lugar de borrarse, y `ExternalTasksService` y `findByLeaderId` se eliminaron antes (HUM-05, BUG-11). Ahora se eliminaron:
+- Backend: `ExternalIamService`, `UpdateUserInfoCommand`, `GetUserByLeaderId`, `GetUserByMemberId`, `CreateUserLeaderCommandFromResourceAssembler`, `GroupMemberResource`, `GroupMetrics`/`GroupsClient`/`GroupMetricsRepository` (con el paquete `persistenence`), `GetAllRequestsQuery`, `GetAllTasksQuery`, `GetAllTaskByStatusQuery` (con `findByStatus`) y `DeleteAllRequestsByTaskIdCommand` (lo reemplazó `RequestsContextFacade` en BUG-01).
+- Frontend: `BaseApi`, `IamStore.loadUsers`, `GroupsApi.getGroup`/`getGroupsByUser`/`getGroupsByUserGroupRole` e `IamApi.getUser`/`getUserByUsername`. El código comentado ya se había quitado con BUG-17.
 
 ### ARC-04
 

@@ -3,7 +3,6 @@ package com.hub.synhub_backend.requests;
 import com.hub.synhub_backend.requests.application.internal.commandservices.RequestCommandServiceImpl;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
-import com.hub.synhub_backend.requests.domain.model.commands.DeleteAllRequestsByTaskIdCommand;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
@@ -57,16 +56,5 @@ class RequestDomainAndDeleteTest {
         assertEquals("REJECTED", request.getRequestStatus());
     }
 
-    // ---- Borrado
-    @Test void deletesAllRequestsOfATask() {
-        when(tasks.getTaskById(1L)).thenReturn(Optional.of(new Task()));
-        service.handle(new DeleteAllRequestsByTaskIdCommand(1L));
-        verify(repo).deleteByTaskId(1L);
-    }
 
-    @Test void deletingRequestsOfUnknownTaskFails() {
-        when(tasks.getTaskById(1L)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> service.handle(new DeleteAllRequestsByTaskIdCommand(1L)));
-        verify(repo, never()).deleteByTaskId(any());
-    }
 }

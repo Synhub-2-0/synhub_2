@@ -46,7 +46,7 @@ Las tareas borradas (soft delete, HUM-03) no cuentan en ninguna métrica: el rep
 
 ## Modelo
 
-`GroupMetrics(groupId, memberCount)`: clase simple, no una entidad JPA. La obtiene `GroupsClient` mediante `GroupMetricsRepository`; hoy no la usa ningún endpoint.
+Metrics no tiene modelo propio ni persistencia: calcula sobre las tareas de tasks.
 
 ## Estructura y observaciones
 

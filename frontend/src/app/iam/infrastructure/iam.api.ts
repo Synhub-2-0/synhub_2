@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
-import {BaseApi} from '../../shared/infrastructure/base-api';
 import {SignUpApiEndpoint} from './sign-up/sign-up.api-endpoint';
 import {SignInApiEndpoint} from './sign-in/sign-in.api-endpoint';
 import {SignUpAssembler} from './sign-up/sign-up.assembler';
@@ -17,14 +16,13 @@ import {UsersApiEndpoint} from './users/users.api-endpoint';
 import {UsersAssembler} from './users/users.assembler';
 
 @Injectable({providedIn: 'root'})
-export class IamApi extends BaseApi {
+export class IamApi {
   private readonly signUpEndpoint: SignUpApiEndpoint;
   private readonly signInEndpoint: SignInApiEndpoint;
   private readonly usersEndpoint: UsersApiEndpoint;
   private readonly profilesEndpoint: ProfilesApiEndpoint;
 
   constructor(http: HttpClient) {
-    super();
     this.signUpEndpoint = new SignUpApiEndpoint(http, new SignUpAssembler());
     this.signInEndpoint = new SignInApiEndpoint(http, new SignInAssembler());
     this.usersEndpoint = new UsersApiEndpoint(http);
@@ -45,16 +43,9 @@ export class IamApi extends BaseApi {
   }
 
   // Users
-  getUser(id: number): Observable<UserResource> {
-    return this.usersEndpoint.getById(id);
-  }
 
   autoSignIn(): Observable<UserResource> {
     return this.usersEndpoint.getByAuthentication();
-  }
-
-  getUserByUsername(username: string): Observable<UserResource> {
-    return this.usersEndpoint.getByUsername(username);
   }
 
   // Profiles

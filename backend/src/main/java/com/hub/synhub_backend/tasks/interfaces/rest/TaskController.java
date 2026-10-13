@@ -15,11 +15,9 @@ import com.hub.synhub_backend.tasks.interfaces.rest.transform.CreateTaskCommandF
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import com.hub.synhub_backend.requests.domain.model.commands.DeleteAllRequestsByTaskIdCommand;
 import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
-import com.hub.synhub_backend.tasks.domain.model.queries.GetAllTaskByStatusQuery;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTaskByIdQuery;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;

@@ -9,43 +9,22 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TaskQueryService {
-    /**
-     * Retrieves all tasks.
-     * @param query
-     * @return
-     */
-    List<Task> handle(GetAllTasksQuery query);
 
-    /**
-     * Retrieves tasks assigned to a specific member.
-     * @param query
-     * @return
-     */
+    /** Una tarea por id; solo para integrantes de su grupo (AUDIT SEC-01). */
     Optional<Task> handle(GetTaskByIdQuery query);
 
-    /**
-     * Retrieves tasks assigned to a specific member.
-     * @param query
-     * @return
-     */
+    /** Tareas asignadas a un usuario en todos sus grupos, por fecha límite (GET /tasks/user). */
     List<Task> handle(GetAllTasksByUserId query);
 
-    /**
-     * Retrieves tasks by their status.
-     * @param query
-     * @return
-     */
-    List<Task> handle(GetAllTaskByStatusQuery query);
-
-    /**
-     * Retrieves tasks by their group ID.
-     * @param query
-     * @return
-     */
+    /** Todas las tareas de un grupo, sin control de acceso: uso interno (informe de IA). */
     List<Task> handle(GetAllTasksByGroupIdQuery query);
+
+    /** Tareas de un grupo, opcionalmente por estado; solo para integrantes. */
     List<Task> handle(GetTasksByGroupIdAndStatus query);
 
     /** Página de tareas del grupo, ordenadas por fecha límite (AUDIT PERF-02). */
     Page<Task> handle(GetTasksByGroupIdAndStatus query, Pageable pageable);
+
+    /** Tareas de un integrante dentro de un grupo; solo para integrantes. */
     List<Task> handle(GetTasksByGroupIdAndUserIdQuery query);
 }

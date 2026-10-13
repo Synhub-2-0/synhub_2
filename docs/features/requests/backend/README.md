@@ -53,7 +53,7 @@ Todos requieren token.
    - `REJECTED`: si la tarea sigue `COMPLETED`, llama a `applySubmissionReview(taskId, false)` → `IN_PROGRESS`; si no, solo cierra la request.
 5. `MODIFICATION` y `EXPIRED` no modifican la tarea.
 
-`RequestQueryServiceImpl` maneja `GetRequestsByTaskIdQuery` y `GetRequestByIdQuery` (solo integrantes del grupo de la tarea, vía `TasksContextFacade` + `GroupsContextFacade.isMember`), `GetRequestsByGroupIdQuery` (valida al líder con `GroupsContextFacade` y filtra en memoria) y `GetAllRequestsQuery` (sin uso).
+`RequestQueryServiceImpl` maneja `GetRequestsByTaskIdQuery` y `GetRequestByIdQuery` (solo integrantes del grupo de la tarea, vía `TasksContextFacade` + `GroupsContextFacade.isMember`), y `GetRequestsByGroupIdQuery` (valida al líder con `GroupsContextFacade`; filtra y ordena en SQL, también paginado).
 
 ## Dependencias
 

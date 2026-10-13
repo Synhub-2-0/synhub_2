@@ -40,8 +40,8 @@ Los errores se muestran con `ToastStore` (shared).
 
 | Archivo | Rol |
 |---|---|
-| `groups.api.ts` (`GroupsApi`) | Fachada inyectable: `getLeaderGroups`, `getMemberGroups`, `getGroupMembers`, `createGroup`, `updateGroup`, `getGroup` y `getGroupsByUser` (las dos últimas sin uso). |
-| `groups.api-endpoint.ts` | Extiende `BaseApiEndpoint` y agrega `createGroup`, `getGroupMembers`, `getGroupsByUser`, `getGroupsByUserGroupRole`, `joinByCode` y `removeMember`. |
+| `groups.api.ts` (`GroupsApi`) | Fachada inyectable: `getLeaderGroups`, `getMemberGroups`, `getGroupMembers`, `createGroup`, `updateGroup`, `joinGroupByCode` y `removeMember`. |
+| `groups.api-endpoint.ts` | Extiende `BaseApiEndpoint` y agrega `createGroup`, `getGroupMembers`, `getGroupsByUserGroupRole`, `joinByCode` y `removeMember`. |
 | `groups.assembler.ts` | `GroupResource` ↔ `Group`; `GroupUsersResource` → `GroupUser`, usando `ProfilesAssembler` de IAM. |
 | `groups.response.ts`, `create-group.request.ts` | Tipos de la API. |
 

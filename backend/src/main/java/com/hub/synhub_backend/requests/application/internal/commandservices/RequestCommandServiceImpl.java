@@ -5,7 +5,6 @@ import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedE
 import com.hub.synhub_backend.requests.domain.exceptions.TaskNotCompletedException;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
-import com.hub.synhub_backend.requests.domain.model.commands.DeleteAllRequestsByTaskIdCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.UpdateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
@@ -117,18 +116,4 @@ public class RequestCommandServiceImpl implements RequestCommandService {
         this.requestRepository.delete(request);
     }
 
-    @Override
-    @Transactional
-    public void handle(DeleteAllRequestsByTaskIdCommand command) {
-        var taskId = command.taskId();
-
-        if (this.tasksContextFacade.getTaskById(taskId).isEmpty())
-            throw new IllegalArgumentException("Task with id " + taskId + " does not exist");
-
-        try {
-            this.requestRepository.deleteByTaskId(taskId);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error while deleting requests for task: " + e.getMessage());
-        }
-    }
 }

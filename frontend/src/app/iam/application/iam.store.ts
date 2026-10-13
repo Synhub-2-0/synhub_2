@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { Profile } from '../domain/model/profile.entity';
 import { SignInCommand } from '../domain/model/sign-in.command';
 import { SignUpCommand } from '../domain/model/sign-up.command';
-import { User } from '../domain/model/user.entity';
 import { IamApi } from '../infrastructure/iam.api';
 import { ToastStore } from '../../shared/application/toast.store';
 import { clearStoredSession, hasActiveSession, saveSession, storedUserId } from '../infrastructure/session';
@@ -15,15 +14,11 @@ export class IamStore {
   private readonly currentUsernameSignal = signal<string | null>(null);
   private readonly currentUserIdSignal = signal<number | null>(hasActiveSession() ? storedUserId() : null);
   private readonly currentProfileSignal = signal<Profile | null>(null);
-  private readonly usersSignal = signal<User[]>([]);
 
   readonly isSignedIn = this.isSignedInSignal.asReadonly();
-  readonly users = this.usersSignal.asReadonly();
   readonly currentUsername = this.currentUsernameSignal.asReadonly();
   readonly currentUserId = this.currentUserIdSignal.asReadonly();
   readonly currentProfile = this.currentProfileSignal.asReadonly();
-  readonly loadingUsers = signal(false);
-  readonly isLoadingUsers = this.loadingUsers.asReadonly();
 
   private readonly toastStore = inject(ToastStore);
 
@@ -76,10 +71,6 @@ export class IamStore {
   /** Cierra la sesión local sin llamar a la API (sesión vencida o rechazada con 401). */
   endSession(): void {
     this.clearSession();
-  }
-
-  loadUsers(): void {
-    this.loadingUsers.set(true);
   }
 
   restoreSession(): Promise<void> {

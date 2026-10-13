@@ -13,7 +13,7 @@ Cada paquete de primer nivel es un **bounded context** con su propio modelo y su
 | `tasks` | Tareas, su ciclo de estados y su vencimiento automático | `Task` | [tasks](../features/tasks/README.md) |
 | `requests` | Solicitudes sobre tareas (entregas, modificaciones, vencimientos) y su revisión | `Request` | [requests](../features/requests/README.md) |
 | `ai` | Clasificación de tareas e informes con Amazon Bedrock (sin persistencia) | — (value object `TaskClassification`) | [ai](../features/ai/README.md) |
-| `metrics` | Cálculos de productividad sobre tareas (sin persistencia propia) | `GroupMetrics` (POJO) | [metrics](../features/metrics/README.md) |
+| `metrics` | Cálculos de productividad sobre tareas (sin persistencia propia) | — (resources de solo lectura) | [metrics](../features/metrics/README.md) |
 | `shared` | Clases base, manejo global de errores, OpenAPI y estrategia de nombres JPA | `AuditableAbstractAggregateRoot`, `AuditableModel` | — |
 
 ### Mapa de contextos
@@ -208,7 +208,6 @@ Están documentadas para no copiarlas en código nuevo:
 | Infraestructura compartida dentro de `domain` | `shared/domain/model/infrastructure/` (OpenAPI y estrategia de nombres) |
 | Servicio de dominio que devuelve DTOs REST | `metrics/domain/model/services/TaskMetricsQueryService` |
 | Repositorios de otro contexto usados directamente | `TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`, `GroupCommandServiceImpl`, `InvitationCommandServiceImpl` |
-| ACL definidas pero sin uso | `ExternalIamService` (shared) |
 
 ## 11. Cómo agregar un caso de uso
 

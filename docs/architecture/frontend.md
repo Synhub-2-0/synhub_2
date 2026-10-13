@@ -62,7 +62,6 @@ flowchart LR
 | `BaseAssembler` | Contrato `toEntityFromResource`, `toResourceFromEntity` y `toEntitiesFromResponse`. |
 | `BaseResource` / `BaseResponse` | Tipos base del JSON. Varios métodos aceptan tanto un arreglo como un objeto envoltorio (`TResponse \| TResource[]`). |
 | `ErrorHandlingEnabledBaseType` | `handleError` para endpoints que no son CRUD (sign-in, sign-up). |
-| `BaseApi` | Clase base vacía para las fachadas `*Api`. |
 
 **URLs**: se construyen desde `src/environments/environment*.ts` con `platformProviderApiBaseUrl` más el path de cada recurso (`platformProviderTasksEndpointPath`, etc.).
 
@@ -113,7 +112,6 @@ Los parámetros de contexto viajan en **query params** (`?groupId=`, `?id=&role=
 |---|---|
 | `invitations` sin capa `presentation` | Su UI vive en `groups/presentation`. |
 | `profiles` sin recurso propio en el backend | `ProfilesApiEndpoint` lee `/users`; `Profile.userId` es el mismo `id` del usuario. |
-| `IamStore.loadUsers()` incompleto | Solo activa un flag. |
 | `AiApi` no usa `BaseApiEndpoint` ni assembler | Es intencional: las respuestas se mapean 1 a 1. |
 
 ## 9. Cómo agregar una feature

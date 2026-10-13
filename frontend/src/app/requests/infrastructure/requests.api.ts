@@ -1,5 +1,4 @@
 import {Injectable} from '@angular/core';
-import {BaseApi} from '../../shared/infrastructure/base-api';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {RequestsApiEndpoint} from './requests.api-endpoint';
@@ -7,11 +6,10 @@ import {RequestStatus, RequestType, TaskRequest} from '../domain/model/task-requ
 import {CreateRequestCommand} from '../domain/model/create-request.command';
 
 @Injectable({providedIn: 'root'})
-export class RequestsApi extends BaseApi {
+export class RequestsApi {
   private readonly requestsEndpoint: RequestsApiEndpoint;
 
   constructor(http: HttpClient) {
-    super();
     this.requestsEndpoint = new RequestsApiEndpoint(http);
   }
 

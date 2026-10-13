@@ -16,7 +16,6 @@ import java.util.List;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByProfile_Id(Long profileId);
-    List<Task> findByStatus(TaskStatus status);
     List<Task> findAllByStatusAndDueDateBefore(TaskStatus status, OffsetDateTime dueDate);
     List<Task> findByProfile_User_Id(Long profileUserId);
     List<Task> findByProfile_User_IdOrderByDueDateAscIdAsc(Long profileUserId);

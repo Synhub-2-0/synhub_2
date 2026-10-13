@@ -49,7 +49,7 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 | groups → tasks | `TasksContextFacade.deleteAllTasksByGroupId` y `deleteTasksByUserIdAndGroupId` | `GroupCommandServiceImpl` borra las tareas al borrar el grupo y al quitar a un integrante. |
 | groups → iam | `UserRepository` (directo) | `GroupCommandServiceImpl` busca al líder y lo guarda. |
 | otros → groups | `GroupRepository`, `GroupProfileRepository` (directo) | `TaskCommandServiceImpl` (tasks) y `UserQueryServiceImpl` (iam). |
-| otros → groups | `GroupQueryService` (directo) | `AiController`, `TaskMetricsQueryServiceImpl` y `GroupsClient` (metrics). |
+| otros → groups | `GroupQueryService` (directo) | `AiController` y `TaskMetricsQueryServiceImpl` (metrics). |
 
 ## Persistencia
 

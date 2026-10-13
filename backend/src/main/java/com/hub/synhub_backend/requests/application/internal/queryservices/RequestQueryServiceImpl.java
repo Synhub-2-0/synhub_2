@@ -2,7 +2,6 @@ package com.hub.synhub_backend.requests.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
-import com.hub.synhub_backend.requests.domain.model.queries.GetAllRequestsQuery;
 import com.hub.synhub_backend.requests.domain.model.queries.GetRequestByIdQuery;
 import com.hub.synhub_backend.requests.domain.model.queries.GetRequestsByGroupIdQuery;
 import com.hub.synhub_backend.requests.domain.model.queries.GetRequestsByTaskIdQuery;
@@ -41,10 +40,6 @@ public class RequestQueryServiceImpl implements RequestQueryService {
             throw new AccessDeniedException("Only members of the group can see the requests of its tasks");
     }
 
-    @Override
-    public List<Request> handle(GetAllRequestsQuery query) {
-        return requestRepository.findAll();
-    }
 
     @Override
     public List<Request> handle(GetRequestsByTaskIdQuery query) {

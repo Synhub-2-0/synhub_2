@@ -26,11 +26,9 @@ En orden de prioridad:
 | `TaskCommandServiceImpl` (usa `GroupRepository`, `GroupProfileRepository`, `UserRepository`) | `tasks` | tasks, groups, iam | **tasks** | Escribe `Task`; las lecturas a otros contextos deberían pasar por ACL. |
 | `GroupCommandServiceImpl` / `InvitationCommandServiceImpl` (usan `UserRepository`) | `groups` | groups, iam | **groups** | Escriben grupos y membresías. |
 | `TaskMetricsQueryServiceImpl` | `metrics` | tasks, iam, groups | **metrics** | Solo lee; el cálculo es de metrics. |
-| `GroupsClient` (`GroupMetricsRepository`) | `metrics/infrastructure/client` | groups | **metrics** | Adaptador de salida de metrics hacia groups. |
 | `GroupReportQueryServiceImpl` | `ai` | metrics, tasks | **ai** | Orquesta datos de otros contextos para el informe. |
 | `AiController.getGroupReport` (valida al líder) | `ai` | groups, iam | **ai** | La regla "solo el líder" se *consulta* en groups, pero el caso de uso es de ai. |
 | Campos de IA en `Task` (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`) | `tasks` | tasks, ai | **tasks** (persistencia) · **ai** (valores y significado) | ai sugiere y tasks guarda. |
-| `ExternalIamService` | `shared/application/external` | → iam | **iam** (debería vivir en el consumidor) | Cliente genérico hacia la ACL de iam (sin uso). |
 | Resolución del usuario actual en los controladores | todos | iam | **iam** | Patrón repetido: `UserQueryService` + `GetUserByUsernameQuery`. |
 
 ## Matriz del frontend

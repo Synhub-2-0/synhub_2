@@ -31,7 +31,6 @@ Store singleton (`providedIn: 'root'`) basado en signals. Funciona como "context
 | `signOut(router)` | `POST /authentication/sign-out` | El backend borra la cookie; el store limpia la sesión local (aunque la petición falle) y navega a `/auth/sign-in`. |
 | `endSession()` | — | Limpia la sesión local sin llamar a la API. Lo usan el interceptor (401) y el guard (sesión vencida). |
 | `restoreSession()` | `GET /users/me` → `GET /users/{id}` | Se ejecuta en `provideAppInitializer` (`app.config.ts`), antes del primer render, solo si hay una sesión vigente. |
-| `loadUsers()` | — | Incompleto: solo activa `loadingUsers`. |
 
 ## Infraestructura
 

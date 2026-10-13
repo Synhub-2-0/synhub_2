@@ -1,5 +1,4 @@
 import {Injectable} from '@angular/core';
-import {BaseApi} from '../../shared/infrastructure/base-api';
 import {GroupsApiEndpoint} from './groups.api-endpoint';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
@@ -8,16 +7,11 @@ import {CreateGroupCommand} from '../domain/model/create-group.command';
 import {GroupUser} from '../domain/model/group-user.entity';
 
 @Injectable({providedIn: 'root'})
-export class GroupsApi extends BaseApi {
+export class GroupsApi {
   private readonly groupsEndpoint: GroupsApiEndpoint;
 
   constructor(http: HttpClient) {
-    super();
     this.groupsEndpoint = new GroupsApiEndpoint(http);
-  }
-
-  getGroup(id: number): Observable<Group> {
-    return this.groupsEndpoint.getById(id);
   }
 
   getGroupMembers(groupId: number): Observable<GroupUser[]> {
@@ -30,10 +24,6 @@ export class GroupsApi extends BaseApi {
 
   updateGroup(group: Group): Observable<Group> {
     return this.groupsEndpoint.update(group, group.id);
-  }
-
-  getGroupsByUser(): Observable<Group[]> {
-    return this.groupsEndpoint.getGroupsByUser();
   }
 
   getLeaderGroups(): Observable<Group[]> {
@@ -52,7 +42,4 @@ export class GroupsApi extends BaseApi {
     return this.groupsEndpoint.removeMember(groupId, userId);
   }
 
-  getGroupsByUserGroupRole(role: 'GROUP_LEADER' | 'GROUP_MEMBER'): Observable<Group[]> {
-    return this.groupsEndpoint.getGroupsByUserGroupRole(role);
-  }
 }
