@@ -1,12 +1,13 @@
 # Levanta la solución completa: la app (frontend + backend) y PostgreSQL.
-#   docker compose up --build   ->  http://localhost:8080
+#   cp .env.example .env        # y completa los valores
+#   docker compose up --build   -> http://localhost:8080
 services:
   db:
     image: postgres:16
     environment:
       POSTGRES_DB: synhub
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Define DATABASE_PASSWORD en .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -21,9 +22,12 @@ services:
     environment:
       DATABASE_URL: jdbc:postgresql://db:5432/synhub
       DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
-      # JWT_SECRET: cambia el secreto por defecto fuera de desarrollo
-      # AWS_REGION / AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY: necesarios para las funciones de IA (Bedrock)
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Define DATABASE_PASSWORD en .env}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (al menos 32 caracteres)}
+      # Opcional, para las funciones de IA (Bedrock):
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
     depends_on:
       db:
         condition: service_healthy

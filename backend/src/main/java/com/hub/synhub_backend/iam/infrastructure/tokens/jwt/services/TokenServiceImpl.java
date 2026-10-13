@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import com.hub.synhub_backend.iam.infrastructure.tokens.jwt.BearerTokenService;
 import org.apache.commons.lang3.time.DateUtils;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +45,14 @@ public class TokenServiceImpl implements BearerTokenService {
    * @return String the JWT token
    * @see Authentication
    */
+  /** Falla al arrancar si el secreto falta o es demasiado corto para HMAC-SHA (mínimo 256 bits). */
+  @PostConstruct
+  public void validateSecret() {
+    if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+      throw new IllegalStateException("authorization.jwt.secret (JWT_SECRET) must be set and be at least 32 bytes long");
+    }
+  }
+
   @Override
   public String generateToken(Authentication authentication) {
     return buildTokenWithDefaultParameters(authentication.getName());

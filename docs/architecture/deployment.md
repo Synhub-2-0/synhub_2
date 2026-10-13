@@ -4,7 +4,7 @@
 
 ```bash
 # Backend (requiere PostgreSQL en localhost:5432)
-cd backend && ./mvnw spring-boot:run
+cd backend && SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 
 # Frontend (usa environment.development.ts → http://localhost:8080/api/v1)
 cd frontend && npm ci && npx ng serve
@@ -21,17 +21,25 @@ cd frontend && npm ci && npx ng serve
 | [`.dockerignore`](../../.dockerignore), [`.gitattributes`](../../.gitattributes) | Excluye artefactos y fuerza finales de línea LF en los scripts del contenedor. |
 
 ```bash
+cp .env.example .env        # completa DATABASE_PASSWORD y JWT_SECRET
 docker compose up --build   # http://localhost:8080
 ```
 
 ## Variables de entorno del backend
 
+Perfiles:
+
+- **Por defecto (producción):** sin secretos en el repositorio; todo llega por variables de entorno.
+- **`dev`** (`SPRING_PROFILES_ACTIVE=dev`): `application-dev.properties` define una contraseña de base y un `JWT_SECRET` locales. Nunca usarlo en un entorno desplegado.
+- **Pruebas:** `src/test/resources/config/application.properties` define un secreto de prueba; la base la pone Testcontainers.
+
+
 | Variable | Propiedad | Por defecto | Notas |
 |---|---|---|---|
 | `DATABASE_URL` | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/postgres` | — |
 | `DATABASE_USERNAME` | `spring.datasource.username` | `postgres` | — |
-| `DATABASE_PASSWORD` | `spring.datasource.password` | valor de desarrollo | — |
-| `JWT_SECRET` | `authorization.jwt.secret` | valor de desarrollo | **Obligatorio cambiarlo fuera de desarrollo**; en AWS se inyecta desde SSM. |
+| `DATABASE_PASSWORD` | `spring.datasource.password` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio. |
+| `JWT_SECRET` | `authorization.jwt.secret` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio, al menos 32 bytes: si falta o es más corto, la app no arranca. En AWS se inyecta desde SSM. |
 | `AWS_REGION` | `ai.bedrock.region` | `us-east-1` | — |
 | `BEDROCK_MODEL_ID` | `ai.bedrock.model-id` | Claude Haiku 4.5 (perfil `us.`) | — |
 | Credenciales de AWS | — | cadena por defecto del SDK | Necesarias solo para las funciones de IA. |

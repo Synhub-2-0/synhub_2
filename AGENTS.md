@@ -26,7 +26,7 @@ Monorepo de **SynHub**: `frontend/` (Angular 22) y `backend/` (Spring Boot 4.1, 
 ```bash
 cd backend && ./mvnw verify               # tests del backend (requiere PostgreSQL en localhost:5432)
 cd frontend && npx ng test --watch=false  # tests del frontend (Vitest)
-docker compose up --build                 # solución completa en http://localhost:8080
+docker compose up --build                 # solución completa en http://localhost:8080 (antes: cp .env.example .env)
 ```
 
 ## Mantener la documentación

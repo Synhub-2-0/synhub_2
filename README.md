@@ -49,7 +49,7 @@ Los agentes de código (Claude Code, Gemini CLI, Codex) tienen sus instrucciones
 
 ```bash
 # Backend (requiere PostgreSQL en localhost:5432)
-cd backend && ./mvnw spring-boot:run
+cd backend && SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run   # el perfil dev trae credenciales locales
 
 # Frontend → http://localhost:4200 (llama a http://localhost:8080/api/v1)
 cd frontend && npm ci && npx ng serve
@@ -67,6 +67,7 @@ cd frontend && npx ng test --watch=false
 El `Dockerfile` de la raíz genera una sola imagen: compila el frontend y el backend, y en ejecución nginx sirve la web en el puerto 80 y reenvía `/api/` al backend (Spring Boot, puerto interno 8080).
 
 ```bash
+cp .env.example .env   # completa DATABASE_PASSWORD y JWT_SECRET
 docker compose up --build
 ```
 

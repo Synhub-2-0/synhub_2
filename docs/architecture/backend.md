@@ -179,7 +179,7 @@ flowchart LR
 | Seed de roles | `iam/application/internal/eventhandlers/ApplicationReadyEventHandler` |
 | Tarea programada | `tasks/domain/services/TaskStatusScheduler` (cada 30 s) |
 | Salud | Actuator `/actuator/health` (lo usan el ALB y el `HEALTHCHECK` de Docker) |
-| Configuración | `application.properties`, con variables de entorno: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, `AWS_REGION`, `BEDROCK_MODEL_ID` |
+| Configuración | `application.properties` (sin secretos por defecto; perfil `dev` en `application-dev.properties`), con variables de entorno: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, `AWS_REGION`, `BEDROCK_MODEL_ID` |
 
 ## 9. Pruebas
 

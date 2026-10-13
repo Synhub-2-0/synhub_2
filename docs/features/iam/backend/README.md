@@ -46,7 +46,7 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 |---|---|---|
 | Persistencia | `UserRepository`, `RoleRepository` | Spring Data JPA. `findByUsername`, `existsByUsername`, `existsByEmail`, `findByName`, `existsByName`. |
 | Hashing | `BCryptHashingService` | Implementa `HashingService` (puerto de aplicación) y `PasswordEncoder`. |
-| Tokens | `TokenServiceImpl` | JJWT. Secreto en `authorization.jwt.secret` (variable `JWT_SECRET`) y expiración en `authorization.jwt.expiration.days` (7). |
+| Tokens | `TokenServiceImpl` | JJWT. Secreto en `authorization.jwt.secret` (variable `JWT_SECRET`, obligatoria y de al menos 32 bytes: `validateSecret()` lo comprueba al arrancar) y expiración en `authorization.jwt.expiration.days` (7). |
 | Seguridad | `WebSecurityConfiguration` | Stateless, CSRF deshabilitado, CORS `*`. Rutas públicas: `/api/v1/authentication/**`, `/actuator/health` y Swagger (`/v3/api-docs/**`, `/swagger-ui/**`). El resto requiere token. |
 | Filtro | `BearerAuthorizationRequestFilter` | Lee `Authorization: Bearer …`, valida el token y carga el `UserDetails` (`UserDetailsServiceImpl`) en el `SecurityContext`. |
 | 401 | `UnauthorizedRequestHandlerEntryPoint` | Respuesta cuando falta el token o no es válido. |

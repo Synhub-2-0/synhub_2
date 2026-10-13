@@ -67,4 +67,11 @@ class TokenServiceImplTest {
         basic.addHeader("Authorization", "Basic dXNlcjpwYXNz");
         assertNull(service.getBearerTokenFrom(basic));
     }
+
+    // ---- AUDIT SEC-04: el secreto es obligatorio y de al menos 32 bytes
+    @Test void missingOrShortSecretFailsAtStartup() {
+        assertThrows(IllegalStateException.class, () -> tokenService(null, 7).validateSecret());
+        assertThrows(IllegalStateException.class, () -> tokenService("corto", 7).validateSecret());
+        assertDoesNotThrow(() -> tokenService(SECRET, 7).validateSecret());
+    }
 }
