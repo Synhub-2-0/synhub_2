@@ -43,7 +43,12 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     @Embedded
     private ImgUrl imgUrl;
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    /**
+     * Membresías. Se cargan siempre (EAGER): el líder y la cantidad de integrantes forman parte de cualquier
+     * representación del grupo, también fuera de una transacción (sin OSIV, AUDIT ARC-04). La carga por lotes
+     * (default_batch_fetch_size) evita una consulta por grupo.
+     */
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<GroupProfile> userProfiles = new ArrayList<>();
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)

@@ -49,6 +49,8 @@ Perfiles:
 | Credenciales de AWS | — | cadena por defecto del SDK | Necesarias solo para las funciones de IA. |
 | `RUN_BEDROCK_IT=1` | — | — | Activa la prueba de integración con Bedrock. |
 
+**Base de datos (ARC-04).** Al arrancar, Flyway aplica las migraciones pendientes de `db/migration` y Hibernate valida el esquema. El despliegue parte de una base vacía. Una base creada antes con `ddl-auto=update` no tiene historial de Flyway y el arranque falla: en local, `docker compose down -v` borra el volumen y la recrea.
+
 **Sesión por cookie (HUM-04).** La web autentica con la cookie `HttpOnly` `SYNHUB_SESSION` (`Path=/api`, `SameSite=Strict`, 1 día). Funciona porque front y API comparten origen. En CloudFront, el *behavior* de `/api/*` debe **reenviar las cookies** al origen (política de *origin request* `AllViewer`, o al menos la cookie `SYNHUB_SESSION`) y **no cachear** esas respuestas; si no, toda petición autenticada responde 401 (ver HUM-02).
 
 ## CI/CD (GitHub Actions)

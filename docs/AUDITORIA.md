@@ -79,7 +79,7 @@ Los riesgos principales son tres:
 | [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Resuelto |
 | [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Resuelto |
 | [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Pendiente |
-| [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Pendiente |
+| [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Resuelto |
 | [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Resuelto |
 | [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Resuelto |
 | [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Resuelto (ver [TESTS.md](../TESTS.md)) |
@@ -652,6 +652,8 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 **Criterios de aceptación.** La app arranca contra una base vacía (migraciones) y contra una existente (baseline). Los tests de integración pasan con OSIV desactivado.
 
 **Decisión (2026-10-13).** Se adopta Flyway. El entorno se volverá a desplegar desde cero, así que no hace falta *baseline* de una base existente: basta con `V1__init.sql` desde una base vacía.
+
+**Resolución.** Flyway con `V1__init.sql`, generado desde las entidades (Hibernate 7) y revisado: restricciones con nombre e índices para las FK y para el scheduler. `ddl-auto=validate`, `open-in-view=false` y `show-sql=false` (activo en `dev`). Sin OSIV fallaban 30 pruebas por carga lazy: los command services pasaron a `@Transactional` y `Group.userProfiles` a EAGER (por lotes). `api/SchemaMigrationApiTests` lo verifica; además se probó en Docker sobre una base vacía recorriendo todos los endpoints de la web, sin errores en los logs.
 
 ### PERF-01
 

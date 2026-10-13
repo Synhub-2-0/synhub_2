@@ -15,6 +15,7 @@ import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFound
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -26,6 +27,7 @@ import java.util.Optional;
  * </p>
  */
 @Service
+@Transactional
 public class UserCommandServiceImpl implements UserCommandService {
 
   private final UserRepository userRepository;

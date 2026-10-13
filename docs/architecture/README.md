@@ -30,7 +30,7 @@ flowchart LR
 |---|---|
 | Frontend | Angular 22 (componentes standalone, signals), RxJS 7.8, Angular Material, Tailwind CSS 4, Vitest |
 | Backend | Java 21, Spring Boot 4.1 (Web MVC, Data JPA, Security, Validation, Actuator), JJWT 0.12, springdoc-openapi 3.1, AWS SDK v2 (Bedrock Runtime), Lombok |
-| Base de datos | PostgreSQL (16 en Docker y CI); el esquema lo genera Hibernate (`ddl-auto=update`) |
+| Base de datos | PostgreSQL (16 en Docker y CI); el esquema lo crean las migraciones de Flyway (`db/migration`) y Hibernate solo lo valida |
 | Infraestructura | Docker (imagen única nginx + JRE), GitHub Actions, AWS (S3 + CloudFront para el frontend; ECR + ECS para el backend) |
 
 ## Principios de organización

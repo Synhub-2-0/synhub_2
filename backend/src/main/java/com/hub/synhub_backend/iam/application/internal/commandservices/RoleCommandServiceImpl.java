@@ -6,6 +6,7 @@ import com.hub.synhub_backend.iam.domain.model.valueobjects.AccountRole;
 import com.hub.synhub_backend.iam.domain.services.RoleCommandService;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 
@@ -13,6 +14,7 @@ import java.util.Arrays;
  * Implementation of {@link RoleCommandService} to handle {@link SeedRolesCommand}
  */
 @Service
+@Transactional
 public class RoleCommandServiceImpl implements RoleCommandService {
 
   private final RoleRepository roleRepository;

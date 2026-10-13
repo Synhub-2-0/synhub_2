@@ -142,7 +142,9 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
 - **Borrado lógico** (decisión HUM-03): `Group`, `GroupProfile`, `Invitation`, `Task` y `Request` llevan `@SoftDelete(strategy = TIMESTAMP, columnName = "deleted_at")` de Hibernate. Un `delete` del repositorio (o una cascada) hace `UPDATE … SET deleted_at = now()`, y Hibernate excluye esas filas de todas las consultas, cargas por id y colecciones: lo borrado no es visible en ninguna parte de la API, pero los datos quedan en la base. `User` y `Role` no se borran. Una tarea borrada conserva su `profile_id` (responsable y grupo) como historial.
 - **Consultas** (AUDIT PERF-01): `hibernate.default_batch_fetch_size=100` carga asociaciones y colecciones en lotes, así un listado ejecuta un número constante de consultas (lo verifica `api/QueryCountApiTests`). Los query services son `@Transactional(readOnly = true)`.
 - **Paginación** (AUDIT PERF-02): `shared/interfaces/rest/Pagination` y `PageResource`; opcional, ver [rest-api.md](rest-api.md).
-- **Esquema**: `spring.jpa.hibernate.ddl-auto=update`. No hay migraciones (Flyway/Liquibase).
+- **Esquema** (AUDIT ARC-04): lo crean las migraciones de **Flyway** en [`src/main/resources/db/migration`](../../backend/src/main/resources/db/migration) (`V1__init.sql`, con nombres de restricciones e índices propios). Hibernate solo valida que las entidades coincidan (`ddl-auto=validate`): un cambio de entidad sin su migración `V2__…` hace fallar el arranque y las pruebas.
+- **Sin Open Session In View** (`open-in-view=false`): cada caso de uso es una transacción (`@Transactional` en los command services, `readOnly` en los query services). `Group.userProfiles` se carga siempre (EAGER, por lotes) porque el líder y la cantidad de integrantes forman parte de cualquier representación del grupo.
+- **SQL en logs**: `show-sql=false`; el perfil `dev` lo activa.
 - **Auditoría y scheduling** se activan en `SynhubBackendApplication` (`@EnableJpaAuditing`, `@EnableScheduling`).
 
 ## 6. Errores

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class TaskCommandServiceImpl implements TaskCommandService {
 
     private final TaskRepository taskRepository;

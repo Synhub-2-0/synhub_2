@@ -9,7 +9,7 @@ SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run   # http://localhost:8080, Swa
 ./mvnw -B verify                                    # pruebas; las de integración usan Testcontainers (requiere Docker)
 ```
 
-Sin el perfil `dev`, la aplicación necesita `DATABASE_PASSWORD` y `JWT_SECRET`. Ver [docs/architecture/deployment.md](../docs/architecture/deployment.md).
+El esquema de la base lo crean las migraciones de Flyway (`src/main/resources/db/migration`); un cambio de entidad necesita su migración nueva. Sin el perfil `dev`, la aplicación necesita `DATABASE_PASSWORD` y `JWT_SECRET`. Ver [docs/architecture/deployment.md](../docs/architecture/deployment.md).
 
 ## Documentación
 
