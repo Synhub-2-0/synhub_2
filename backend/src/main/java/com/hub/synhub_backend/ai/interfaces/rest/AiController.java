@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.ai.interfaces.rest;
 
+import jakarta.validation.Valid;
 import com.hub.synhub_backend.ai.domain.services.TaskClassificationQueryService;
 import com.hub.synhub_backend.ai.interfaces.rest.resources.ClassifyTaskResource;
 import com.hub.synhub_backend.ai.interfaces.rest.resources.TaskClassificationResource;
@@ -59,7 +60,7 @@ public class AiController {
 
     @PostMapping("/classify")
     @Operation(summary = "Classify a task", description = "Suggests labels, urgency, difficulty and context for a task")
-    public ResponseEntity<TaskClassificationResource> classifyTask(@RequestBody ClassifyTaskResource resource) {
+    public ResponseEntity<TaskClassificationResource> classifyTask(@Valid @RequestBody ClassifyTaskResource resource) {
         if (resource.title() == null || resource.title().isBlank()) return ResponseEntity.badRequest().build();
 
         var classification = taskClassificationQueryService.handle(

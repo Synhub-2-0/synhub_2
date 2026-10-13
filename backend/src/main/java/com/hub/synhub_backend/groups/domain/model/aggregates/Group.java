@@ -66,8 +66,13 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     }
 
     public void updateInformation(UpdateGroupCommand command) {
-        this.name = command.name().isEmpty() ? this.name : command.name();
-        this.description = command.description().isEmpty() ? this.description : command.description();
-        this.imgUrl = command.imgUrl().isEmpty() ? this.imgUrl : new ImgUrl(command.imgUrl());
+        // Un campo ausente (null) o vacío no cambia.
+        this.name = isBlank(command.name()) ? this.name : command.name();
+        this.description = isBlank(command.description()) ? this.description : command.description();
+        this.imgUrl = isBlank(command.imgUrl()) ? this.imgUrl : new ImgUrl(command.imgUrl());
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

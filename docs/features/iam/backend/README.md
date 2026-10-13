@@ -7,7 +7,7 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 | Método | Ruta | Acceso | Cuerpo / parámetros | Respuesta |
 |---|---|---|---|---|
 | `POST` | `/api/v1/authentication/sign-in` | Público | `SignInResource { username, password }` | `200 AuthenticatedUserResource { id, username, token, role[] }` · `401` credenciales inválidas |
-| `POST` | `/api/v1/authentication/sign-up` | Público | `SignUpResource { username, name, surname, imgUrl, email, password }` (no acepta roles: siempre `ROLE_USER`) | `201 UserResource` · `409` usuario o email repetido |
+| `POST` | `/api/v1/authentication/sign-up` | Público | `SignUpResource { username, name, surname, imgUrl?, email, password }` (no acepta roles: siempre `ROLE_USER`; `email` válido, `password` de 8 a 72 caracteres; sin `imgUrl` se usa `/default-avatar.jpg`) | `201 UserResource` · `409` usuario o email repetido |
 | `GET` | `/api/v1/users` | Autenticado | — | `200 UserResource[]` |
 | `GET` | `/api/v1/users/me` | Autenticado | — | `200 UserResource` del usuario del token |
 | `GET` | `/api/v1/users/{userId}` | Autenticado | — | `200 UserResource` · `404` |

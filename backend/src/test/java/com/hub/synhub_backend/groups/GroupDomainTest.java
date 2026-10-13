@@ -70,4 +70,11 @@ class GroupDomainTest {
         assertDoesNotThrow(() -> profile.addTask(task));
         assertSame(profile, task.getProfile());
     }
+
+    @Test void updateInformationIgnoresNullFields() {
+        var group = group(10, user(1, "lider"));
+        group.updateInformation(new UpdateGroupCommand(1L, 10L, null, null, null));
+        assertEquals("Equipo", group.getName());
+        assertEquals("Descripción", group.getDescription());
+    }
 }

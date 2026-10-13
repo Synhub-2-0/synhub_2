@@ -11,6 +11,7 @@
 | Recursos | Sustantivo en plural por recurso raíz (`/groups`, `/tasks`, `/invitations`); relaciones como sub-recursos (`/tasks/{taskId}/requests`, `/groups/{groupId}/members`). |
 | Vistas del usuario actual | Segmento `user` o `me` (`/groups/user`, `/invitations/user`, `/users/me`). |
 | Filtros | Query params opcionales (`?status=`, `?type=`, `?groupRole=`). |
+| Validación | Los cuerpos se validan con Bean Validation (`@Valid`): un campo obligatorio ausente, un formato inválido o un valor fuera de rango responden `400` con `message` = `Invalid request: campo: motivo; …`. |
 | Verbos | `GET` lee, `POST` crea (o ejecuta una acción: `/invitations/accept`), `PUT` actualiza y `DELETE` borra. |
 | Códigos | `200`/`201` éxito, `204` borrado, `400` datos inválidos, `401` sin token, `403` sin permiso de negocio, `404` no existe, `409` regla de negocio, `503` servicio externo (Bedrock) no disponible. |
 | Errores | `{ timestamp, status, error, message, path }` (`ErrorResponse`). |

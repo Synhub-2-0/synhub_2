@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.iam.interfaces.rest;
 
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.iam.domain.services.UserCommandService;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.AuthenticatedUserResource;
@@ -44,7 +45,7 @@ public class AuthenticationController {
    */
   @PostMapping("/sign-in")
   public ResponseEntity<AuthenticatedUserResource> signIn(
-      @RequestBody SignInResource signInResource) {
+      @Valid @RequestBody SignInResource signInResource) {
 
     var signInCommand = SignInCommandFromResourceAssembler
         .toCommandFromResource(signInResource);
@@ -62,7 +63,7 @@ public class AuthenticationController {
    * @return the created user resource.
    */
   @PostMapping("/sign-up")
-  public ResponseEntity<UserResource> signUp(@RequestBody SignUpResource signUpResource) {
+  public ResponseEntity<UserResource> signUp(@Valid @RequestBody SignUpResource signUpResource) {
     var signUpCommand = SignUpCommandFromResourceAssembler
         .toCommandFromResource(signUpResource);
     var user = userCommandService.handle(signUpCommand);

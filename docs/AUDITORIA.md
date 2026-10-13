@@ -68,13 +68,13 @@ Los riesgos principales son tres:
 | [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Pendiente |
 | [SEC-05](#sec-05) | Media | Backend · iam | El registro permite autoasignarse `ROLE_ADMIN` | Código | Resuelto |
 | [SEC-06](#sec-06) | Media | Backend · iam | `/users` expone a todos los usuarios con su email | Reproducido | Pendiente |
-| [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Pendiente |
+| [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Resuelto (frontend: FE-03) |
 | [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Pendiente |
 | [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Pendiente |
 | [SEC-10](#sec-10) | Media | Frontend · sesión | Sesión: el 401 no cierra la sesión; token de 7 días en `localStorage` | Código | Pendiente |
 | [BUG-04](#bug-04) | Media | Backend · iam | Email duplicado → 500 (la validación compara el username) | Reproducido | Pendiente |
 | [BUG-05](#bug-05) | Media | Backend · iam | Rol inexistente en el registro → 500 | Reproducido | Resuelto (por SEC-05) |
-| [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Pendiente |
+| [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Resuelto (por SEC-07) |
 | [BUG-07](#bug-07) | Media | Backend · shared | El handler de 500 no registra la excepción | Código | Pendiente |
 | [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Pendiente |
 | [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Pendiente |
@@ -229,6 +229,8 @@ El archivo figura en `backend/.gitignore`, pero **está versionado**. Si un ento
 - Un enum inválido en un parámetro (`PUT /tasks/{id}/status?status=ARCHIVED`) → **500**: `MethodArgumentTypeMismatchException` cae en el handler genérico.
 
 Hay pruebas que lo cubren en `api/ValidationApiTests`.
+
+Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: registro sin imagen (ahora usa `/default-avatar.jpg`), grupo sin descripción, edición de grupo con campos ausentes, JSON mal formado y parámetro obligatorio ausente.
 
 **Solución propuesta.**
 

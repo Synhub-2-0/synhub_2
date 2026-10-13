@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.requests.interfaces.rest;
 
+import jakarta.validation.Valid;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,7 +49,7 @@ public class RequestController {
 
     @PostMapping
     @Operation(summary = "Create a new request", description = "Create a request for a task. Only the assigned member; a SUBMISSION needs the task COMPLETED and no pending submission")
-    public ResponseEntity<RequestResource> createRequest(@PathVariable Long taskId, @RequestBody CreateRequestResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<RequestResource> createRequest(@PathVariable Long taskId, @Valid @RequestBody CreateRequestResource resource, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createRequestCommand = CreateRequestCommandFromResourceAssembler.toCommandFromResource(resource, taskId, user.getId());

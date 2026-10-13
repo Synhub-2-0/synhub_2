@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
+import jakarta.validation.Valid;
 import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupForMemberQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupMembersByGroupIdQuery;
@@ -85,7 +86,7 @@ public class GroupController {
 
     @PostMapping()
     @Operation(summary = "Create a new group", description = "Create a new group")
-    public ResponseEntity<GroupResource> createGroup(@RequestBody CreateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<GroupResource> createGroup(@Valid @RequestBody CreateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createGroupCommand = CreateGroupCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
@@ -119,7 +120,7 @@ public class GroupController {
 
     @PutMapping("/{groupId}")
     @Operation(summary = "Updates group details by id")
-    public ResponseEntity<GroupResource> updateGroup(@PathVariable Long groupId, @RequestBody UpdateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<GroupResource> updateGroup(@PathVariable Long groupId, @Valid @RequestBody UpdateGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var updateGroupCommand = UpdateGroupCommandFromResourceAssembler.toCommandFromResource(resource, groupId, user.getId());

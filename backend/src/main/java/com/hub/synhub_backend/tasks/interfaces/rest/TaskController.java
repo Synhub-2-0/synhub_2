@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.tasks.interfaces.rest;
 
+import jakarta.validation.Valid;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
@@ -52,7 +53,7 @@ public class TaskController {
 
     @PostMapping()
     @Operation(summary = "Create a new task", description = "Creates a new task within a group and assigns it to a member. Only the group leader can perform this action.")
-    public ResponseEntity<TaskResource> createTask(@RequestBody CreateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<TaskResource> createTask(@Valid @RequestBody CreateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createTaskCommand = CreateTaskCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
@@ -109,7 +110,7 @@ public class TaskController {
 
     @PutMapping("/{taskId}")
     @Operation(summary = "Update task details", description = "Updates the editable details of an existing task, such as its title, description, or due date.")
-    public ResponseEntity<TaskResource> updateTaskDetails(@PathVariable Long taskId, @RequestBody UpdateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<TaskResource> updateTaskDetails(@PathVariable Long taskId, @Valid @RequestBody UpdateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var updateTaskDetailsCommand = UpdateTaskCommandFromResourceAssembler.toCommandFromResource(resource, taskId, user.getId());

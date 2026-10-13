@@ -8,13 +8,13 @@ Todos requieren token. El usuario actual se obtiene del token (`@AuthenticationP
 
 | Método | Ruta | Cuerpo / parámetros | Respuesta | Regla |
 |---|---|---|---|---|
-| `POST` | `/api/v1/groups` | `CreateGroupResource { name, imgUrl, description }` | `200 GroupResource` | El creador queda como `GROUP_LEADER`. |
+| `POST` | `/api/v1/groups` | `CreateGroupResource { name, imgUrl?, description? }` | `200 GroupResource` · `400` sin `name` | El creador queda como `GROUP_LEADER`. |
 | `GET` | `/api/v1/groups/{groupId}` | — | `200 GroupResource` · `403` · `404` | Solo integrantes del grupo (`GetGroupForMemberQuery`). |
 | `GET` | `/api/v1/groups/search` | `?code=` | `200 GroupResource` · `404` | `code` debe cumplir el formato de `GroupCode` o responde 400. |
 | `GET` | `/api/v1/groups/{groupId}/members` | — | `200 UserInGroupResource[] { user: UserResource, roleInGroup }` · `403` · `404` | Solo integrantes del grupo. |
 | `GET` | `/api/v1/groups/user` | — | `200 GroupResourceReduced[]` (incluye `leader`) | Todos los grupos del usuario. |
 | `GET` | `/api/v1/groups/user/role` | `?groupRole=GROUP_LEADER\|GROUP_MEMBER` | `200 GroupResource[]` | Grupos del usuario con ese rol. |
-| `PUT` | `/api/v1/groups/{groupId}` | `UpdateGroupResource { name, imgUrl, description }` | `200 GroupResource` · `403` | Solo el líder. Los campos vacíos no cambian. |
+| `PUT` | `/api/v1/groups/{groupId}` | `UpdateGroupResource { name?, imgUrl?, description? }` | `200 GroupResource` · `403` | Solo el líder. Los campos vacíos o ausentes no cambian. |
 | `DELETE` | `/api/v1/groups/{groupId}` | — | `204` · `403` · `404` | Solo el líder. |
 
 `GroupResource = { id, name, imgUrl, description, code, memberCount }`

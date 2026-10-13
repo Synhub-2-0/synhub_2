@@ -146,6 +146,7 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
 
 | Excepción | HTTP |
 |---|---|
+| `MethodArgumentNotValidException` (`@Valid` sobre el cuerpo; el mensaje lista los campos), `ConstraintViolationException`, `HttpMessageNotReadableException` (JSON mal formado), `MethodArgumentTypeMismatchException` (por ejemplo, un enum desconocido en `?status=`), `MissingServletRequestParameterException` | 400 |
 | `IllegalArgumentException` (incluye enums inválidos y value objects que no validan) | 400 |
 | `BadCredentialsException` | 401 |
 | `AccessDeniedException` (permisos de negocio: "solo el líder…") | 403 |
@@ -208,6 +209,6 @@ Están documentadas para no copiarlas en código nuevo:
 1. Crear el `record` `XCommand` o `XQuery` en `domain/model/commands|queries` del contexto dueño (ver [cross-feature-ownership.md](cross-feature-ownership.md)).
 2. Agregar `handle(XCommand)` a la interfaz de `domain/services` e implementarlo en `application/internal/...`. El comportamiento va en el agregado; el servicio carga el agregado, verifica permisos y persiste.
 3. Si se necesitan datos de otro contexto, usar o ampliar su `*ContextFacade` en lugar de inyectar sus repositorios.
-4. Exponer el caso de uso con un `*Resource` y su assembler en `interfaces/rest`.
+4. Exponer el caso de uso con un `*Resource` (con anotaciones de Bean Validation) y su assembler en `interfaces/rest`; el `@RequestBody` lleva `@Valid`.
 5. Lanzar las excepciones adecuadas (`ResourceNotFoundException`, `AccessDeniedException` o una subclase de `BusinessRuleViolationException`).
 6. Documentar el endpoint en `docs/features/<feature>/backend/README.md` y en [rest-api.md](rest-api.md).

@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
+import jakarta.validation.Valid;
 import com.hub.synhub_backend.groups.domain.model.commands.AcceptInvitationCommand;
 import com.hub.synhub_backend.groups.domain.model.commands.CancelInvitationCommand;
 import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByGroupIdQuery;
@@ -45,7 +46,7 @@ public class InvitationController {
 
     @PostMapping()
     @Operation(summary = "Creates an invitation to a group for a user")
-    public ResponseEntity<InvitationResource> createInvitation(@RequestBody CreateInvitationResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<InvitationResource> createInvitation(@Valid @RequestBody CreateInvitationResource resource, @AuthenticationPrincipal UserDetails userDetails) {
         var getUserByUsernameQuery = new GetUserByUsernameQuery(userDetails.getUsername());
         var user = this.userQueryService.handle(getUserByUsernameQuery)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
