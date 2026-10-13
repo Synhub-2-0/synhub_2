@@ -15,7 +15,7 @@ cd frontend && npm ci && npx ng serve
 | Archivo | Rol |
 |---|---|
 | [`Dockerfile`](../../Dockerfile) | Imagen única con tres etapas: `node:22-alpine` compila Angular, `eclipse-temurin:21-jdk` empaqueta el jar (sin tests) y el runtime `eclipse-temurin:21-jre` + nginx. |
-| [`docker/nginx.conf`](../../docker/nginx.conf) | Sirve la SPA (fallback a `index.html`) y reenvía `/api/` y `/actuator/health` a `127.0.0.1:8080`. |
+| [`docker/nginx.conf`](../../docker/nginx.conf) | Sirve la SPA (fallback a `index.html`) y reenvía `/api/` y `/actuator/health` a `127.0.0.1:8080` (con `Host: $http_host`). Agrega cabeceras de seguridad (CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy`) y limita `sign-in`/`sign-up` a 5 por minuto por IP (ráfaga de 10; luego 429). |
 | [`docker/entrypoint.sh`](../../docker/entrypoint.sh) | Arranca Java (como usuario `app`) y nginx; si uno de los dos termina, el contenedor se detiene. |
 | [`docker-compose.yml`](../../docker-compose.yml) | `db` (postgres:16 con volumen `pgdata`) + `app` (puerto `8080:80`). |
 | [`.dockerignore`](../../.dockerignore), [`.gitattributes`](../../.gitattributes) | Excluye artefactos y fuerza finales de línea LF en los scripts del contenedor. |

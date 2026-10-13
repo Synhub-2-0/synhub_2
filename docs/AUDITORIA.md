@@ -83,8 +83,8 @@ Los riesgos principales son tres:
 | [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Pendiente |
 | [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Resuelto |
 | [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Resuelto (ver [TESTS.md](../TESTS.md)) |
-| [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Pendiente |
-| [SEC-12](#sec-12) | Baja | Docker · nginx | Faltan cabeceras de seguridad HTTP | Código | Pendiente |
+| [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Resuelto (Docker; AWS: HUM-02) |
+| [SEC-12](#sec-12) | Baja | Docker · nginx | Faltan cabeceras de seguridad HTTP | Código | Resuelto |
 | [DEP-02](#dep-02) | Baja | Backend · dependencias | Versiones de JJWT desalineadas | Código | Pendiente |
 | [DEP-03](#dep-03) | Baja | Dependencias | Sin escaneo automático de dependencias | Código | Pendiente |
 | [BUG-10](#bug-10) | Baja | Backend · groups | `LeaderCannotBeRemovedException` responde 500 | Código | Pendiente |
@@ -265,7 +265,7 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 
 **Criterios de aceptación.** Una petición con `Origin: https://evil.example` no recibe `Access-Control-Allow-Origin`. Con el perfil `prod`, `/swagger-ui.html` → 404.
 
-**Resolución.** CORS lee `app.cors.allowed-origins` (`CORS_ALLOWED_ORIGINS`), con credenciales para la cookie de sesión (HUM-04). Swagger está apagado en la configuración base y solo lo enciende el perfil `dev`.
+**Resolución.** CORS lee `app.cors.allowed-origins` (`CORS_ALLOWED_ORIGINS`), con credenciales para la cookie de sesión (HUM-04). Si la lista está vacía (producción, mismo origen), **no se procesa CORS**: la prueba en Docker mostró que, con una configuración vacía, Spring rechazaba el login con 403 porque nginx reenviaba el Host sin puerto y el `Origin` del navegador no coincidía. Además nginx reenvía ahora `$http_host` (`api/SameOriginApiTests`). Swagger está apagado en la configuración base y solo lo enciende el perfil `dev`.
 
 ### SEC-09
 
@@ -312,6 +312,8 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 
 **Criterios de aceptación.** El intento número 11 en un minuto desde la misma IP → 429.
 
+**Resolución.** `docker/nginx.conf` limita `sign-in` y `sign-up` a 5 por minuto por IP con ráfaga de 10 (`limit_req_status 429`). Verificado con `docker compose`: tras 11 peticiones seguidas, la siguiente responde 429. En AWS el tráfico no pasa por este nginx: hace falta una regla de WAF (HUM-02).
+
 ### SEC-12
 
 **Faltan cabeceras de seguridad en nginx** · Baja · Código
@@ -321,6 +323,8 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 **Solución propuesta.** Agregar `X-Content-Type-Options nosniff`, `X-Frame-Options DENY`, `Referrer-Policy strict-origin-when-cross-origin` y una `Content-Security-Policy` compatible con Angular (`default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; connect-src 'self'`). Usar `always` y repetirlas en el `location` que ya define `add_header`, porque nginx no las hereda.
 
 **Criterios de aceptación.** `curl -I http://localhost:8080/` muestra las cuatro cabeceras y la web carga sin errores de CSP en la consola.
+
+**Resolución.** Las cuatro cabeceras, con `always`, más `server_tokens off`. La CSP agrega Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`), `object-src 'none'`, `base-uri 'self'` y `frame-ancestors 'none'`. El build de producción desactiva `inlineCritical` (`angular.json`): ese modo inserta un `<script>` en línea que `script-src 'self'` bloquearía y dejaría la página sin estilos. Verificado en el navegador con `docker compose`: login, recarga y cierre de sesión sin violaciones de CSP.
 
 ---
 
