@@ -41,13 +41,39 @@
             } @else {
               <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-200 text-sm font-bold text-slate-600">{{ member.name.charAt(0).toUpperCase() }}</span>
             }
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-bold">{{ member.name }} {{ member.surname }}</p>
               <p class="truncate text-xs text-slate-500">&#64;{{ member.username }}</p>
             </div>
+            @if (isLeaderView()) {
+              @if (pendingRemoval() === member.id) {
+                <div class="flex shrink-0 gap-2">
+                  <button type="button" (click)="cancelRemoval()" class="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-600">No</button>
+                  <button type="button" (click)="confirmRemoval()" class="rounded-lg bg-red-600 px-2.5 py-1.5 text-[11px] font-bold text-white">Quitar</button>
+                </div>
+              } @else {
+                <button type="button" (click)="askRemoval(member.id)" [attr.aria-label]="'Quitar a ' + member.name"
+                  class="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600">
+                  <mat-icon class="text-lg">person_remove</mat-icon>
+                </button>
+              }
+            }
           </div>
         }
       </div>
+      @if (isLeaderView()) {
+        <p class="mt-3 text-xs text-slate-500">Al quitar a un integrante también se borran sus tareas en este grupo. Comparte el código <strong>{{ grp.code }}</strong> para que otros se unan.</p>
+      } @else {
+        <div class="mt-5 flex items-center justify-end gap-2 border-t pt-4">
+          @if (pendingRemoval() === 'self') {
+            <span class="text-xs text-slate-600">Perderás tus tareas en este grupo. ¿Salir?</span>
+            <button type="button" (click)="cancelRemoval()" class="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">Cancelar</button>
+            <button type="button" (click)="confirmRemoval()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white">Salir del grupo</button>
+          } @else {
+            <button type="button" (click)="askRemoval('self')" class="rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">Salir del grupo</button>
+          }
+        </div>
+      }
     </section>
     @if (isLeaderView()) {
       <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">

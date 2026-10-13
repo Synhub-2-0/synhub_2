@@ -44,13 +44,13 @@ export class GroupsApi extends BaseApi {
     return this.groupsEndpoint.getGroupsByUserGroupRole('GROUP_MEMBER');
   }
 
-  /*
-   * TODO: Reactivar cuando el backend exponga la búsqueda de grupos por código.
-   *
-   * searchByCode(code: string): Observable<Group> {
-   *   return this.groupsEndpoint.searchByCode(code);
-   * }
-   */
+  joinGroupByCode(code: string): Observable<Group> {
+    return this.groupsEndpoint.joinByCode(code);
+  }
+
+  removeMember(groupId: number, userId: number): Observable<void> {
+    return this.groupsEndpoint.removeMember(groupId, userId);
+  }
 
   getGroupsByUserGroupRole(role: 'GROUP_LEADER' | 'GROUP_MEMBER'): Observable<Group[]> {
     return this.groupsEndpoint.getGroupsByUserGroupRole(role);

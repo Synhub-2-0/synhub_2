@@ -9,8 +9,8 @@ Carpeta: [`frontend/src/app/groups`](../../../../frontend/src/app/groups)
 | Ruta | Vista | Stores | Qué hace |
 |---|---|---|---|
 | `/groups/leader` | `LeaderGroups` | `GroupsStore` | Lista los grupos donde soy líder. `?create=true` abre el modal para crear un grupo (`addGroup`). |
-| `/groups/member` | `MemberGroups` | `GroupsStore`, `InvitationsStore` | Lista los grupos donde soy miembro y **mis invitaciones pendientes** (aceptar / rechazar). |
-| `/groups?id=…&role=leader\|member` | `GroupDetails` | `GroupsStore`, `TasksStore`, `InvitationsStore`, `IamStore` | Detalle del grupo: integrantes, edición (líder), tablero de tareas del grupo, invitaciones enviadas e invitación por nombre de usuario. |
+| `/groups/member` | `MemberGroups` | `GroupsStore`, `InvitationsStore` | Lista los grupos donde soy miembro. El panel "Unirse a un grupo" acepta un **código** o muestra **mis invitaciones pendientes** (aceptar / rechazar). |
+| `/groups?id=…&role=leader\|member` | `GroupDetails` | `GroupsStore`, `TasksStore`, `InvitationsStore`, `IamStore` | Detalle del grupo: integrantes, edición (líder), quitar integrantes con confirmación (líder) o salir del grupo (miembro), tablero de tareas del grupo, invitaciones enviadas e invitación por nombre de usuario. |
 
 Componentes: `GroupList` → `GroupCard` (navega al detalle o a las tareas del grupo con `queryParams`), `NoGroupLeader` y `NoGroupMember` (estados vacíos). `GroupDetails` reutiliza `TaskBoard` y `TaskList` de [tasks](../../tasks/frontend/README.md).
 
@@ -21,7 +21,7 @@ Componentes: `GroupList` → `GroupCard` (navega al detalle o a las tareas del g
 | `groups` | Unión de los grupos de líder y de miembro. |
 | `leaderGroups`, `memberGroups` | Grupos por rol. |
 | `membersByGroup` | `Record<groupId, GroupUser[]>`. |
-| `loading`, `membersLoading`, `error`, `groupCount` | Estado de la UI. |
+| `loading`, `membersLoading`, `joining`, `error`, `groupCount` | Estado de la UI. |
 
 | Método | Petición |
 |---|---|
@@ -29,6 +29,9 @@ Componentes: `GroupList` → `GroupCard` (navega al detalle o a las tareas del g
 | `loadGroupMembers(groupId)` | `GET /groups/{id}/members` |
 | `addGroup(command, router)` | `POST /groups` |
 | `updateGroup(group, router)` | `PUT /groups/{id}`: envía la entidad completa con `BaseApiEndpoint.update`; el backend solo toma `name`, `imgUrl` y `description`. |
+| `joinGroupByCode(code, onSuccess?)` | `POST /groups/join`. Valida el formato (`[0-9A-Z]{9}`) antes de llamar y traduce 404/409/400 a mensajes en español. |
+| `removeMember(groupId, userId, onSuccess?)` | `DELETE /groups/{id}/members/{userId}`; saca al integrante de `membersByGroup`. |
+| `leaveGroup(groupId, router)` | `DELETE /groups/{id}/members/{yo}` y navega a `/groups/member`. |
 | `getGroupById(id)` | No hace petición: devuelve un `computed` sobre `groups`. |
 
 Los errores se muestran con `ToastStore` (shared).
@@ -38,7 +41,7 @@ Los errores se muestran con `ToastStore` (shared).
 | Archivo | Rol |
 |---|---|
 | `groups.api.ts` (`GroupsApi`) | Fachada inyectable: `getLeaderGroups`, `getMemberGroups`, `getGroupMembers`, `createGroup`, `updateGroup`, `getGroup` y `getGroupsByUser` (las dos últimas sin uso). |
-| `groups.api-endpoint.ts` | Extiende `BaseApiEndpoint`. Tiene comentado `searchByCode` con un TODO "reactivar cuando el backend exponga este endpoint"; **el backend ya lo expone** (`GET /groups/search?code=`). |
+| `groups.api-endpoint.ts` | Extiende `BaseApiEndpoint` y agrega `createGroup`, `getGroupMembers`, `getGroupsByUser`, `getGroupsByUserGroupRole`, `joinByCode` y `removeMember`. |
 | `groups.assembler.ts` | `GroupResource` ↔ `Group`; `GroupUsersResource` → `GroupUser`, usando `ProfilesAssembler` de IAM. |
 | `groups.response.ts`, `create-group.request.ts` | Tipos de la API. |
 

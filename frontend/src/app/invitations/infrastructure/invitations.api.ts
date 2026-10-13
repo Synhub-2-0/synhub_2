@@ -19,14 +19,6 @@ export class InvitationsApi extends BaseApi {
     return this.invitationsEndpoint.createInvitation(command);
   }
 
-  /*
-   * TODO: Reactivar cuando el backend permita solicitar la unión a un grupo.
-   *
-   * inviteUserToGroup(groupId: number, userId: number) {
-   *   return this.invitationsEndpoint.inviteUserToGroup(groupId, userId);
-   * }
-   */
-
   acceptInvitation(id: number) {
     return this.invitationsEndpoint.acceptInvitation(id);
   }

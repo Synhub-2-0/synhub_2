@@ -15,7 +15,9 @@ Todos requieren token. El usuario actual se obtiene del token (`@AuthenticationP
 | `GET` | `/api/v1/groups/user` | — | `200 GroupResourceReduced[]` (incluye `leader`) | Todos los grupos del usuario. |
 | `GET` | `/api/v1/groups/user/role` | `?groupRole=GROUP_LEADER\|GROUP_MEMBER` | `200 GroupResource[]` | Grupos del usuario con ese rol. |
 | `PUT` | `/api/v1/groups/{groupId}` | `UpdateGroupResource { name?, imgUrl?, description? }` | `200 GroupResource` · `403` | Solo el líder. Los campos vacíos o ausentes no cambian. |
-| `DELETE` | `/api/v1/groups/{groupId}` | — | `204` · `403` · `404` | Solo el líder. Borra primero las tareas del grupo y sus requests (`TasksContextFacade.deleteAllTasksByGroupId`); membresías e invitaciones caen en cascada. |
+| `DELETE` | `/api/v1/groups/{groupId}` | — | `204` · `403` · `404` | Solo el líder. Borra primero las tareas del grupo y sus requests (`TasksContextFacade.deleteAllTasksByGroupId`); membresías e invitaciones caen en cascada. Todo es borrado lógico (HUM-03). |
+| `POST` | `/api/v1/groups/join` | `JoinGroupResource { code }` | `200 GroupResource` · `400` código mal formado · `404` no existe · `409` ya pertenece | Cualquier usuario con el código entra como `GROUP_MEMBER` (HUM-05). El código se normaliza a mayúsculas. Consume una invitación pendiente al mismo grupo. |
+| `DELETE` | `/api/v1/groups/{groupId}/members/{userId}` | — | `204` · `403` · `404` no es integrante · `409` es el líder | El líder quita a un miembro, o un miembro sale (`userId` = él mismo). Borra primero las tareas del integrante en ese grupo y sus requests, después la membresía (HUM-05, borrado lógico). |
 
 `GroupResource = { id, name, imgUrl, description, code, memberCount }`
 
@@ -33,7 +35,7 @@ Todos requieren token. El usuario actual se obtiene del token (`@AuthenticationP
 
 | Servicio | Mensajes |
 |---|---|
-| `GroupCommandServiceImpl` | `CreateGroupCommand`, `UpdateGroupCommand`, `DeleteGroupCommand` y `RemoveMemberUserFromGroupCommand` (este último no tiene endpoint; lanza `LeaderCannotBeRemovedException` si se intenta quitar al líder). |
+| `GroupCommandServiceImpl` | `CreateGroupCommand`, `UpdateGroupCommand`, `DeleteGroupCommand`, `JoinGroupByCodeCommand(code, userId)` y `RemoveMemberUserFromGroupCommand(requesterId, userId, groupId)` (lanza `LeaderCannotBeRemovedException` si se intenta quitar al líder). |
 | `GroupQueryServiceImpl` | `GetGroupByIdQuery`, `GetGroupByCodeQuery`, `GetGroupsByUserIdQuery`, `GetGroupsByUserRoleQuery`, `GetGroupMembersByGroupIdQuery`, `GetGroupsByLeaderIdQuery` (sin uso). |
 
 Las reglas de autorización (por ejemplo, "solo el líder") se validan en los command services y lanzan `AccessDeniedException` (403).
@@ -44,7 +46,7 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 |---|---|---|
 | groups → otros | `GroupsContextFacade.fetchLeaderIdByGroupId` | Lo usa `RequestQueryServiceImpl` (requests) para validar que quien lista las solicitudes sea el líder. |
 | groups → otros | `GroupsContextFacade.isMember` / `isLeader` | Control de acceso de las lecturas: `TaskQueryServiceImpl` (tasks) y `RequestQueryServiceImpl` (requests). |
-| groups → tasks | `application/external/ExternalTasksService` → `TasksContextFacade.deleteTasksByUserIdAndGroupId` | Está preparado para borrar las tareas de un miembro al quitarlo del grupo, pero todavía nadie lo llama. |
+| groups → tasks | `TasksContextFacade.deleteAllTasksByGroupId` y `deleteTasksByUserIdAndGroupId` | `GroupCommandServiceImpl` borra las tareas al borrar el grupo y al quitar a un integrante. |
 | groups → iam | `UserRepository` (directo) | `GroupCommandServiceImpl` busca al líder y lo guarda. |
 | otros → groups | `GroupRepository`, `GroupProfileRepository` (directo) | `TaskCommandServiceImpl` (tasks) y `UserQueryServiceImpl` (iam). |
 | otros → groups | `GroupQueryService` (directo) | `AiController`, `TaskMetricsQueryServiceImpl` y `GroupsClient` (metrics). |
@@ -59,9 +61,8 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 |---|---|
 | `ResourceNotFoundException`, `UserNotInGroupException` | 404 |
 | `AccessDeniedException` | 403 |
-| `LeaderCannotBeRemovedException` | 500 (extiende `RuntimeException`, no `BusinessRuleViolationException`) |
+| `LeaderCannotBeRemovedException`, `UserAlreadyInGroupException` | 409 (extienden `BusinessRuleViolationException`) |
 
 ## Observaciones
 
 - `GroupRepository.findByLeaderId` está derivado de una propiedad `leader` que `Group` no tiene como campo: el líder se calcula desde `userProfiles`. Solo lo usa `GetGroupsByLeaderIdQuery`, que tampoco se invoca. Revisarlo antes de usarlo.
-- `LeaderCannotBeRemovedException` debería extender `BusinessRuleViolationException` para responder 409.

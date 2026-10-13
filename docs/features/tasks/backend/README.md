@@ -61,7 +61,7 @@ Hacia otros contextos:
 |---|---|
 | `getTaskById` | requests (crear y eliminar solicitudes) |
 | `applySubmissionReview` | requests (revisar entregas) |
-| `deleteTasksByUserIdAndGroupId` | groups, mediante `ExternalTasksService` (sin llamadas por ahora) |
+| `deleteTasksByUserIdAndGroupId` | groups, al quitar a un integrante o cuando sale del grupo |
 | `deleteAllTasksByGroupId` | groups, al borrar un grupo (`DeleteTasksByGroupIdCommand`: requests y luego tareas) |
 
 ## Persistencia

@@ -30,7 +30,6 @@ En orden de prioridad:
 | `GroupReportQueryServiceImpl` | `ai` | metrics, tasks | **ai** | Orquesta datos de otros contextos para el informe. |
 | `AiController.getGroupReport` (valida al líder) | `ai` | groups, iam | **ai** | La regla "solo el líder" se *consulta* en groups, pero el caso de uso es de ai. |
 | Campos de IA en `Task` (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`) | `tasks` | tasks, ai | **tasks** (persistencia) · **ai** (valores y significado) | ai sugiere y tasks guarda. |
-| `ExternalTasksService` | `groups/application/external` | groups → tasks | **groups** | Cliente de groups hacia la ACL de tasks (sin uso todavía). |
 | `ExternalIamService` | `shared/application/external` | → iam | **iam** (debería vivir en el consumidor) | Cliente genérico hacia la ACL de iam (sin uso). |
 | Resolución del usuario actual en los controladores | todos | iam | **iam** | Patrón repetido: `UserQueryService` + `GetUserByUsernameQuery`. |
 

@@ -2,6 +2,8 @@ package com.hub.synhub_backend.groups.interfaces.rest;
 
 import jakarta.validation.Valid;
 import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
+import com.hub.synhub_backend.groups.domain.model.commands.JoinGroupByCodeCommand;
+import com.hub.synhub_backend.groups.domain.model.commands.RemoveMemberUserFromGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupForMemberQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupMembersByGroupIdQuery;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.UserInGroupResource;
@@ -13,6 +15,7 @@ import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateGroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.GroupResourceReduced;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.UpdateGroupResource;
+import com.hub.synhub_backend.groups.interfaces.rest.resources.JoinGroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.CreateGroupCommandFromResourceAssembler;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.GroupResourceReducedFromEntityAssembler;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.UpdateGroupCommandFromResourceAssembler;
@@ -135,6 +138,24 @@ public class GroupController {
         var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         this.groupCommandService.handle(new DeleteGroupCommand(user.getId(), groupId));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/join")
+    @Operation(summary = "Join a group with its code", description = "The authenticated user becomes a member of the group with that code")
+    public ResponseEntity<GroupResource> joinGroup(@Valid @RequestBody JoinGroupResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var group = this.groupCommandService.handle(new JoinGroupByCodeCommand(resource.code().trim().toUpperCase(), user.getId()));
+        return ResponseEntity.ok(GroupResourceFromEntityAssembler.toResourceFromEntity(group));
+    }
+
+    @DeleteMapping("/{groupId}/members/{userId}")
+    @Operation(summary = "Remove a member from a group", description = "The leader removes a member, or a member leaves the group. The leader cannot be removed")
+    public ResponseEntity<Void> removeMember(@PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        this.groupCommandService.handle(new RemoveMemberUserFromGroupCommand(user.getId(), userId, groupId));
         return ResponseEntity.noContent().build();
     }
 }

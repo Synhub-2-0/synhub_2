@@ -8,4 +8,5 @@ public interface GroupCommandService {
     Group handle(UpdateGroupCommand command);
     void handle(DeleteGroupCommand command);
     void handle(RemoveMemberUserFromGroupCommand command);
+    Group handle(JoinGroupByCodeCommand command);
 }

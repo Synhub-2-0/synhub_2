@@ -205,7 +205,7 @@ Están documentadas para no copiarlas en código nuevo:
 | Proceso programado en `domain/services` | `tasks/domain/services/TaskStatusScheduler` |
 | Servicio de dominio que devuelve DTOs REST | `metrics/domain/model/services/TaskMetricsQueryService` |
 | Repositorios de otro contexto usados directamente | `TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`, `GroupCommandServiceImpl`, `InvitationCommandServiceImpl` |
-| ACL definidas pero sin uso | `ExternalIamService` (shared), `ExternalTasksService` (groups) |
+| ACL definidas pero sin uso | `ExternalIamService` (shared) |
 
 ## 11. Cómo agregar un caso de uso
 

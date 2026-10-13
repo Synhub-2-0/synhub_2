@@ -41,7 +41,9 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 |---|---|---|---|
 | POST | `/groups` | `GroupController` | `GroupsStore.addGroup` |
 | GET | `/groups/{groupId}` | `GroupController` | — |
-| GET | `/groups/search?code=` | `GroupController` | — (código comentado en `GroupsApiEndpoint`) |
+| GET | `/groups/search?code=` | `GroupController` | — |
+| POST | `/groups/join` | `GroupController` | `GroupsStore.joinGroupByCode` |
+| DELETE | `/groups/{groupId}/members/{userId}` | `GroupController` | `GroupsStore.removeMember`, `GroupsStore.leaveGroup` |
 | GET | `/groups/{groupId}/members` | `GroupController` | `GroupsStore.loadGroupMembers` |
 | GET | `/groups/user` | `GroupController` | — |
 | GET | `/groups/user/role?groupRole=` | `GroupController` | `GroupsStore.loadGroups` |

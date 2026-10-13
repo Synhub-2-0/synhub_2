@@ -33,6 +33,8 @@ export class GroupDetails implements OnInit {
   editDescription = '';
   editImgUrl = '';
   inviteUsername = '';
+  /** Integrante cuya expulsión espera confirmación (id de usuario), o 'self' para salir del grupo. */
+  readonly pendingRemoval = signal<number | 'self' | null>(null);
 
   readonly group = computed<Group | undefined>(() => {
     const groups = this.groupsStore.groups();
@@ -66,6 +68,17 @@ export class GroupDetails implements OnInit {
     const username = this.inviteUsername.trim();
     if (!username || !this.groupId()) return;
     this.invitationsStore.inviteByUsername(username, this.groupId(), () => this.inviteUsername = '');
+  }
+
+  askRemoval(target: number | 'self'): void { this.pendingRemoval.set(target); }
+  cancelRemoval(): void { this.pendingRemoval.set(null); }
+
+  confirmRemoval(): void {
+    const target = this.pendingRemoval();
+    this.pendingRemoval.set(null);
+    if (!target || !this.groupId()) return;
+    if (target === 'self') this.groupsStore.leaveGroup(this.groupId(), this.router);
+    else this.groupsStore.removeMember(this.groupId(), target, () => this.tasksStore.loadTasksByGroup(this.groupId()));
   }
 
   cancelInvitation(invitationId: number): void {
