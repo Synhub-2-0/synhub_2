@@ -77,7 +77,7 @@ Los riesgos principales son tres:
 | [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Resuelto (por SEC-07) |
 | [BUG-07](#bug-07) | Media | Backend · shared | El handler de 500 no registra la excepción | Código | Resuelto |
 | [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Resuelto |
-| [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Pendiente |
+| [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Resuelto |
 | [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Pendiente |
 | [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Pendiente |
 | [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Pendiente |
@@ -491,6 +491,8 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 4. Mover el scheduler a `tasks/application/internal/schedulers/` ([ARC-02](#arc-02)).
 
 **Criterios de aceptación.** Test: dos ejecuciones concurrentes sobre la misma tarea vencida crean **una** sola request `EXPIRED`.
+
+**Resolución.** `UPDATE` condicional (`markExpiredIfInProgress`) en una transacción por tarea; solo crea la request quien cambió la fila. Logger en `DEBUG`, frecuencia en `app.tasks.expiration-check-ms` (60 s) y la clase movida a `tasks/aplication/internal/schedulers`. `api/TaskExpirationApiTests` corre dos ejecuciones a la vez contra PostgreSQL y verifica una sola request.
 
 ### BUG-10
 

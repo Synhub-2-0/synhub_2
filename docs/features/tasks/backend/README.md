@@ -47,7 +47,7 @@ Comportamiento del agregado:
 |---|---|
 | `TaskCommandServiceImpl` | `CreateTaskCommand`, `UpdateTaskCommand` (incluye reasignación entre membresías), `DeleteTaskCommand`, `UpdateTaskStatusCommand` y `DeleteTasksByUserIdAndGroupIdCommand`. |
 | `TaskQueryServiceImpl` | `GetTaskByIdQuery`, `GetAllTasksQuery`, `GetAllTasksByUserId`, `GetAllTaskByStatusQuery`, `GetAllTasksByGroupIdQuery`, `GetTasksByGroupIdAndStatus`, `GetTasksByGroupIdAndUserIdQuery`. |
-| `TaskStatusScheduler` (`domain/services`) | `@Scheduled(fixedRate = 30000)`: busca las tareas `IN_PROGRESS` vencidas, las pasa a `EXPIRED` y crea `CreateRequestCommand("La tarea venció automáticamente.", "EXPIRED", taskId)` sin `requesterId`, por lo que se salta las validaciones de usuario. |
+| `TaskStatusScheduler` (`aplication/internal/schedulers`) | `@Scheduled` cada `app.tasks.expiration-check-ms` (60 s; variable `TASKS_EXPIRATION_CHECK_MS`): busca las tareas `IN_PROGRESS` vencidas y, en una transacción por tarea, las marca con un `UPDATE` condicional (`TaskRepository.markExpiredIfInProgress`, `WHERE status = IN_PROGRESS`). Solo si cambió la fila crea `CreateRequestCommand("La tarea venció automáticamente.", "EXPIRED", taskId)` sin `requesterId`, por lo que se salta las validaciones de usuario. Con varias instancias, solo una crea la request (AUDIT BUG-09). |
 
 ## ACL
 
@@ -82,5 +82,3 @@ Hacia otros contextos:
 
 ## Observaciones
 
-- El comentario de `TaskStatusScheduler` dice "cada 60 segundos", pero `fixedRate = 30000` son 30 s.
-- `TaskStatusScheduler` es un proceso de aplicación ubicado en `domain/services`.

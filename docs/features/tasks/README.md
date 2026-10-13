@@ -27,7 +27,7 @@ stateDiagram-v2
 
 - `PUT /tasks/{id}/status` acepta cualquier estado **excepto `DONE`** (responde 409 `TaskStatusTransitionNotAllowedException`). Pueden hacerlo el líder o el integrante asignado.
 - `PUT /tasks/{id}` con una `dueDate` pasada mueve la tarea a `EXPIRED`; con una fecha futura la vuelve a `IN_PROGRESS`, salvo que ya esté `EXPIRED`.
-- `TaskStatusScheduler` revisa cada 30 s las tareas `IN_PROGRESS` vencidas: las marca `EXPIRED` y crea una solicitud `EXPIRED` en requests.
+- `TaskStatusScheduler` revisa cada 60 s las tareas `IN_PROGRESS` vencidas: las marca `EXPIRED` y crea una solicitud `EXPIRED` en requests.
 - En la web, una tarea `DONE` no se puede editar ni eliminar (`TasksStore` lo bloquea).
 
 ## Comunicación frontend ↔ backend
@@ -48,7 +48,7 @@ stateDiagram-v2
 
 - **Asignación mediante groups**: `Task.profile` apunta a `GroupProfile` (la membresía de groups) y `GroupProfile.tasks` es la colección inversa. Una tarea no tiene `userId` ni `groupId` propios: ambos se derivan de la membresía. `TaskResource` expone `group` y `assignedTo` armados con assemblers de groups e IAM.
 - **`TaskCommandServiceImpl` usa repositorios de otros contextos** (`GroupRepository`, `GroupProfileRepository` de groups y `UserRepository` de IAM) en lugar de sus ACL.
-- **Scheduler de vencimiento**: `TaskStatusScheduler` está en `tasks/domain/services`, pero escribe en **requests** (`RequestCommandService`, solicitud `EXPIRED`). El proceso es de tasks y el dato resultante es de requests.
+- **Scheduler de vencimiento**: `TaskStatusScheduler` está en `tasks/aplication/internal/schedulers`, pero escribe en **requests** (`RequestCommandService`, solicitud `EXPIRED`). El proceso es de tasks y el dato resultante es de requests.
 - **`DONE` lo decide requests**: requests llama a `TasksContextFacade.applySubmissionReview` al revisar una entrega. Es la única vía hacia `DONE`.
 - **Campos de IA en `Task`** (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`): se persisten en tasks, pero los produce [ai](../ai/README.md) y los consume su informe de grupo.
 - **Métricas**: `TaskMetricsQueryServiceImpl` ([metrics](../metrics/README.md)) lee `TaskRepository` directamente.

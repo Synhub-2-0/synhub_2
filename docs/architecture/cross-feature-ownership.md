@@ -20,7 +20,7 @@ En orden de prioridad:
 | `RequestRepository.findByTask_Profile_Group_Id` | `requests` | requests → tasks → groups | **requests** | Consulta de requests; navega las relaciones JPA. |
 | `TaskRepository.findByProfile_Group_Id…` / `…_User_Id` | `tasks` | tasks → groups → iam | **tasks** | Consulta de tareas filtrada por membresía. |
 | `GroupProfile.tasks` / `Task.profile` | `groups` / `tasks` | groups ↔ tasks | **tasks** es dueño de la asignación; **groups**, de la membresía | La tarea se asigna a una membresía; la membresía no tiene reglas sobre tareas. |
-| `TaskStatusScheduler` | `tasks/domain/services` | tasks, requests | **tasks** (proceso) · **requests** (dato creado) | El vencimiento es una regla de la tarea; la request `EXPIRED` es una consecuencia. |
+| `TaskStatusScheduler` | `tasks/aplication/internal/schedulers` | tasks, requests | **tasks** (proceso) · **requests** (dato creado) | El vencimiento es una regla de la tarea; la request `EXPIRED` es una consecuencia. |
 | `TasksContextFacade.applySubmissionReview` | `tasks` | tasks | **tasks** | Única vía hacia `DONE`; requests solo la invoca. |
 | `UserQueryServiceImpl.handle(GetUsersByGroupIdQuery)` | `iam` | iam, groups | **groups** (conceptualmente) | Es una consulta de membresía; hoy vive en iam porque devuelve `User`. |
 | `TaskCommandServiceImpl` (usa `GroupRepository`, `GroupProfileRepository`, `UserRepository`) | `tasks` | tasks, groups, iam | **tasks** | Escribe `Task`; las lecturas a otros contextos deberían pasar por ACL. |

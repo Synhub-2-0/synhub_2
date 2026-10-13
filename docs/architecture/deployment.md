@@ -42,6 +42,7 @@ Perfiles:
 | `DATABASE_PASSWORD` | `spring.datasource.password` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio. |
 | `JWT_SECRET` | `authorization.jwt.secret` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio, al menos 32 bytes: si falta o es más corto, la app no arranca. En AWS se inyecta desde SSM. |
 | `AUTH_COOKIE_SECURE` | `authorization.cookie.secure` | `true` (`false` en `dev` y en compose) | Atributo `Secure` de la cookie de sesión. Debe ser `true` detrás de HTTPS (AWS). |
+| `TASKS_EXPIRATION_CHECK_MS` | `app.tasks.expiration-check-ms` | `60000` | Cada cuánto se vencen las tareas atrasadas. |
 | `CORS_ALLOWED_ORIGINS` | `app.cors.allowed-origins` | vacío (`http://localhost:4200` en `dev`) | Orígenes separados por comas. En producción no hace falta: front y API comparten origen. |
 | `AWS_REGION` | `ai.bedrock.region` | `us-east-1` | — |
 | `BEDROCK_MODEL_ID` | `ai.bedrock.model-id` | Claude Haiku 4.5 (perfil `us.`) | — |
