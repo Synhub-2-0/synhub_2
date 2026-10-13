@@ -63,5 +63,5 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 
 ## Observaciones
 
-- `GET /users` devuelve todos los usuarios con su email a cualquier usuario autenticado. El frontend no lo usa.
+- `GET /users` es solo para `ROLE_ADMIN` (SEC-06). El frontend no lo usa.
 - `GET /roles` no lo usa el frontend.

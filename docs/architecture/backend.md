@@ -193,14 +193,19 @@ flowchart LR
 - Unitarias con JUnit 5 y Mockito sobre los servicios de aplicación (`requests`, `tasks`, `ai`).
 - `SynhubBackendApplicationTests` levanta el contexto completo y necesita PostgreSQL.
 - `*IT` contra servicios externos, condicionadas por variables de entorno (`RUN_BEDROCK_IT=1`).
-- En CI: `./mvnw verify` con un servicio `postgres:16` (ver [deployment.md](deployment.md)).
+- Pruebas de API (`api/*ApiTests`): levantan la aplicación completa contra PostgreSQL en Testcontainers, con Flyway, y la ejercitan por HTTP con la cookie de sesión.
+- `architecture/BoundedContextIsolationTest`: ningún contexto importa los repositorios de otro.
+- En CI: `./mvnw verify` (pruebas y formato con Spotless; ver [deployment.md](deployment.md)).
 
 ## 10. Desviaciones conocidas respecto a la estructura canónica
 
-Están documentadas para no copiarlas en código nuevo:
+Las desviaciones de la auditoría (erratas de paquetes, capas mal ubicadas, repositorios ajenos) están resueltas. Quedan, a propósito:
 
-| Desviación | Ubicación |
-|---|---|
+| Desviación | Ubicación | Motivo |
+|---|---|---|
+| Relaciones JPA entre contextos | `Task.profile → GroupProfile`, `GroupProfile.user`, `Invitation.user` | Cambiarlas por ids es una refactorización mayor. |
+| Excepciones de negocio en `shared/interfaces/rest/exceptions` | `BusinessRuleViolationException`, `ResourceNotFoundException`, usadas también por el dominio | Simplifica el mapeo a HTTP en `GlobalExceptionHandler`. |
+| Usuario de la sesión resuelto con `UserQueryService` en cada controlador | todos los controladores | Patrón repetido; no pasa por la ACL de iam. |
 
 ## 11. Cómo agregar un caso de uso
 
@@ -208,5 +213,6 @@ Están documentadas para no copiarlas en código nuevo:
 2. Agregar `handle(XCommand)` a la interfaz de `domain/services` e implementarlo en `application/internal/...`. El comportamiento va en el agregado; el servicio carga el agregado, verifica permisos y persiste.
 3. Si se necesitan datos de otro contexto, usar o ampliar su `*ContextFacade` en lugar de inyectar sus repositorios.
 4. Exponer el caso de uso con un `*Resource` (con anotaciones de Bean Validation) y su assembler en `interfaces/rest`; el `@RequestBody` lleva `@Valid`.
-5. Lanzar las excepciones adecuadas (`ResourceNotFoundException`, `AccessDeniedException` o una subclase de `BusinessRuleViolationException`).
-6. Documentar el endpoint en `docs/features/<feature>/backend/README.md` y en [rest-api.md](rest-api.md).
+5. Si cambia una entidad, agregar la migración `V<n>__descripcion.sql` en `src/main/resources/db/migration`.
+6. Lanzar las excepciones adecuadas (`ResourceNotFoundException`, `AccessDeniedException` o una subclase de `BusinessRuleViolationException`).
+7. Documentar el endpoint en `docs/features/<feature>/backend/README.md` y en [rest-api.md](rest-api.md).

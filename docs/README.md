@@ -10,7 +10,7 @@ Punto de entrada de toda la documentación del monorepo. Tiene dos partes:
 ```text
 docs/
 ├── README.md                          ← este índice
-├── AUDITORIA.md                       hallazgos a corregir, soluciones y plan de ejecución
+├── AUDITORIA.md                       auditoría: hallazgos, soluciones aplicadas y cierre
 ├── architecture/
 │   ├── README.md                      visión general, stack, principios, recorrido de una petición
 │   ├── backend.md                     DDD, capas, CQRS, ACL, persistencia, errores, seguridad
@@ -65,7 +65,7 @@ docs/
 | Convenciones REST y catálogo de endpoints | [architecture/rest-api.md](architecture/rest-api.md) |
 | Propiedad del código compartido | [architecture/cross-feature-ownership.md](architecture/cross-feature-ownership.md) |
 | Docker, variables de entorno y CI/CD | [architecture/deployment.md](architecture/deployment.md) |
-| **Auditoría: puntos a corregir y plan** | [AUDITORIA.md](AUDITORIA.md) |
+| **Auditoría: hallazgos, resolución y pendientes de despliegue** | [AUDITORIA.md](AUDITORIA.md#cierre) · prueba de humo: [`scripts/audit-smoke.py`](../scripts/audit-smoke.py) |
 | **Inventario de pruebas y su estado** | [TESTS.md](../TESTS.md) |
 | Desviaciones conocidas (deuda técnica) | [backend §10](architecture/backend.md#10-desviaciones-conocidas-respecto-a-la-estructura-canónica) · [frontend §8](architecture/frontend.md#8-desviaciones-conocidas) · [deuda de integración](architecture/cross-feature-ownership.md#deuda-de-integración) |
 

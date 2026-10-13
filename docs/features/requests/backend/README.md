@@ -87,3 +87,5 @@ Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsBy
 
 ## Observaciones
 
+Sin observaciones abiertas: los hallazgos de esta parte están resueltos (ver [AUDITORIA.md](../../../AUDITORIA.md)).
+

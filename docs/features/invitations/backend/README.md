@@ -41,4 +41,4 @@ Todos requieren token.
 
 ## Observaciones
 
-- `InvitationRepository.findByUser_IdAndGroup_Id` no se usa.
+- `InvitationRepository.findByUser_IdAndGroup_Id` lo usa unirse por código (`JoinGroupByCodeCommand`) para consumir la invitación pendiente.

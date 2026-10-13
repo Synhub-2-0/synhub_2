@@ -5,7 +5,7 @@
 | **Fecha** | 2026-10-13 |
 | **Alcance** | Monorepo completo: `backend/`, `frontend/`, Docker, CI/CD y documentación |
 | **Commit auditado** | `68536da` (rama `main`) |
-| **Estado** | 48 hallazgos pendientes y 6 decisiones humanas |
+| **Estado** | Corregida en la rama `audit`: 49 hallazgos resueltos (48 originales + BUG-18). Quedan HUM-01 y HUM-02, que requieren acceso a AWS y GitHub. Ver [Cierre](#cierre). |
 
 ## Cómo usar este documento (instrucciones para el prompt de corrección)
 
@@ -878,28 +878,46 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 | 6 | Refactorización de arquitectura | ARC-01, ARC-02, ARC-03, OPS-03 | Commits de refactorización pura; el formato (OPS-03) va al final para no ensuciar los diffs. |
 | 7 | Cierre | — | Actualizar `docs/` (secciones "Observaciones" y "Desviaciones conocidas"), poner este índice en `Resuelto` y volver a ejecutar el anexo. |
 
+## Cierre
+
+Corrección completada en la rama `audit` (2026-10-13), por fases y con un commit por hallazgo:
+
+| Indicador | Al auditar | Tras la corrección |
+|---|---|---|
+| Hallazgos abiertos | 48 | 0 (+ BUG-18, hallado y resuelto durante la corrección) |
+| Pruebas del backend | 28 | 262 (unitarias, de API contra PostgreSQL en Testcontainers y de arquitectura), con formato verificado (Spotless) |
+| Pruebas del frontend | 25 | 202, con ESLint sin errores |
+| Pruebas `AUDIT` deshabilitadas (documentaban defectos) | todas las del inventario | 0: todas habilitadas y pasando |
+| `npm audit` (altas o críticas) | 5 | 0 |
+| Casos del anexo con el resultado esperado | 2 de 17 | 18 de 18 (`scripts/audit-smoke.py`) |
+
+Decisiones humanas aplicadas: HUM-03 (soft delete), HUM-04 (cookie `HttpOnly` de 1 día), HUM-05 (unirse por código, quitar integrantes y métricas base) y HUM-06 (nombre, correo y foto visibles). Además se decidió paginación opcional (PERF-02) y Flyway desde una base vacía (ARC-04).
+
+**Pendiente antes de desplegar (HUM-01, HUM-02):** rotar `JWT_SECRET` y `DATABASE_PASSWORD` en SSM; en la task definition de ECS, `SPRING_PROFILES_ACTIVE=prod` y esas variables; en CloudFront, reenviar las cookies y no cachear `/api/*`; una regla de WAF para limitar los intentos de login; y la *trust policy* OIDC más las variables `AWS_DEPLOY_ROLE_ARN` y `AWS_ACCOUNT_ID` del repositorio. La base de datos debe empezar vacía (Flyway crea el esquema).
+
 ## Anexo: scripts de verificación
 
-**Reproducción de seguridad y defectos.** Script Python usado en la auditoría, adaptable como test de humo. Con el stack levantado (`docker compose up`), registrar los usuarios `leader`, `member`, `outsider` y `xuser`, y ejecutar las peticiones de la tabla. Resultados al momento de la auditoría (esperados tras la corrección entre paréntesis):
+**Reproducción de seguridad y defectos.** El script está en [`scripts/audit-smoke.py`](../scripts/audit-smoke.py) (`docker compose up --build -d` y luego `python scripts/audit-smoke.py`). La última columna muestra la ejecución sobre la rama `audit`, con todos los casos como se esperaba. Con el stack levantado (`docker compose up`), registrar los usuarios `leader`, `member`, `outsider` y `xuser`, y ejecutar las peticiones de la tabla. Resultados al momento de la auditoría (esperados tras la corrección entre paréntesis):
 
-| Caso | Obtenido | Esperado |
-|---|---|---|
-| Registro con email duplicado | 500 | 409 |
-| Registro con contraseña `"1"` y email inválido | 201 | 400 |
-| Registro con un rol inexistente | 500 | 201 con `ROLE_USER` (SEC-05) |
-| `POST /groups` sin `name` | 500 | 400 |
-| `POST /tasks` sin `title` | 200 | 400 |
-| Ajeno: `GET /invitations/group?groupId=` | 200 | 403 |
-| Ajeno: `GET /groups/{id}/members` | 200 | 403 |
-| Ajeno: `GET /tasks/group/{id}` | 200 | 403 |
-| Ajeno: `GET /tasks/{id}` | 200 | 403 |
-| Ajeno: `GET /tasks/{id}/requests` | 200 | 403 |
-| Ajeno: `GET /users` | 200 | 403 |
-| Ajeno: `DELETE /tasks/{t}/requests/{r}` | 204 | 403 |
-| Líder: `DELETE /tasks/{id}` con requests | 500 | 204 |
-| Líder: `DELETE /groups/{id}` con tareas | 500 | 204 |
-| Líder: `DELETE /groups/{id}` vacío | 204 | 204 |
-| Token alterado | 401 | 401 |
-| Tokens completos en `docker logs` | 22 | 0 |
+| Caso | Al auditar | Esperado | Rama `audit` |
+|---|---|---|---|
+| Registro con email duplicado | 500 | 409 | ✓ |
+| Registro con contraseña `"1"` y email inválido | 201 | 400 | ✓ |
+| Registro con un rol inexistente | 500 | 201 con `ROLE_USER` (SEC-05) | ✓ |
+| `POST /groups` sin `name` | 500 | 400 | ✓ |
+| `POST /tasks` sin `title` | 200 | 400 | ✓ |
+| Ajeno: `GET /invitations/group?groupId=` | 200 | 403 | ✓ |
+| Ajeno: `GET /groups/{id}/members` | 200 | 403 | ✓ |
+| Ajeno: `GET /tasks/group/{id}` | 200 | 403 | ✓ |
+| Ajeno: `GET /tasks/{id}` | 200 | 403 | ✓ |
+| Ajeno: `GET /tasks/{id}/requests` | 200 | 403 | ✓ |
+| Ajeno: `GET /users` | 200 | 403 | ✓ |
+| Ajeno: `DELETE /tasks/{t}/requests/{r}` | 204 | 403 | ✓ |
+| Líder: `DELETE /tasks/{id}` con requests | 500 | 204 | ✓ |
+| Líder: `DELETE /groups/{id}` con tareas | 500 | 204 | ✓ |
+| Líder: `DELETE /groups/{id}` vacío | 204 | 204 | ✓ |
+| Token alterado | 401 | 401 | ✓ |
+| Tokens completos en `docker logs` | 22 | 0 | ✓ |
+| Errores 500 en los logs durante la prueba | — | 0 | ✓ |
 
 **Enlaces de la documentación.** Comprobar que todos los enlaces Markdown relativos de los `.md` apunten a archivos existentes y que las anclas `#…` coincidan con encabezados (slug de GitHub: minúsculas, sin puntuación y espacios → `-`). Al momento de la auditoría: 238 enlaces, 0 rotos.

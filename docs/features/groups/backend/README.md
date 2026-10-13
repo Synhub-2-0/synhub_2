@@ -65,3 +65,5 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 
 ## Observaciones
 
+Sin observaciones abiertas: los hallazgos de esta parte están resueltos (ver [AUDITORIA.md](../../../AUDITORIA.md)).
+

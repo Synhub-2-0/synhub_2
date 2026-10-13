@@ -13,7 +13,7 @@ Registro de cuentas, inicio de sesión con JWT, consulta de usuarios y roles de 
 ## Qué resuelve
 
 - **Registro** (`sign-up`): crea un `User` con contraseña hasheada (BCrypt) y uno o más roles de cuenta.
-- **Inicio de sesión** (`sign-in`): valida credenciales y devuelve un JWT válido por 7 días.
+- **Inicio de sesión** (`sign-in`): valida credenciales y abre una sesión de 1 día: el JWT viaja en la cookie `HttpOnly` `SYNHUB_SESSION` (HUM-04). `sign-out` la borra.
 - **Sesión en la web**: el JWT viaja en una cookie `HttpOnly` de 1 día que el JavaScript no puede leer (decisión HUM-04). Un interceptor envía las peticiones con credenciales y cierra la sesión ante un 401; un guard protege las rutas privadas.
 - **Consulta de usuarios**: `/users/me`, `/users/{id}` y `/users/username?username=`; otras features las usan para resolver perfiles.
 
