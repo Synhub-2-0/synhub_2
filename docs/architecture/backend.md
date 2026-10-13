@@ -30,6 +30,7 @@ flowchart TB
     tasks -- "JPA: Task.profile → GroupProfile<br/>repos: Group*, UserRepository" --> groups
     requests -- "ACL: TasksContextFacade" --> tasks
     requests -- "ACL: GroupsContextFacade" --> groups
+    tasks -- "ACL: GroupsContextFacade (lecturas)" --> groups
     tasks -- "scheduler → RequestCommandService" --> requests
     ai -- "TaskQueryService" --> tasks
     ai -- "TaskMetricsQueryService" --> metrics

@@ -9,6 +9,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,14 +45,16 @@ class GroupQueryServiceImplTest {
 
     @Test void membersOfUnknownGroupIs404() {
         when(groups.existsById(99L)).thenReturn(false);
-        assertThrows(ResourceNotFoundException.class, () -> service.handle(new GetGroupMembersByGroupIdQuery(99L)));
+        assertThrows(ResourceNotFoundException.class, () -> service.handle(new GetGroupMembersByGroupIdQuery(99L, 1L)));
     }
 
     @Test void membersOfGroup() {
         var group = group(10, user(1, "lider"), user(2, "ana"));
         when(groups.existsById(10L)).thenReturn(true);
+        when(profiles.existsByGroup_IdAndUser_Id(10L, 2L)).thenReturn(true);
         when(profiles.findByGroup_Id(10L)).thenReturn(group.getUserProfiles());
-        assertEquals(2, service.handle(new GetGroupMembersByGroupIdQuery(10L)).size());
+        assertEquals(2, service.handle(new GetGroupMembersByGroupIdQuery(10L, 2L)).size());
+        assertThrows(AccessDeniedException.class, () -> service.handle(new GetGroupMembersByGroupIdQuery(10L, 99L)));
     }
 
     @Test void byCode() {
@@ -63,5 +66,15 @@ class GroupQueryServiceImplTest {
 
     @Test void malformedCodeIsABadRequest() {
         assertThrows(IllegalArgumentException.class, () -> service.handle(new GetGroupByCodeQuery("bad")));
+    }
+
+    // ---- AUDIT SEC-01
+    @Test void groupByIdIsOnlyVisibleToMembers() {
+        var group = group(10, user(1, "lider"));
+        when(groups.findById(10L)).thenReturn(Optional.of(group));
+        when(profiles.existsByGroup_IdAndUser_Id(10L, 1L)).thenReturn(true);
+        assertSame(group, service.handle(new GetGroupForMemberQuery(10L, 1L)).orElseThrow());
+        assertThrows(AccessDeniedException.class, () -> service.handle(new GetGroupForMemberQuery(10L, 99L)));
+        assertTrue(service.handle(new GetGroupForMemberQuery(11L, 1L)).isEmpty());
     }
 }

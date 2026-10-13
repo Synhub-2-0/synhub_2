@@ -63,8 +63,10 @@ public class TaskController {
 
     @GetMapping("/{taskId}")
     @Operation(summary = "Get a task by ID", description = "Retrieves the details of a single task using its unique identifier.")
-    public ResponseEntity<TaskResource> getTaskById(@PathVariable Long taskId) {
-        var getTaskByIdQuery = new GetTaskByIdQuery(taskId);
+    public ResponseEntity<TaskResource> getTaskById(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getTaskByIdQuery = new GetTaskByIdQuery(taskId, user.getId());
         var task = this.taskQueryService.handle(getTaskByIdQuery)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
         var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
@@ -73,8 +75,11 @@ public class TaskController {
 
     @GetMapping("/group/{groupId}")
     @Operation(summary = "Get tasks by group", description = "Retrieves all tasks belonging to a group, optionally filtered by task status.")
-    public ResponseEntity<List<TaskResource>> getByGroup(@PathVariable Long groupId, @RequestParam(required = false) TaskStatus status) {
-        var getTasksByGroupIdAndStatusQuery = new GetTasksByGroupIdAndStatus(groupId, status);
+    public ResponseEntity<List<TaskResource>> getByGroup(@PathVariable Long groupId, @RequestParam(required = false) TaskStatus status,
+                                                         @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getTasksByGroupIdAndStatusQuery = new GetTasksByGroupIdAndStatus(groupId, status, user.getId());
         var tasks = this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery);
         var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(taskResources);
@@ -82,8 +87,11 @@ public class TaskController {
 
     @GetMapping("/group/{groupId}/user/{userId}")
     @Operation(summary = "Get tasks by group and user", description = "Retrieves all tasks within a group that are assigned to a specific user.")
-    public ResponseEntity<List<TaskResource>> getTaskByGroupIdAndUserId(@PathVariable Long groupId, @PathVariable Long userId) {
-        var getTasksByGroupIdAndUserIdQuery = new GetTasksByGroupIdAndUserIdQuery(groupId, userId);
+    public ResponseEntity<List<TaskResource>> getTaskByGroupIdAndUserId(@PathVariable Long groupId, @PathVariable Long userId,
+                                                                        @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getTasksByGroupIdAndUserIdQuery = new GetTasksByGroupIdAndUserIdQuery(groupId, userId, user.getId());
         var tasks = this.taskQueryService.handle(getTasksByGroupIdAndUserIdQuery);
         var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(taskResources);

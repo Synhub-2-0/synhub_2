@@ -11,8 +11,8 @@ Todos requieren token.
 | Método | Ruta | Cuerpo / parámetros | Respuesta | Regla |
 |---|---|---|---|---|
 | `POST` | `/` | `CreateRequestResource { description, requestType }` | `201 RequestResource` | Ver "Reglas al crear". |
-| `GET` | `/` | — | `200 RequestResource[]` | Sin control de acceso por rol. |
-| `GET` | `/{requestId}` | — | `200` · `404` · `400` si la request es de otra tarea | — |
+| `GET` | `/` | — | `200 RequestResource[]` · `403` · `404` | Solo integrantes del grupo de la tarea. |
+| `GET` | `/{requestId}` | — | `200` · `404` · `400` si la request es de otra tarea | Solo integrantes del grupo de la tarea (403). |
 | `PUT` | `/{requestId}/status/{status}` | `status` = `APPROVED` \| `REJECTED` | `200 RequestResource` | Ver "Reglas al revisar". |
 | `DELETE` | `/{requestId}` | — | `204` · `400` si no existe | **Sin control de acceso.** |
 
@@ -53,14 +53,14 @@ Todos requieren token.
    - `REJECTED`: si la tarea sigue `COMPLETED`, llama a `applySubmissionReview(taskId, false)` → `IN_PROGRESS`; si no, solo cierra la request.
 5. `MODIFICATION` y `EXPIRED` no modifican la tarea.
 
-`RequestQueryServiceImpl` maneja `GetRequestsByTaskIdQuery`, `GetRequestByIdQuery`, `GetRequestsByGroupIdQuery` (valida al líder con `GroupsContextFacade` y filtra en memoria) y `GetAllRequestsQuery` (sin uso).
+`RequestQueryServiceImpl` maneja `GetRequestsByTaskIdQuery` y `GetRequestByIdQuery` (solo integrantes del grupo de la tarea, vía `TasksContextFacade` + `GroupsContextFacade.isMember`), `GetRequestsByGroupIdQuery` (valida al líder con `GroupsContextFacade` y filtra en memoria) y `GetAllRequestsQuery` (sin uso).
 
 ## Dependencias
 
 | Hacia | Mediante | Para |
 |---|---|---|
 | tasks | `TasksContextFacade` (ACL) | Cargar la tarea y aplicar el resultado de la revisión. |
-| groups | `GroupsContextFacade` (ACL) | Saber quién es el líder del grupo. |
+| groups | `GroupsContextFacade` (ACL) | Saber quién es el líder del grupo y si el solicitante es integrante. |
 | iam | `UserQueryService` (en los controladores) | Resolver el usuario del token. |
 
 ## Persistencia
@@ -84,6 +84,5 @@ Todos requieren token.
 ## Observaciones
 
 - `DELETE /tasks/{taskId}/requests/{id}` no valida quién borra ni que la request pertenezca a `taskId`.
-- `GET /tasks/{taskId}/requests` no valida que el solicitante sea del grupo.
 - `RequestController` tiene `@CrossOrigin(origins = "*")` redundante: el CORS ya se configura en `WebSecurityConfiguration`.
 - `DeleteAllRequestsByTaskIdCommand` tiene handler pero nadie lo invoca (ver la observación sobre borrado en [tasks/backend](../../tasks/backend/README.md)).

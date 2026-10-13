@@ -53,15 +53,17 @@ public class RequestController {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createRequestCommand = CreateRequestCommandFromResourceAssembler.toCommandFromResource(resource, taskId, user.getId());
         var requestId = this.requestCommandService.handle(createRequestCommand);
-        var request = this.requestQueryService.handle(new GetRequestByIdQuery(requestId))
+        var request = this.requestQueryService.handle(new GetRequestByIdQuery(requestId, user.getId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found"));
         return ResponseEntity.status(HttpStatus.CREATED).body(RequestResourceFromEntityAssembler.toResourceFromEntity(request));
     }
 
     @GetMapping
     @Operation(summary = "Get requests from a task", description = "Get a list of requests from a task id")
-    public ResponseEntity<List<RequestResource>> getRequestsByTaskId(@PathVariable Long taskId) {
-        var getRequestsByTaskIdQuery = new GetRequestsByTaskIdQuery(taskId);
+    public ResponseEntity<List<RequestResource>> getRequestsByTaskId(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getRequestsByTaskIdQuery = new GetRequestsByTaskIdQuery(taskId, user.getId());
         var requests = this.requestQueryService.handle(getRequestsByTaskIdQuery);
 
         var requestResources = requests.stream()
@@ -72,8 +74,11 @@ public class RequestController {
 
     @GetMapping("/{requestId}")
     @Operation(summary = "Get a request by id", description = "Get a request by id")
-    public ResponseEntity<RequestResource> getRequestById(@PathVariable Long taskId, @PathVariable Long requestId) {
-        var getRequestByIdQuery = new GetRequestByIdQuery(requestId);
+    public ResponseEntity<RequestResource> getRequestById(@PathVariable Long taskId, @PathVariable Long requestId,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getRequestByIdQuery = new GetRequestByIdQuery(requestId, user.getId());
         var optionalRequest = this.requestQueryService.handle(getRequestByIdQuery);
 
         if (optionalRequest.isEmpty()) {

@@ -1,7 +1,7 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
 import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
-import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupForMemberQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupMembersByGroupIdQuery;
 import com.hub.synhub_backend.groups.interfaces.rest.resources.UserInGroupResource;
 import com.hub.synhub_backend.groups.interfaces.rest.transform.UserInGroupResourceFromEntityAssembler;
@@ -61,9 +61,10 @@ public class GroupController {
 
     @GetMapping("/{groupId}")
     @Operation(summary = "Get group by id", description = "Get group by id")
-    public ResponseEntity<GroupResource> getGroupById(@PathVariable Long groupId) {
-        var getGroupByIdQuery = new GetGroupByIdQuery(groupId);
-        var group = this.groupQueryService.handle(getGroupByIdQuery)
+    public ResponseEntity<GroupResource> getGroupById(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var group = this.groupQueryService.handle(new GetGroupForMemberQuery(groupId, user.getId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Group with id " + groupId + " does not exist"));
         var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
         return ResponseEntity.ok(groupResource);
@@ -71,8 +72,10 @@ public class GroupController {
 
     @GetMapping("/{groupId}/members")
     @Operation(summary = "Get the members of a group", description = "Get the members of a group with their role in it")
-    public ResponseEntity<List<UserInGroupResource>> getGroupMembers(@PathVariable Long groupId) {
-        var getGroupMembersByGroupIdQuery = new GetGroupMembersByGroupIdQuery(groupId);
+    public ResponseEntity<List<UserInGroupResource>> getGroupMembers(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getGroupMembersByGroupIdQuery = new GetGroupMembersByGroupIdQuery(groupId, user.getId());
         var profiles = this.groupQueryService.handle(getGroupMembersByGroupIdQuery);
         var memberResources = profiles.stream()
                 .map(profile -> UserInGroupResourceFromEntityAssembler.toResourceFromEntity(profile.getUser(), profile.getRoleInGroup()))

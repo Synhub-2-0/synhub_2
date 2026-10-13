@@ -91,8 +91,10 @@ public class InvitationController {
 
     @GetMapping("/group")
     @Operation(summary = "Gets invitations by group id", description = "Gets invitations by group id")
-    public ResponseEntity<List<InvitationResource>> getInvitationsByGroup(@RequestParam Long groupId) {
-        var getInvitationsByGroupIdQuery = new GetInvitationsByGroupIdQuery(groupId);
+    public ResponseEntity<List<InvitationResource>> getInvitationsByGroup(@RequestParam Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var getInvitationsByGroupIdQuery = new GetInvitationsByGroupIdQuery(groupId, user.getId());
         var invitations = this.invitationQueryService.handle(getInvitationsByGroupIdQuery);
         var invitationResources = invitations.stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity).toList();
         return ResponseEntity.ok(invitationResources);

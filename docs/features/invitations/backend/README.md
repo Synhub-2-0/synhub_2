@@ -25,7 +25,7 @@ Todos requieren token.
 | `POST` | `/api/v1/invitations/accept` | `?invitationId=` | `200` (sin cuerpo) | Solo el invitado (403). 409 si ya es miembro. |
 | `DELETE` | `/api/v1/invitations/{invitationId}` | — | `204` | El invitado (rechaza) o el líder del grupo (cancela); cualquier otro usuario recibe 403. |
 | `GET` | `/api/v1/invitations/user` | — | `200 InvitationResource[]` | Invitaciones recibidas por el usuario del token. |
-| `GET` | `/api/v1/invitations/group` | `?groupId=` | `200 InvitationResource[]` | Invitaciones pendientes de un grupo. **No valida** que quien consulta sea el líder. |
+| `GET` | `/api/v1/invitations/group` | `?groupId=` | `200 InvitationResource[]` · `403` · `404` | Invitaciones pendientes de un grupo. Solo el líder. |
 
 `InvitationResource = { id, group: GroupResourceReduced, user: UserResource }`
 
@@ -41,5 +41,4 @@ Todos requieren token.
 
 ## Observaciones
 
-- `GET /invitations/group` no comprueba el rol del solicitante: cualquier usuario autenticado puede ver a quién se invitó a un grupo.
 - `InvitationRepository.findByUser_IdAndGroup_Id` no se usa.

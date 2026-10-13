@@ -62,7 +62,7 @@ class AuthorizationApiTests extends ApiTestSupport {
     }
 
     // ---- Esperados (auditoría)
-    @Disabled("AUDIT SEC-01: las lecturas de un grupo no verifican la pertenencia del solicitante")
+    // AUDIT SEC-01 (resuelto)
     @Test void strangerCannotReadAnotherGroup() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());
@@ -78,7 +78,7 @@ class AuthorizationApiTests extends ApiTestSupport {
                 () -> assertEquals(403, get("/tasks/" + taskId + "/requests", token).status(), "GET task requests"));
     }
 
-    @Disabled("AUDIT SEC-01: cualquier miembro (no solo el líder) ve las invitaciones del grupo")
+    // AUDIT SEC-01 (resuelto)
     @Test void onlyTheLeaderSeesPendingInvitations() {
         var team = team();
         assertEquals(200, get("/invitations/group?groupId=" + team.groupId(), team.leader().token()).status());

@@ -11,6 +11,7 @@ import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.domain.services.RequestQueryService;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -23,10 +24,18 @@ public class RequestQueryServiceImpl implements RequestQueryService {
 
     private final RequestRepository requestRepository;
     private final GroupsContextFacade groupsContextFacade;
+    private final TasksContextFacade tasksContextFacade;
 
-    public RequestQueryServiceImpl(RequestRepository requestRepository, GroupsContextFacade groupsContextFacade) {
+    public RequestQueryServiceImpl(RequestRepository requestRepository, GroupsContextFacade groupsContextFacade,
+                                   TasksContextFacade tasksContextFacade) {
         this.requestRepository = requestRepository;
         this.groupsContextFacade = groupsContextFacade;
+        this.tasksContextFacade = tasksContextFacade;
+    }
+
+    private void requireMember(Long groupId, Long requesterId) {
+        if (!groupsContextFacade.isMember(groupId, requesterId))
+            throw new AccessDeniedException("Only members of the group can see the requests of its tasks");
     }
 
     @Override
@@ -36,12 +45,17 @@ public class RequestQueryServiceImpl implements RequestQueryService {
 
     @Override
     public List<Request> handle(GetRequestsByTaskIdQuery query) {
+        var task = tasksContextFacade.getTaskById(query.taskId())
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + query.taskId() + " does not exist"));
+        requireMember(task.getProfile().getGroup().getId(), query.requesterId());
         return requestRepository.findByTaskId(query.taskId());
     }
 
     @Override
     public Optional<Request> handle(GetRequestByIdQuery query) {
-        return this.requestRepository.findById(query.requestId());
+        var request = this.requestRepository.findById(query.requestId());
+        request.ifPresent(found -> requireMember(found.getTask().getProfile().getGroup().getId(), query.requesterId()));
+        return request;
     }
 
     @Override

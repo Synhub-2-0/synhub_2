@@ -8,6 +8,7 @@ import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -73,6 +74,20 @@ public class GroupQueryServiceImpl implements GroupQueryService {
         if (!this.groupRepository.existsById(query.groupId())) {
             throw new ResourceNotFoundException("Group with id " + query.groupId() + " does not exist");
         }
+        requireMember(query.groupId(), query.requesterId());
         return this.groupProfileRepository.findByGroup_Id(query.groupId());
+    }
+
+    @Override
+    public Optional<Group> handle(GetGroupForMemberQuery query) {
+        var group = this.groupRepository.findById(query.groupId());
+        group.ifPresent(found -> requireMember(found.getId(), query.requesterId()));
+        return group;
+    }
+
+    private void requireMember(Long groupId, Long requesterId) {
+        if (!this.groupProfileRepository.existsByGroup_IdAndUser_Id(groupId, requesterId)) {
+            throw new AccessDeniedException("Only members of the group can access it");
+        }
     }
 }
