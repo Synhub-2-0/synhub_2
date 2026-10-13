@@ -36,10 +36,10 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 
 | Capa | Archivos | LISTO / PREVIO | LISTO-PARCIAL | PENDIENTE |
 |---|---|---|---|---|
-| Backend: pruebas unitarias | 26 | 19 | 7 | 0 |
+| Backend: pruebas unitarias | 27 | 20 | 7 | 0 |
 | Backend: API (integración) | 6 | 2 | 4 | 0 |
 | Frontend | 37 | 33 | 4 | 0 |
-| **Total** | **69** | **54** | **15** | **0** |
+| **Total** | **70** | **55** | **15** | **0** |
 
 ---
 
@@ -55,6 +55,7 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 | B-IAM-04 | `iam/UserQueryServiceImplTest.java` | `UserQueryServiceImpl` | por id, por username, todos · usuarios de un grupo a partir de las membresías | — | LISTO |
 | B-IAM-05 | `iam/IamContextFacadeImplTest.java` | `IamContextFacadeImpl` | `fetchUserIdByUsername` (encontrado → id, no encontrado → 0) · `fetchUsernameByUserId` (vacío si no existe) · `fetchUserById` con id null o ≤ 0 → vacío · `createUser` con rol por defecto | — | LISTO |
 | B-IAM-06 | `iam/HashingServiceImplTest.java` | `HashingServiceImpl` (BCrypt) | `encode` ≠ texto plano · `matches` verdadero y falso | — | LISTO |
+| B-IAM-07 | `iam/BearerAuthorizationRequestFilterTest.java` | `BearerAuthorizationRequestFilter` | un token válido autentica la petición · el token nunca aparece en los logs, en ningún nivel · la validación por petición no se registra en INFO | SEC-03 | LISTO |
 | B-GRP-01 | `groups/GroupDomainTest.java` | `Group`, `GroupCode`, `ImgUrl`, `GroupProfile` | `GroupCode.random` cumple el formato · el código inválido lanza excepción · `ImgUrl` null → "" · `getLeader` y `getMemberCount` · `updateInformation` ignora los vacíos · `addTask` en una membresía nueva | BUG-12 | LISTO-PARCIAL |
 | B-GRP-02 | `groups/GroupCommandServiceImplTest.java` | `GroupCommandServiceImpl` | crear: el creador queda líder y se regenera el código si colisiona · líder inexistente → 404 · actualizar: solo el líder · borrar: solo el líder, grupo inexistente → 404 · quitar miembro: OK, no está en el grupo → 404, líder → excepción (409 esperado) | BUG-10 | LISTO-PARCIAL |
 | B-GRP-03 | `groups/GroupQueryServiceImplTest.java` | `GroupQueryServiceImpl` | grupos por rol filtra por `GroupRole` · grupos por usuario · miembros de un grupo inexistente → 404 · por código con formato inválido → `IllegalArgumentException` | — | LISTO |
