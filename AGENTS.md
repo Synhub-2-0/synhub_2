@@ -10,6 +10,7 @@ Monorepo de **SynHub**: `frontend/` (Angular 22) y `backend/` (Spring Boot 4.1, 
 3. Para decisiones de estructura: [`docs/architecture/backend.md`](docs/architecture/backend.md) y [`docs/architecture/frontend.md`](docs/architecture/frontend.md).
 4. Para endpoints: [`docs/architecture/rest-api.md`](docs/architecture/rest-api.md).
 5. Si el cambio toca varias features: [`docs/architecture/cross-feature-ownership.md`](docs/architecture/cross-feature-ownership.md) indica a qué contexto le pertenece.
+6. Para corregir defectos o deuda técnica: [`docs/AUDITORIA.md`](docs/AUDITORIA.md) lista los hallazgos con su ID, evidencia, solución, criterios de aceptación y plan por fases. Sigue sus instrucciones y actualiza la columna **Estado** al resolver cada uno.
 
 ## Reglas del proyecto
 
