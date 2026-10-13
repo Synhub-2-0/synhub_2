@@ -222,7 +222,13 @@ El archivo figura en `backend/.gitignore`, pero **está versionado**. Si un ento
 
 **No hay validación de entrada** · Media · Reproducido
 
-**Evidencia.** Hay **0** usos de `@Valid` en el backend y ningún `@NotBlank`/`@Email`/`@Size` en `interfaces/rest/resources`. Reproducción: un registro con contraseña `"1"` y email `"no-es-email"` → **201**.
+**Evidencia.** Hay **0** usos de `@Valid` en el backend y ningún `@NotBlank`/`@Email`/`@Size` en `interfaces/rest/resources`. Reproducción:
+
+- Un registro con contraseña `"1"` y email `"no-es-email"` → **201**.
+- `difficulty: 9` en `POST /tasks` → **200**.
+- Un enum inválido en un parámetro (`PUT /tasks/{id}/status?status=ARCHIVED`) → **500**: `MethodArgumentTypeMismatchException` cae en el handler genérico.
+
+Hay pruebas que lo cubren en `api/ValidationApiTests`.
 
 **Solución propuesta.**
 
@@ -232,7 +238,7 @@ El archivo figura en `backend/.gitignore`, pero **está versionado**. Si un ento
    - `CreateRequestResource.requestType`: obligatorio.
    - `difficulty`: `@Min(1) @Max(5)`.
 2. Agregar `@Valid` en cada `@RequestBody`.
-3. En `GlobalExceptionHandler`, manejar `MethodArgumentNotValidException`, `ConstraintViolationException` y `HttpMessageNotReadableException` → **400**, con un mensaje que liste los campos.
+3. En `GlobalExceptionHandler`, manejar `MethodArgumentNotValidException`, `ConstraintViolationException`, `HttpMessageNotReadableException` y `MethodArgumentTypeMismatchException` → **400**, con un mensaje que liste los campos.
 4. Frontend: agregar validadores equivalentes (ver [FE-03](#fe-03)).
 
 **Criterios de aceptación.** Los casos de [BUG-03](#bug-03), [BUG-06](#bug-06) y el registro débil responden **400** con el campo en el mensaje. Hay tests de controlador para cada resource.

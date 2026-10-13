@@ -37,9 +37,9 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 | Capa | Archivos | LISTO / PREVIO | LISTO-PARCIAL | PENDIENTE |
 |---|---|---|---|---|
 | Backend: pruebas unitarias | 26 | 19 | 7 | 0 |
-| Backend: API (integración) | 6 | 0 | 0 | 6 |
+| Backend: API (integración) | 6 | 2 | 4 | 0 |
 | Frontend | 37 | 0 | 0 | 37 |
-| **Total** | **69** | **19** | **7** | **43** |
+| **Total** | **69** | **21** | **11** | **37** |
 
 ---
 
@@ -82,12 +82,12 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|
-| B-API-00 | `api/ApiTestSupport.java` | Utilidad compartida | cliente HTTP, registro y login, creación de grupo, invitación y tarea | — | PENDIENTE |
-| B-API-01 | `api/AuthApiTests.java` | IAM por HTTP | sign-up 201 · sign-in 200 con token · contraseña incorrecta 401 · sin token 401 · token alterado 401 · `/users/me` · `/actuator/health` público · rol `ROLE_ADMIN` ignorado · email duplicado 409 · rol inválido no da 500 | SEC-05, BUG-04, BUG-05 | PENDIENTE |
-| B-API-02 | `api/TaskLifecycleApiTests.java` | Flujo completo | crear grupo → invitar → aceptar → miembro listado · crear tarea → miembro `COMPLETED` → entrega → líder aprueba → `DONE` · rechazar → `IN_PROGRESS` · `DONE` directo 409 · segunda entrega pendiente 409 · bandeja del líder filtra por estado | — | PENDIENTE |
-| B-API-03 | `api/AuthorizationApiTests.java` | Matriz de permisos | (vigentes) miembro no puede editar ni borrar el grupo, ni invitar, ni crear o borrar tareas, ni revisar · ajeno no puede cambiar el estado · (esperados) ajeno → 403 en las lecturas del grupo, tareas, requests e invitaciones · ajeno no borra requests · `GET /users` solo admin | SEC-01, SEC-02, SEC-06 | PENDIENTE |
-| B-API-04 | `api/ValidationApiTests.java` | Validación de entrada | (esperados) tarea sin título 400 · grupo sin nombre 400 · registro con contraseña débil o email inválido 400 · difficulty fuera de 1..5 400 · `GroupCode` inválido 400 (vigente) | SEC-07, BUG-03, BUG-06 | PENDIENTE |
-| B-API-05 | `api/CascadeDeleteApiTests.java` | Borrados | (vigente) borrar un grupo vacío 204 · borrar una tarea sin requests 204 · (esperados) tarea con requests 204 · grupo con tareas y requests 204 | BUG-01, BUG-02 | PENDIENTE |
+| B-API-00 | `api/ApiTestSupport.java` | Utilidad compartida | cliente HTTP, registro y login, creación de grupo, invitación y tarea | — | LISTO |
+| B-API-01 | `api/AuthApiTests.java` | IAM por HTTP | sign-up 201 · sign-in 200 con token · contraseña incorrecta 401 · sin token 401 · token alterado 401 · `/users/me` · `/actuator/health` público · rol `ROLE_ADMIN` ignorado · email duplicado 409 · rol inválido no da 500 | SEC-05, BUG-04, BUG-05 | LISTO-PARCIAL |
+| B-API-02 | `api/TaskLifecycleApiTests.java` | Flujo completo | crear grupo → invitar → aceptar → miembro listado · crear tarea → miembro `COMPLETED` → entrega → líder aprueba → `DONE` · rechazar → `IN_PROGRESS` · `DONE` directo 409 · segunda entrega pendiente 409 · bandeja del líder filtra por estado | — | LISTO |
+| B-API-03 | `api/AuthorizationApiTests.java` | Matriz de permisos | (vigentes) miembro no puede editar ni borrar el grupo, ni invitar, ni crear o borrar tareas, ni revisar · ajeno no puede cambiar el estado · (esperados) ajeno → 403 en las lecturas del grupo, tareas, requests e invitaciones · ajeno no borra requests · `GET /users` solo admin | SEC-01, SEC-02, SEC-06 | LISTO-PARCIAL |
+| B-API-04 | `api/ValidationApiTests.java` | Validación de entrada | (vigentes) `GroupCode` mal formado 400 · código inexistente 404 · tipo de request inválido 400 · un miembro no crea requests `EXPIRED` · (esperados) tarea sin título 400 · grupo sin nombre 400 · registro débil 400 · difficulty fuera de 1..5 400 · enum inválido en un parámetro 400 | SEC-07, BUG-03, BUG-06 | LISTO-PARCIAL |
+| B-API-05 | `api/CascadeDeleteApiTests.java` | Borrados | (vigente) borrar un grupo vacío 204 · borrar una tarea sin requests 204 · (esperados) tarea con requests 204 · grupo con tareas y requests 204 | BUG-01, BUG-02 | LISTO-PARCIAL |
 
 ## Frontend
 
