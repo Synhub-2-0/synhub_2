@@ -85,4 +85,3 @@ Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsBy
 
 ## Observaciones
 
-- `RequestController` tiene `@CrossOrigin(origins = "*")` redundante: el CORS ya se configura en `WebSecurityConfiguration`.

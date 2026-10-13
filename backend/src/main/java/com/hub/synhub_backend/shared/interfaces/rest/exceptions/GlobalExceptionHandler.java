@@ -16,6 +16,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -57,6 +60,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         return badRequest("Invalid value for parameter '" + ex.getName() + "'", request);
+    }
+
+    /** Ruta inexistente (404), método no soportado (405) o tipo de contenido no soportado (415): conservan su estado. */
+    @ExceptionHandler({NoResourceFoundException.class, HttpRequestMethodNotSupportedException.class, HttpMediaTypeNotSupportedException.class})
+    public ResponseEntity<ErrorResponse> handleFrameworkStatus(Exception ex, HttpServletRequest request) {
+        var status = HttpStatus.valueOf(((org.springframework.web.ErrorResponse) ex).getStatusCode().value());
+        var error = ErrorResponse.of(status.value(), status.getReasonPhrase(), status.getReasonPhrase(), request.getRequestURI());
+        return ResponseEntity.status(status).body(error);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)

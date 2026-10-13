@@ -69,8 +69,8 @@ Los riesgos principales son tres:
 | [SEC-05](#sec-05) | Media | Backend · iam | El registro permite autoasignarse `ROLE_ADMIN` | Código | Resuelto |
 | [SEC-06](#sec-06) | Media | Backend · iam | `/users` expone a todos los usuarios con su email | Reproducido | Resuelto (email visible por HUM-06) |
 | [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Resuelto (frontend: FE-03) |
-| [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Pendiente |
-| [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Pendiente |
+| [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Resuelto |
+| [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Resuelto (ECS: HUM-02) |
 | [SEC-10](#sec-10) | Media | Frontend · sesión | Sesión: el 401 no cierra la sesión; token de 7 días en `localStorage` | Código | Pendiente |
 | [BUG-04](#bug-04) | Media | Backend · iam | Email duplicado → 500 (la validación compara el username) | Reproducido | Resuelto |
 | [BUG-05](#bug-05) | Media | Backend · iam | Rol inexistente en el registro → 500 | Reproducido | Resuelto (por SEC-05) |
@@ -81,7 +81,7 @@ Los riesgos principales son tres:
 | [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Pendiente |
 | [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Pendiente |
 | [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Pendiente |
-| [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Pendiente |
+| [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Resuelto |
 | [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Resuelto (ver [TESTS.md](../TESTS.md)) |
 | [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Pendiente |
 | [SEC-12](#sec-12) | Baja | Docker · nginx | Faltan cabeceras de seguridad HTTP | Código | Pendiente |
@@ -265,6 +265,8 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 
 **Criterios de aceptación.** Una petición con `Origin: https://evil.example` no recibe `Access-Control-Allow-Origin`. Con el perfil `prod`, `/swagger-ui.html` → 404.
 
+**Resolución.** CORS lee `app.cors.allowed-origins` (`CORS_ALLOWED_ORIGINS`), con credenciales para la cookie de sesión (HUM-04). Swagger está apagado en la configuración base y solo lo enciende el perfil `dev`.
+
 ### SEC-09
 
 **`TestController` activo en todos los despliegues** · Media · Código
@@ -274,6 +276,8 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 **Solución propuesta.** **Eliminar `TestController`** (recomendado: no tiene uso). Además, definir `SPRING_PROFILES_ACTIVE=prod` en el `Dockerfile` raíz, en `backend/Dockerfile` y en compose (ver [HUM-02](#decisiones-humanas-no-automatizar) para ECS).
 
 **Criterios de aceptación.** `/api/v1/tests/*` → 404 o 401 en el contenedor.
+
+**Resolución.** `TestController` eliminado; `SPRING_PROFILES_ACTIVE=prod` en ambos Dockerfile y en compose. Al probarlo apareció otro 500: cualquier ruta inexistente (`NoResourceFoundException`) o método no soportado caía en el handler genérico. Ahora responden 404, 405 o 415 (`api/HardeningApiTests`).
 
 ### SEC-10
 

@@ -15,7 +15,7 @@
 | Verbos | `GET` lee, `POST` crea (o ejecuta una acción: `/invitations/accept`), `PUT` actualiza y `DELETE` borra. |
 | Códigos | `200`/`201` éxito, `204` borrado, `400` datos inválidos, `401` sin token, `403` sin permiso de negocio, `404` no existe, `409` regla de negocio, `503` servicio externo (Bedrock) no disponible. |
 | Errores | `{ timestamp, status, error, message, path }` (`ErrorResponse`). |
-| Documentación viva | Swagger UI en `/swagger-ui.html`; OpenAPI en `/v3/api-docs`. |
+| Documentación viva | Swagger UI en `/swagger-ui.html`; OpenAPI en `/v3/api-docs`. Solo con el perfil `dev`. |
 
 **Desviaciones**: `POST /groups`, `POST /tasks` y `POST /invitations` responden `200` en lugar de `201`. La revisión de una request usa un segmento de ruta (`PUT …/status/{status}`), mientras que en tasks el estado va como query param (`PUT /tasks/{id}/status?status=`).
 
@@ -70,8 +70,6 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | PUT | `/tasks/{taskId}` | `TaskController` | `TasksStore.updateTask` |
 | PUT | `/tasks/{taskId}/status?status=` | `TaskController` | `TasksStore.updateTaskStatus` |
 | DELETE | `/tasks/{taskId}` | `TaskController` | `TasksStore.deleteTask` |
-| GET | `/tests/fetch-user` | `TestController` (solo fuera de `prod`) | — |
-| POST | `/tests/token` | `TestController` (solo fuera de `prod`) | — |
 
 ### Requests: [docs](../features/requests/README.md)
 
@@ -100,4 +98,4 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | Método | Ruta | Uso |
 |---|---|---|
 | GET | `/actuator/health` | Health check del ALB y de Docker. |
-| GET | `/swagger-ui.html`, `/v3/api-docs` | Documentación OpenAPI. |
+| GET | `/swagger-ui.html`, `/v3/api-docs` | Documentación OpenAPI (solo perfil `dev`). |

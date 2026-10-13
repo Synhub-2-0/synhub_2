@@ -29,8 +29,9 @@ docker compose up --build   # http://localhost:8080
 
 Perfiles:
 
-- **Por defecto (producción):** sin secretos en el repositorio; todo llega por variables de entorno.
-- **`dev`** (`SPRING_PROFILES_ACTIVE=dev`): `application-dev.properties` define una contraseña de base y un `JWT_SECRET` locales. Nunca usarlo en un entorno desplegado.
+- **Base (`application.properties`):** segura por defecto. Sin secretos en el repositorio (todo llega por variables de entorno), Swagger apagado y CORS solo para los orígenes de `CORS_ALLOWED_ORIGINS` (vacío = solo mismo origen).
+- **`prod`** (`SPRING_PROFILES_ACTIVE=prod`): lo fijan el `Dockerfile` raíz, `backend/Dockerfile` y compose. Solo apaga `show-sql`. En ECS se define en la task definition (HUM-02).
+- **`dev`** (`SPRING_PROFILES_ACTIVE=dev`): `application-dev.properties` define una contraseña de base y un `JWT_SECRET` locales, enciende Swagger (`/swagger-ui.html`) y permite CORS desde `http://localhost:4200`. Nunca usarlo en un entorno desplegado.
 - **Pruebas:** `src/test/resources/config/application.properties` define un secreto de prueba; la base la pone Testcontainers.
 
 
@@ -40,6 +41,7 @@ Perfiles:
 | `DATABASE_USERNAME` | `spring.datasource.username` | `postgres` | — |
 | `DATABASE_PASSWORD` | `spring.datasource.password` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio. |
 | `JWT_SECRET` | `authorization.jwt.secret` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio, al menos 32 bytes: si falta o es más corto, la app no arranca. En AWS se inyecta desde SSM. |
+| `CORS_ALLOWED_ORIGINS` | `app.cors.allowed-origins` | vacío (`http://localhost:4200` en `dev`) | Orígenes separados por comas. En producción no hace falta: front y API comparten origen. |
 | `AWS_REGION` | `ai.bedrock.region` | `us-east-1` | — |
 | `BEDROCK_MODEL_ID` | `ai.bedrock.model-id` | Claude Haiku 4.5 (perfil `us.`) | — |
 | Credenciales de AWS | — | cadena por defecto del SDK | Necesarias solo para las funciones de IA. |

@@ -52,7 +52,6 @@ stateDiagram-v2
 - **`DONE` lo decide requests**: requests llama a `TasksContextFacade.applySubmissionReview` al revisar una entrega. Es la única vía hacia `DONE`.
 - **Campos de IA en `Task`** (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`): se persisten en tasks, pero los produce [ai](../ai/README.md) y los consume su informe de grupo.
 - **Métricas**: `TaskMetricsQueryServiceImpl` ([metrics](../metrics/README.md)) lee `TaskRepository` directamente.
-- **`TestController`** (`/api/v1/tests`, solo fuera de `prod`) está en el paquete tasks, pero es una herramienta de depuración de IAM: lee el usuario del token y genera tokens.
 - **Frontend**: `TaskCard` (tasks) usa `RequestsStore`; `TaskForm` usa `AiStore` y `GroupsStore`; `LeaderTasks` incrusta `AiReportCard` (ai); `Home` (shared) y `GroupDetails` (groups) usan `TasksStore`.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).

@@ -4,6 +4,7 @@ import com.hub.synhub_backend.iam.infrastructure.authorization.sfs.pipeline.Bear
 import com.hub.synhub_backend.iam.infrastructure.hashing.bcrypt.BCryptHashingService;
 import com.hub.synhub_backend.iam.infrastructure.tokens.jwt.BearerTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,6 +40,10 @@ public class WebSecurityConfiguration {
   private final BCryptHashingService hashingService;
 
   private final AuthenticationEntryPoint unauthorizedRequestHandler;
+
+  /** Orígenes con CORS permitido (AUDIT SEC-08). Vacío en producción: front y API comparten origen. */
+  @Value("${app.cors.allowed-origins:}")
+  private List<String> allowedOrigins;
 
   /**
    * This method creates the Bearer Authorization Request Filter.
@@ -91,9 +96,10 @@ public class WebSecurityConfiguration {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.cors(corsConfigurer -> corsConfigurer.configurationSource( request -> {
       var cors = new CorsConfiguration();
-      cors.setAllowedOrigins(List.of("*"));
-      cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
-      cors.setAllowedHeaders(List.of("*"));
+      cors.setAllowedOrigins(allowedOrigins.stream().filter(origin -> !origin.isBlank()).toList());
+      cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+      cors.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+      cors.setAllowCredentials(true);
       return cors;
     } ));
     http.csrf(csrfConfigurer -> csrfConfigurer.disable())

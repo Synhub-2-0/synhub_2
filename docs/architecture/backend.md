@@ -171,15 +171,15 @@ flowchart LR
     AZ -->|no| E[UnauthorizedRequestHandlerEntryPoint → 401]
 ```
 
-- `WebSecurityConfiguration`: sesión `STATELESS`, CSRF deshabilitado, CORS abierto y `@EnableMethodSecurity`.
-- Rutas públicas: `/api/v1/authentication/**`, `/actuator/health`, `/v3/api-docs/**`, `/swagger-ui/**`, `/swagger-resources/**` y `/webjars/**`.
+- `WebSecurityConfiguration`: sesión `STATELESS`, CSRF deshabilitado, CORS solo para `app.cors.allowed-origins` (con credenciales) y `@EnableMethodSecurity`.
+- Rutas públicas: `/api/v1/authentication/**`, `/actuator/health`, `/v3/api-docs/**`, `/swagger-ui/**`, `/swagger-resources/**` y `/webjars/**`. Swagger solo existe con el perfil `dev`.
 - **La autorización de negocio** (ser líder, ser el asignado o ser el invitado) no usa roles de Spring: la verifica cada command o query service y responde con `AccessDeniedException`.
 
 ## 8. Otros elementos transversales
 
 | Elemento | Dónde |
 |---|---|
-| OpenAPI / Swagger UI | `shared/domain/model/infrastructure/documentation/openapi/configuration/OpenApiConfiguration` ("SynHub API", esquema bearer). Disponible en `/swagger-ui.html`. |
+| OpenAPI / Swagger UI | `shared/domain/model/infrastructure/documentation/openapi/configuration/OpenApiConfiguration` ("SynHub API", esquema bearer). Disponible en `/swagger-ui.html` solo con el perfil `dev`. |
 | Seed de roles | `iam/application/internal/eventhandlers/ApplicationReadyEventHandler` |
 | Tarea programada | `tasks/domain/services/TaskStatusScheduler` (cada 30 s) |
 | Salud | Actuator `/actuator/health` (lo usan el ALB y el `HEALTHCHECK` de Docker) |
@@ -204,7 +204,6 @@ Están documentadas para no copiarlas en código nuevo:
 | Proceso programado en `domain/services` | `tasks/domain/services/TaskStatusScheduler` |
 | Servicio de dominio que devuelve DTOs REST | `metrics/domain/model/services/TaskMetricsQueryService` |
 | Repositorios de otro contexto usados directamente | `TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`, `GroupCommandServiceImpl`, `InvitationCommandServiceImpl` |
-| Controlador de depuración de IAM en tasks | `tasks/interfaces/rest/TestController` (`@Profile("!prod")`) |
 | ACL definidas pero sin uso | `ExternalIamService` (shared), `ExternalTasksService` (groups) |
 
 ## 11. Cómo agregar un caso de uso

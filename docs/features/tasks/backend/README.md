@@ -27,7 +27,6 @@ TaskResource       = { id, title, description, dueDate, createdAt, updatedAt, st
 
 `UpdateTaskResource.requesterId` se ignora: el solicitante siempre se toma del token.
 
-**Depuración**: `TestController` (`/api/v1/tests/fetch-user` y `/api/v1/tests/token`) se activa solo cuando el perfil activo no es `prod` (`@Profile("!prod")`).
 
 ## Modelo de dominio
 

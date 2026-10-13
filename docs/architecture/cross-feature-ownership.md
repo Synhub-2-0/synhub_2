@@ -32,7 +32,6 @@ En orden de prioridad:
 | Campos de IA en `Task` (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`) | `tasks` | tasks, ai | **tasks** (persistencia) · **ai** (valores y significado) | ai sugiere y tasks guarda. |
 | `ExternalTasksService` | `groups/application/external` | groups → tasks | **groups** | Cliente de groups hacia la ACL de tasks (sin uso todavía). |
 | `ExternalIamService` | `shared/application/external` | → iam | **iam** (debería vivir en el consumidor) | Cliente genérico hacia la ACL de iam (sin uso). |
-| `TestController` (`/api/v1/tests`) | `tasks/interfaces/rest` | iam | **iam** | Lee el usuario del token y emite tokens; solo para depuración. |
 | Resolución del usuario actual en los controladores | todos | iam | **iam** | Patrón repetido: `UserQueryService` + `GetUserByUsernameQuery`. |
 
 ## Matriz del frontend
@@ -67,5 +66,4 @@ Pendientes para alinear el código con estos criterios:
 
 - Reemplazar los accesos directos a repositorios de otros contextos (`TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`) por métodos de las fachadas `*ContextFacade`.
 - Mover `GetUsersByGroupIdQuery` a groups.
-- Mover `TestController` a iam (o eliminarlo).
 - Llamar a `ExternalTasksService.deleteTasksByUserIdAndGroupId` cuando se exponga la expulsión de miembros (`RemoveMemberUserFromGroupCommand`).
