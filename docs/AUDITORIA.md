@@ -65,7 +65,7 @@ Los riesgos principales son tres:
 | [BUG-01](#bug-01) | Alta | Backend · tasks/requests | Borrar una tarea con requests → 500 | Reproducido | Resuelto |
 | [BUG-02](#bug-02) | Alta | Backend · groups | Borrar un grupo con tareas → 500 | Reproducido | Resuelto (pasa a soft delete por HUM-03) |
 | [BUG-03](#bug-03) | Alta | Backend · tasks | Se crean tareas sin título (null persistido) | Reproducido | Resuelto |
-| [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Pendiente |
+| [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Resuelto |
 | [SEC-05](#sec-05) | Media | Backend · iam | El registro permite autoasignarse `ROLE_ADMIN` | Código | Resuelto |
 | [SEC-06](#sec-06) | Media | Backend · iam | `/users` expone a todos los usuarios con su email | Reproducido | Resuelto (email visible por HUM-06) |
 | [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Resuelto (frontend: FE-03) |
@@ -85,8 +85,8 @@ Los riesgos principales son tres:
 | [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Resuelto (ver [TESTS.md](../TESTS.md)) |
 | [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Resuelto (Docker; AWS: HUM-02) |
 | [SEC-12](#sec-12) | Baja | Docker · nginx | Faltan cabeceras de seguridad HTTP | Código | Resuelto |
-| [DEP-02](#dep-02) | Baja | Backend · dependencias | Versiones de JJWT desalineadas | Código | Pendiente |
-| [DEP-03](#dep-03) | Baja | Dependencias | Sin escaneo automático de dependencias | Código | Pendiente |
+| [DEP-02](#dep-02) | Baja | Backend · dependencias | Versiones de JJWT desalineadas | Código | Resuelto (0.12.7) |
+| [DEP-03](#dep-03) | Baja | Dependencias | Sin escaneo automático de dependencias | Código | Resuelto |
 | [BUG-10](#bug-10) | Baja | Backend · groups | `LeaderCannotBeRemovedException` responde 500 | Código | Pendiente |
 | [BUG-11](#bug-11) | Baja | Backend · groups | `findByLeaderId` derivado de una propiedad inexistente | Código | Pendiente |
 | [BUG-12](#bug-12) | Baja | Backend · groups | `GroupProfile.tasks` es `null` en los constructores | Código | Pendiente |

@@ -77,6 +77,6 @@ Esto levanta la app y PostgreSQL; la web queda en http://localhost:8080. Variabl
 
 Los workflows están en `.github/workflows/` y solo se disparan cuando cambian archivos de su carpeta:
 
-- `frontend-deploy.yml`: tests y build del frontend; en `main` despliega a S3/CloudFront.
-- `backend-ci.yml`: `mvnw verify` (PostgreSQL con Testcontainers).
-- `backend-deploy.yml`: en `main` construye la imagen, la sube a ECR y redepliega en ECS.
+- `frontend-deploy.yml`: `npm audit`, tests y build del frontend; en `main`, si pasan, despliega a S3/CloudFront.
+- `backend.yml`: `mvnw verify` (PostgreSQL con Testcontainers); en `main`, si pasan, construye la imagen con el jar probado, la sube a ECR y redepliega en ECS.
+- `dependabot.yml`: actualizaciones semanales de dependencias.

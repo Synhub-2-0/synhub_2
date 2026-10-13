@@ -1,0 +1,21 @@
+# AUDIT DEP-03: revisión semanal de dependencias de cada parte del monorepo.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly }
+    groups:
+      angular:
+        patterns: ['@angular/*', '@angular-devkit/*', '@schematics/angular']
+  - package-ecosystem: maven
+    directory: /backend
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /backend
+    schedule: { interval: weekly }

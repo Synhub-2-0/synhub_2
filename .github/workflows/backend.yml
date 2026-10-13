@@ -1,8 +1,11 @@
-name: Backend Deploy
+name: Backend
+# Un solo workflow (AUDIT OPS-01): el deploy depende del job de tests, así un commit en rojo no llega a AWS.
 on:
+  pull_request:
+    paths: ['backend/**', '.github/workflows/backend.yml']
   push:
     branches: [main]
-    paths: ['backend/**', '.github/workflows/backend-deploy.yml']
+    paths: ['backend/**', '.github/workflows/backend.yml']
   workflow_dispatch:
 
 permissions:
@@ -16,7 +19,7 @@ env:
   SERVICE: synhub-backend
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,7 +28,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '21', cache: maven, cache-dependency-path: backend/pom.xml }
-      - run: ./mvnw -B -DskipTests package   # los tests corren en CI.yml
+      # Las pruebas de integración levantan PostgreSQL con Testcontainers (el runner ya trae Docker).
+      - run: ./mvnw -B verify
+      # El jar probado es el mismo que se despliega.
+      - uses: actions/upload-artifact@v4
+        with: { name: backend-jar, path: backend/target/*.jar, if-no-files-found: error }
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: backend-jar, path: backend/target }
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
