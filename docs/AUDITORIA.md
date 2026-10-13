@@ -840,4 +840,4 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 | Token alterado | 401 | 401 |
 | Tokens completos en `docker logs` | 22 | 0 |
 
-**Enlaces de la documentación.** Comprobar que todos los enlaces relativos `[](…)` de los `.md` apunten a archivos existentes y que las anclas `#…` coincidan con encabezados (slug de GitHub: minúsculas, sin puntuación y espacios → `-`). Al momento de la auditoría: 238 enlaces, 0 rotos.
+**Enlaces de la documentación.** Comprobar que todos los enlaces Markdown relativos de los `.md` apunten a archivos existentes y que las anclas `#…` coincidan con encabezados (slug de GitHub: minúsculas, sin puntuación y espacios → `-`). Al momento de la auditoría: 238 enlaces, 0 rotos.
