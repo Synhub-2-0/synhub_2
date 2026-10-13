@@ -1,8 +1,10 @@
-name: Deploy front
+name: Frontend Deploy
 on:
   pull_request:
+    paths: ['frontend/**', '.github/workflows/frontend-deploy.yml']
   push:
-    branches: [master]
+    branches: [main]
+    paths: ['frontend/**', '.github/workflows/frontend-deploy.yml']
   workflow_dispatch:
 
 permissions:
@@ -16,19 +18,22 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci
       - run: npx ng test --watch=false
       - run: npx ng build
       - uses: actions/upload-artifact@v4
-        with: { name: front, path: dist/Synhub-website/browser }
+        with: { name: front, path: frontend/dist/Synhub-website/browser }
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
