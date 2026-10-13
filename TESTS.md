@@ -36,10 +36,10 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 
 | Capa | Archivos | LISTO / PREVIO | LISTO-PARCIAL | PENDIENTE |
 |---|---|---|---|---|
-| Backend: pruebas unitarias | 26 | 5 | 1 | 20 |
+| Backend: pruebas unitarias | 26 | 8 | 3 | 15 |
 | Backend: API (integración) | 6 | 0 | 0 | 6 |
 | Frontend | 37 | 0 | 0 | 37 |
-| **Total** | **69** | **5** | **1** | **63** |
+| **Total** | **69** | **8** | **3** | **58** |
 
 ---
 
@@ -55,11 +55,11 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 | B-IAM-04 | `iam/UserQueryServiceImplTest.java` | `UserQueryServiceImpl` | por id, por username, todos · usuarios de un grupo a partir de las membresías | — | LISTO |
 | B-IAM-05 | `iam/IamContextFacadeImplTest.java` | `IamContextFacadeImpl` | `fetchUserIdByUsername` (encontrado → id, no encontrado → 0) · `fetchUsernameByUserId` (vacío si no existe) · `fetchUserById` con id null o ≤ 0 → vacío · `createUser` con rol por defecto | — | LISTO |
 | B-IAM-06 | `iam/HashingServiceImplTest.java` | `HashingServiceImpl` (BCrypt) | `encode` ≠ texto plano · `matches` verdadero y falso | — | LISTO |
-| B-GRP-01 | `groups/GroupDomainTest.java` | `Group`, `GroupCode`, `ImgUrl`, `GroupProfile` | `GroupCode.random` cumple el formato · el código inválido lanza excepción · `ImgUrl` null → "" · `getLeader` y `getMemberCount` · `updateInformation` ignora los vacíos · `addTask` en una membresía nueva | BUG-12 | PENDIENTE |
-| B-GRP-02 | `groups/GroupCommandServiceImplTest.java` | `GroupCommandServiceImpl` | crear: el creador queda líder y se regenera el código si colisiona · líder inexistente → 404 · actualizar: solo el líder · borrar: solo el líder, grupo inexistente → 404 · quitar miembro: OK, no está en el grupo → 404, líder → excepción (409 esperado) | BUG-10 | PENDIENTE |
-| B-GRP-03 | `groups/GroupQueryServiceImplTest.java` | `GroupQueryServiceImpl` | grupos por rol filtra por `GroupRole` · grupos por usuario · miembros de un grupo inexistente → 404 · por código con formato inválido → `IllegalArgumentException` | — | PENDIENTE |
-| B-GRP-04 | `groups/InvitationCommandServiceImplTest.java` | `InvitationCommandServiceImpl` | crear: OK solo el líder · invitación duplicada → 409 · ya es miembro → 409 · usuario o grupo inexistente → 404 · aceptar: solo el invitado; crea `GROUP_MEMBER` y borra la invitación; ya es miembro → 409 · cancelar: el invitado o el líder sí, un tercero → 403 | — | PENDIENTE |
-| B-GRP-05 | `groups/InvitationQueryServiceImplTest.java` | `InvitationQueryServiceImpl`, `GroupsContextFacadeImpl` | invitaciones por usuario y por grupo · `fetchLeaderIdByGroupId` (con líder, sin líder, sin grupo) | — | PENDIENTE |
+| B-GRP-01 | `groups/GroupDomainTest.java` | `Group`, `GroupCode`, `ImgUrl`, `GroupProfile` | `GroupCode.random` cumple el formato · el código inválido lanza excepción · `ImgUrl` null → "" · `getLeader` y `getMemberCount` · `updateInformation` ignora los vacíos · `addTask` en una membresía nueva | BUG-12 | LISTO-PARCIAL |
+| B-GRP-02 | `groups/GroupCommandServiceImplTest.java` | `GroupCommandServiceImpl` | crear: el creador queda líder y se regenera el código si colisiona · líder inexistente → 404 · actualizar: solo el líder · borrar: solo el líder, grupo inexistente → 404 · quitar miembro: OK, no está en el grupo → 404, líder → excepción (409 esperado) | BUG-10 | LISTO-PARCIAL |
+| B-GRP-03 | `groups/GroupQueryServiceImplTest.java` | `GroupQueryServiceImpl` | grupos por rol filtra por `GroupRole` · grupos por usuario · miembros de un grupo inexistente → 404 · por código con formato inválido → `IllegalArgumentException` | — | LISTO |
+| B-GRP-04 | `groups/InvitationCommandServiceImplTest.java` | `InvitationCommandServiceImpl` | crear: OK solo el líder · invitación duplicada → 409 · ya es miembro → 409 · usuario o grupo inexistente → 404 · aceptar: solo el invitado; crea `GROUP_MEMBER` y borra la invitación; ya es miembro → 409 · cancelar: el invitado o el líder sí, un tercero → 403 | — | LISTO |
+| B-GRP-05 | `groups/InvitationQueryServiceImplTest.java` | `InvitationQueryServiceImpl`, `GroupsContextFacadeImpl` | invitaciones por usuario y por grupo · `fetchLeaderIdByGroupId` (con líder, sin líder, sin grupo) | — | LISTO |
 | B-TSK-01 | `tasks/TaskTest.java` | Agregado `Task` | nace `IN_PROGRESS` · `IN_PROGRESS`→`COMPLETED` calcula `timePassed` · `COMPLETED`/`ON_HOLD`/`EXPIRED` → `IN_PROGRESS` suma `timesRearranged` · `updateTask` con fecha pasada → `EXPIRED`, con fecha futura → `IN_PROGRESS` · ignora los campos vacíos · `applySubmissionReview` → `DONE`/`IN_PROGRESS` · rechaza un título vacío | BUG-03 | PENDIENTE |
 | B-TSK-02 | `tasks/TaskCommandServiceImplTest.java` | `TaskCommandServiceImpl` | crear: solo el líder; el asignado debe ser miembro · actualizar: solo el líder, reasigna la membresía · borrar: solo el líder · estado: el líder o el asignado sí, un tercero → 403 · borrar las tareas de un miembro | — | PENDIENTE |
 | B-TSK-03 | `tasks/TaskStatusDoneBlockedTest.java` | `PUT /status` con `DONE` | `DONE` directo → 409 incluso para el líder | — | PENDIENTE |
