@@ -23,7 +23,7 @@ Registro de cuentas, inicio de sesión con JWT, consulta de usuarios y roles de 
 |---|---|---|---|
 | Iniciar sesión | `SignInPage` → `IamStore.signIn` | `POST /authentication/sign-in` | `AuthenticationController.signIn` → `UserCommandService.handle(SignInCommand)` |
 | Cargar el perfil tras el login | `IamStore.signIn` → `IamApi.getProfileByUserId` | `GET /users/{id}` | `UsersController.getUserById` |
-| Registrarse | `SignUpPage` → `IamStore.signUp` | `POST /authentication/sign-up` | `AuthenticationController.signUp` → `UserCommandService.handle(SignUpCommand)` |
+| Registrarse (y entrar) | `SignUpPage` → `IamStore.signUp` → `IamStore.signIn` | `POST /authentication/sign-up`, luego `POST /authentication/sign-in` | `AuthenticationController.signUp` → `UserCommandService.handle(SignUpCommand)` |
 | Restaurar la sesión al recargar | `provideAppInitializer` → `IamStore.restoreSession` | `GET /users/me` y luego `GET /users/{id}` | `UsersController.me` / `getUserById` |
 | Invitar por nombre de usuario (feature [invitations](../invitations/README.md)) | `InvitationsStore.inviteByUsername` → `IamApi.getProfileByUsername` | `GET /users/username?username=` | `UsersController.getUserByUsername` |
 

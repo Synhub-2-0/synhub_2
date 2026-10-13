@@ -7,7 +7,7 @@ Carpeta: [`frontend/src/app/iam`](../../../../frontend/src/app/iam)
 | Ruta | Componente | Qué hace |
 |---|---|---|
 | `/auth/sign-in` | `SignInPage` (`presentation/views/sign-in-page`) | Formulario de login. Llama a `IamStore.signIn` y, si sale bien, navega a `/home`. |
-| `/auth/sign-up` | `SignUpPage` (`presentation/views/sign-up-page`) | Formulario de registro. Envía `accountRoles: ['ROLE_USER']` y luego redirige a `/auth/sign-in`. |
+| `/auth/sign-up` | `SignUpPage` (`presentation/views/sign-up-page`) | Formulario de registro (contraseñas coincidentes, email válido). Envía `accountRoles: ['ROLE_USER']`; si sale bien, inicia sesión automáticamente y navega a `/home`. |
 | `''` | — | Redirige a `/auth/sign-in` (definido en `app.routes.ts`). |
 
 Las rutas de `iam.routes.ts` se cargan de forma diferida (`loadChildren`) y **no** tienen guard.
@@ -25,7 +25,7 @@ Store singleton (`providedIn: 'root'`) basado en signals. Funciona como "context
 | Método | Peticiones | Efecto |
 |---|---|---|
 | `signIn(command, router)` | `POST /authentication/sign-in` → `GET /users/{id}` | Guarda `token` y `userId` en `localStorage`, carga el perfil y navega a `/home`. |
-| `signUp(command, router)` | `POST /authentication/sign-up` | Navega a `/auth/sign-in`. |
+| `signUp(command, router)` | `POST /authentication/sign-up` → `signIn` con las mismas credenciales | Si sale bien, la cuenta queda con sesión iniciada y navega a `/home`; si falla, muestra un toast y vuelve a `/auth/sign-up`. |
 | `signOut(router)` | — | Borra la sesión y navega a `/auth/sign-in`. |
 | `restoreSession()` | `GET /users/me` → `GET /users/{id}` | Se ejecuta en `provideAppInitializer` (`app.config.ts`), antes del primer render. |
 | `loadUsers()` | — | Incompleto: solo activa `loadingUsers`. |
@@ -57,4 +57,4 @@ Store singleton (`providedIn: 'root'`) basado en signals. Funciona como "context
 
 ## Pruebas
 
-`sign-in-page.spec.ts` y `sign-up-page.spec.ts` (Vitest).
+`iam.store.spec.ts`, `iam.interceptor.spec.ts`, `iam.guard.spec.ts`, `iam.assemblers.spec.ts`, `iam.api.spec.ts`, `sign-in-page.spec.ts` y `sign-up-page.spec.ts` (Vitest). Detalle y estado en [TESTS.md](../../../../TESTS.md).

@@ -82,7 +82,7 @@ Los riesgos principales son tres:
 | [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Pendiente |
 | [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Pendiente |
 | [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Pendiente |
-| [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Pendiente |
+| [TEST-01](#test-01) | Media | Pruebas | Sin pruebas de autorización ni de iam/groups/invitations | Código | Resuelto (ver [TESTS.md](../TESTS.md)) |
 | [SEC-11](#sec-11) | Baja | Seguridad | Sin límite de intentos de login | Código | Pendiente |
 | [SEC-12](#sec-12) | Baja | Docker · nginx | Faltan cabeceras de seguridad HTTP | Código | Pendiente |
 | [DEP-02](#dep-02) | Baja | Backend · dependencias | Versiones de JJWT desalineadas | Código | Pendiente |
@@ -696,9 +696,9 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 **El registro no exige una contraseña mínima** · Baja
 
-**Evidencia.** `F/iam/presentation/views/sign-up-page/sign-up-page.ts:42` solo usa `Validators.required`.
+**Evidencia.** `F/iam/presentation/views/sign-up-page/sign-up-page.ts:42`: la contraseña solo usa `Validators.required` (el email ya tiene `Validators.email`). Hay una prueba deshabilitada que lo cubre en `sign-up-page.spec.ts` (`AUDIT FE-03`).
 
-**Solución propuesta.** Agregar `Validators.minLength(8)` a la contraseña y `Validators.email` al email, alineados con [SEC-07](#sec-07), con mensajes en `BaseForm`.
+**Solución propuesta.** Agregar `Validators.minLength(8)` a la contraseña, alineado con [SEC-07](#sec-07), con su mensaje en `BaseForm`.
 
 **Criterios de aceptación.** Spec del formulario: una contraseña de 7 caracteres es inválida.
 

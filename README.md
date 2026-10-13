@@ -41,6 +41,8 @@ Toda la documentación está en **[`docs/`](docs/README.md)** y se divide en dos
 | [Propiedad entre features](docs/architecture/cross-feature-ownership.md) | A quién le pertenece el código que mezcla varias features |
 | [Despliegue](docs/architecture/deployment.md) | Docker, variables de entorno, CI/CD |
 
+El inventario de pruebas y su estado está en [`TESTS.md`](TESTS.md).
+
 Los agentes de código (Claude Code, Gemini CLI, Codex) tienen sus instrucciones en [`CLAUDE.md`](CLAUDE.md), [`GEMINI.md`](GEMINI.md) y [`AGENTS.md`](AGENTS.md), que remiten a esta documentación.
 
 ## Desarrollo

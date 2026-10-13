@@ -11,6 +11,7 @@ Monorepo de **SynHub**: `frontend/` (Angular 22) y `backend/` (Spring Boot 4.1, 
 4. Para endpoints: [`docs/architecture/rest-api.md`](docs/architecture/rest-api.md).
 5. Si el cambio toca varias features: [`docs/architecture/cross-feature-ownership.md`](docs/architecture/cross-feature-ownership.md) indica a qué contexto le pertenece.
 6. Para corregir defectos o deuda técnica: [`docs/AUDITORIA.md`](docs/AUDITORIA.md) lista los hallazgos con su ID, evidencia, solución, criterios de aceptación y plan por fases. Sigue sus instrucciones y actualiza la columna **Estado** al resolver cada uno.
+7. Para pruebas: [`TESTS.md`](TESTS.md) lista cada archivo de pruebas y su estado. Las pruebas `@Disabled("AUDIT <ID>…")` / `it.skip('AUDIT <ID>…')` describen el comportamiento esperado de cada hallazgo: habilítalas al corregir ese ID.
 
 ## Reglas del proyecto
 

@@ -38,8 +38,8 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 |---|---|---|---|---|
 | Backend: pruebas unitarias | 26 | 19 | 7 | 0 |
 | Backend: API (integración) | 6 | 2 | 4 | 0 |
-| Frontend | 37 | 21 | 4 | 12 |
-| **Total** | **69** | **42** | **15** | **12** |
+| Frontend | 37 | 33 | 4 | 0 |
+| **Total** | **69** | **54** | **15** | **0** |
 
 ---
 
@@ -120,18 +120,18 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 | F-TSK-04 | `tasks/presentation/components/task-board/task-board.spec.ts` | `TaskBoard` | agrupa por columnas de estado · emite `statusChange` al cambiar el select | — | LISTO |
 | F-TSK-05 | `tasks/presentation/components/task-card/task-card.spec.ts` | `TaskCard` | se crea · el miembro con una tarea `COMPLETED` puede enviar la entrega · en revisión no permite otra | — | LISTO |
 | F-TSK-06 | `tasks/presentation/views/task-views.spec.ts` | `LeaderTasks`, `MemberTasks`, `TaskForm`, `TaskDetails`, `TaskList` | se crean · `TaskForm` calcula `aiAccepted` (sin IA → undefined, igual → true, editada → false) | — | LISTO |
-| F-REQ-01 | `requests/application/requests.store.spec.ts` | `RequestsStore` | loadGroupSubmissions pide `type=SUBMISSION` con el estado · approve y reject quitan de la bandeja · submitTask crea y llama a onSuccess · `isUnderReview` · error → toast | — | PENDIENTE |
-| F-REQ-02 | `requests/infrastructure/requests.api.spec.ts` | `RequestsApi` (HTTP) | URLs anidadas `/tasks/{t}/requests…` y `/groups/{g}/requests?status&type` · mensajes en español para 403, 404 y 409 en crear, listar y revisar | — | PENDIENTE |
-| F-REQ-03 | `requests/infrastructure/requests.assembler.spec.ts` | `RequestsAssembler` | resource → entidad con la tarea anidada · comando → request | — | PENDIENTE |
-| F-REQ-04 | `requests/presentation/views/validations/validations.spec.ts` | `Validations` | se crea | — | PENDIENTE |
-| F-AI-01 | `ai/application/ai.store.spec.ts` | `AiStore` | (6 previos) | — | PENDIENTE |
-| F-AI-02 | `ai/domain/model/task-classification.entity.spec.ts` | `parseReport` | (2 previos) | — | PENDIENTE |
-| F-AI-03 | `ai/infrastructure/ai.api.spec.ts` | `AiApi` (HTTP) | POST `/ai/classify` con `dueDate` en ISO · GET report devuelve el texto | — | PENDIENTE |
-| F-AI-04 | `ai/presentation/components/ai-report-card/ai-report-card.spec.ts` | `AiReportCard` | se crea · generar llama a `loadReport(groupId)` · sin grupo no llama | — | PENDIENTE |
-| F-TOUR-01 | `tour/domain/model/tour-chapter.spec.ts` | Capítulos del tour | ids únicos · `start` creciente y menor que `TOUR_DURATION` · el primero empieza en 0 | — | PENDIENTE |
-| F-TOUR-02 | `tour/presentation/views/tour-page/tour-page.spec.ts` | `TourPage` | se crea · `currentIndex` según `currentTime` · `progress` de los segmentos | — | PENDIENTE |
-| F-APP-01 | `app.routes.spec.ts` | Rutas | las rutas privadas tienen `iamGuard` · `''` redirige al login · `**` → `PageNotFound` | — | PENDIENTE |
-| F-ENV-01 | `environments.spec.ts` | Entornos | producción usa `/api/v1` relativo · desarrollo usa localhost · los dos definen los mismos paths | — | PENDIENTE |
+| F-REQ-01 | `requests/application/requests.store.spec.ts` | `RequestsStore` | loadGroupSubmissions pide `type=SUBMISSION` con el estado · approve y reject quitan de la bandeja · submitTask crea y llama a onSuccess · `isUnderReview` · error → toast | — | LISTO |
+| F-REQ-02 | `requests/infrastructure/requests.api.spec.ts` | `RequestsApi` (HTTP) | URLs anidadas `/tasks/{t}/requests…` y `/groups/{g}/requests?status&type` · mensajes en español para 403, 404 y 409 en crear, listar y revisar | — | LISTO |
+| F-REQ-03 | `requests/infrastructure/requests.assembler.spec.ts` | `RequestsAssembler` | resource → entidad con la tarea anidada · comando → request | — | LISTO |
+| F-REQ-04 | `requests/presentation/views/validations/validations.spec.ts` | `Validations` | se crea | — | LISTO |
+| F-AI-01 | `ai/application/ai.store.spec.ts` | `AiStore` | (6 previos) | — | PREVIO |
+| F-AI-02 | `ai/domain/model/task-classification.entity.spec.ts` | `parseReport` | (2 previos) | — | PREVIO |
+| F-AI-03 | `ai/infrastructure/ai.api.spec.ts` | `AiApi` (HTTP) | POST `/ai/classify` con `dueDate` en ISO · GET report devuelve el texto | — | LISTO |
+| F-AI-04 | `ai/presentation/components/ai-report-card/ai-report-card.spec.ts` | `AiReportCard` | se crea · generar llama a `loadReport(groupId)` · sin grupo no llama | — | LISTO |
+| F-TOUR-01 | `tour/domain/model/tour-chapter.spec.ts` | Capítulos del tour | ids únicos · `start` creciente y menor que `TOUR_DURATION` · el primero empieza en 0 | — | LISTO |
+| F-TOUR-02 | `tour/presentation/views/tour-page/tour-page.spec.ts` | `TourPage` | se crea · `currentIndex` según `currentTime` · `progress` de los segmentos | — | LISTO |
+| F-APP-01 | `app.routes.spec.ts` | Rutas | las rutas privadas tienen `iamGuard` · `''` redirige al login · `**` → `PageNotFound` | — | LISTO |
+| F-ENV-01 | `../environments/environments.spec.ts` | Entornos | producción usa `/api/v1` relativo · desarrollo usa localhost · los dos definen los mismos paths | — | LISTO |
 
 ## Fuera de alcance (pendiente de decidir)
 
@@ -147,4 +147,5 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 |---|---|---|
 | 2026-10-13 | Se crea el inventario (69 archivos, todos `PENDIENTE`). | B-IAM-01 |
 | 2026-10-13 | Backend completo: 26 unitarias + 6 de API (22 casos `AUDIT` deshabilitados, verificados: todos fallan al habilitarlos). Frontend: F-IAM-01 a F-IAM-06. Sesión detenida por límite de uso. | F-IAM-07: agregar a `sign-up-page.spec.ts` el caso de coincidencia de contraseñas y `it.skip('AUDIT FE-03 …')`; luego F-SHR-01 |
-| — | Notas: (1) docs/features/iam: `signUp` inicia sesión y navega a `/home`, no al login (corregir la doc). (2) AUDITORIA FE-03: el email ya tiene `Validators.email`; solo falta `minLength(8)` en la contraseña. | — |
+| 2026-10-13 | Frontend completo: F-IAM-07 a F-ENV-01. Se corrigieron la doc de iam (el registro inicia sesión y va a `/home`) y FE-03 en la auditoría. | — |
+| 2026-10-13 | **Inventario completo: 69/69.** Backend: `./mvnw test` → 197 pruebas, 0 fallas, 22 omitidas `AUDIT`. Frontend: `ng test` → 46 archivos, 177 pruebas, 4 omitidas `AUDIT`; `ng build` OK. Las 26 pruebas `AUDIT` fallan al habilitarlas (verificado). | Habilitar cada prueba `AUDIT <ID>` al corregir ese ID de [docs/AUDITORIA.md](docs/AUDITORIA.md). |
