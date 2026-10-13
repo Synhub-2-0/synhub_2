@@ -7,6 +7,9 @@ import java.util.Optional;
 public interface TasksContextFacade {
     Optional<Task> getTaskById(Long taskId);
     void deleteTasksByUserIdAndGroupId(Long userId, Long groupId);
+
+    /** Borra todas las tareas del grupo y sus requests (antes de borrar el grupo). */
+    void deleteAllTasksByGroupId(Long groupId);
     /** Aplica a la tarea el resultado de revisar su entrega (SUBMISSION). */
     Task applySubmissionReview(Long taskId, boolean approved);
 }

@@ -2,6 +2,7 @@ package com.hub.synhub_backend.tasks.aplication.internal.acl;
 
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
+import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByGroupIdCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAndGroupIdCommand;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
@@ -39,5 +40,10 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
         task.applySubmissionReview(approved);
         return taskRepository.save(task);
+    }
+
+    @Override
+    public void deleteAllTasksByGroupId(Long groupId) {
+        taskCommandService.handle(new DeleteTasksByGroupIdCommand(groupId));
     }
 }

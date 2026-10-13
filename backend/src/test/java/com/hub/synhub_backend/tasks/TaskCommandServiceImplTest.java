@@ -150,4 +150,14 @@ class TaskCommandServiceImplTest {
     @Test void deletingTasksOfUnknownUserFails() {
         assertThrows(IllegalArgumentException.class, () -> service.handle(new DeleteTasksByUserIdAndGroupIdCommand(99L, GROUP)));
     }
+
+    // ---- AUDIT BUG-02: borrar todas las tareas de un grupo
+    @Test void deletesAllTasksOfAGroupWithTheirRequests() {
+        when(tasks.findByProfile_Group_Id(GROUP)).thenReturn(List.of(task));
+        service.handle(new DeleteTasksByGroupIdCommand(GROUP));
+        var order = inOrder(requests, tasks);
+        order.verify(requests).deleteAllRequestsByTaskId(TASK);
+        order.verify(tasks).delete(task);
+        assertFalse(((List<?>) ReflectionTestUtils.getField(anaProfile, "tasks")).contains(task));
+    }
 }

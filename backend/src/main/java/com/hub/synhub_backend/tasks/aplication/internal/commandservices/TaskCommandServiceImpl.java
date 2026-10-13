@@ -162,4 +162,15 @@ public class TaskCommandServiceImpl implements TaskCommandService {
             throw new IllegalArgumentException("Error deleting tasks for member: " + e.getMessage());
         }
     }
+
+    @Override
+    @Transactional
+    public void handle(DeleteTasksByGroupIdCommand command) {
+        for (var task : this.taskRepository.findByProfile_Group_Id(command.groupId())) {
+            this.requestsContextFacade.deleteAllRequestsByTaskId(task.getId());
+            var profile = task.getProfile();
+            if (profile != null) profile.removeTask(task);
+            this.taskRepository.delete(task);
+        }
+    }
 }

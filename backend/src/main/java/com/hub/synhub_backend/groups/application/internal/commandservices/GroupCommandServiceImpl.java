@@ -12,6 +12,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,15 +23,18 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
     private final GroupProfileRepository groupProfileRepository;
+    private final TasksContextFacade tasksContextFacade;
 
     public GroupCommandServiceImpl(
             GroupRepository groupRepository,
             UserRepository userRepository,
-            GroupProfileRepository groupProfileRepository
+            GroupProfileRepository groupProfileRepository,
+            TasksContextFacade tasksContextFacade
     ) {
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
         this.groupProfileRepository = groupProfileRepository;
+        this.tasksContextFacade = tasksContextFacade;
     }
 
     @Override
@@ -89,6 +93,8 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             throw new AccessDeniedException("Only the leader of a group can delete it");
         }
 
+        // Las tareas (y sus requests) se borran primero; membresías e invitaciones caen en cascada con el grupo (AUDIT BUG-02).
+        tasksContextFacade.deleteAllTasksByGroupId(group.getId());
         groupRepository.delete(group);
 
     }

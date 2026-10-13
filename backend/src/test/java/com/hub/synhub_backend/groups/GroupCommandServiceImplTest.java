@@ -13,6 +13,7 @@ import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.BusinessRuleViolationException;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ class GroupCommandServiceImplTest {
     private GroupRepository groups;
     private UserRepository users;
     private GroupProfileRepository profiles;
+    private TasksContextFacade tasks;
     private GroupCommandServiceImpl service;
     private User leader, member;
     private Group group;
@@ -40,7 +42,8 @@ class GroupCommandServiceImplTest {
         groups = mock(GroupRepository.class);
         users = mock(UserRepository.class);
         profiles = mock(GroupProfileRepository.class);
-        service = new GroupCommandServiceImpl(groups, users, profiles);
+        tasks = mock(TasksContextFacade.class);
+        service = new GroupCommandServiceImpl(groups, users, profiles, tasks);
         leader = user(1, "lider");
         member = user(2, "ana");
         group = group(10, leader, member);
@@ -83,12 +86,16 @@ class GroupCommandServiceImplTest {
     // ---- Borrar
     @Test void leaderDeletesGroup() {
         service.handle(new DeleteGroupCommand(1L, 10L));
-        verify(groups).delete(group);
+        // AUDIT BUG-02: primero las tareas (y sus requests), después el grupo
+        var order = inOrder(tasks, groups);
+        order.verify(tasks).deleteAllTasksByGroupId(10L);
+        order.verify(groups).delete(group);
     }
 
     @Test void memberCannotDeleteGroup() {
         assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteGroupCommand(2L, 10L)));
         verify(groups, never()).delete(any());
+        verifyNoInteractions(tasks);
     }
 
     @Test void deletingUnknownGroupIs404() {

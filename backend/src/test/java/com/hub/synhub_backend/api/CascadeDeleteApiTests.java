@@ -1,6 +1,5 @@
 package com.hub.synhub_backend.api;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +30,7 @@ class CascadeDeleteApiTests extends ApiTestSupport {
         assertEquals(404, get("/tasks/" + taskId, team.leader().token()).status());
     }
 
-    @Disabled("AUDIT BUG-02: borrar un grupo con tareas y requests falla (500)")
+    // AUDIT BUG-02 (resuelto)
     @Test void groupWithTasksAndRequestsIsDeleted() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());
