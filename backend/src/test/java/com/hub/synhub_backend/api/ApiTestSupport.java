@@ -1,7 +1,9 @@
 package com.hub.synhub_backend.api;
 
 import org.springframework.beans.factory.annotation.Value;
+import com.hub.synhub_backend.TestcontainersConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -16,11 +18,12 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Base de las pruebas de API: levanta la aplicación completa en un puerto aleatorio contra PostgreSQL
- * (DATABASE_URL / DATABASE_USERNAME / DATABASE_PASSWORD) y la ejercita por HTTP real, con el filtro JWT incluido.
+ * Base de las pruebas de API: levanta la aplicación completa en un puerto aleatorio contra un PostgreSQL en
+ * Testcontainers (requiere Docker) y la ejercita por HTTP real, con el filtro JWT incluido.
  * Cada prueba crea sus propios usuarios con un sufijo aleatorio, así que no depende del estado de la base.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(TestcontainersConfiguration.class)
 abstract class ApiTestSupport {
 
     protected static final JsonMapper JSON = JsonMapper.builder().build();

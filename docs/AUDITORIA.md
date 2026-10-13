@@ -104,7 +104,7 @@ Los riesgos principales son tres:
 | [FE-03](#fe-03) | Baja | Frontend · iam | El registro no exige una contraseña mínima | Código | Pendiente |
 | [FE-04](#fe-04) | Baja | Repositorio | Archivos sobrantes (README genérico, `.vscode`, `package-lock` en el backend) | Código | Pendiente |
 | [OPS-03](#ops-03) | Baja | CI/CD | Sin lint ni formato en CI | Código | Pendiente |
-| [TEST-02](#test-02) | Baja | Pruebas | El test de contexto depende de un PostgreSQL local | Código | Pendiente |
+| [TEST-02](#test-02) | Baja | Pruebas | El test de contexto depende de un PostgreSQL local | Código | Resuelto |
 
 Rutas abreviadas: `B/` = `backend/src/main/java/com/hub/synhub_backend/` y `F/` = `frontend/src/app/`.
 

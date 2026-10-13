@@ -25,11 +25,11 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
   ```
 - **Comandos**:
   ```bash
-  cd backend && ./mvnw -B test                          # unitarias + API (requiere PostgreSQL)
+  cd backend && ./mvnw -B test                          # unitarias + API (PostgreSQL en Testcontainers: requiere Docker)
   cd backend && ./mvnw -B test -Dtest='!*ApiTests'      # solo unitarias, sin BD
   cd frontend && npx ng test --watch=false
   ```
-  Las pruebas `*ApiTests` (backend) levantan la app completa en un puerto aleatorio contra PostgreSQL (`DATABASE_URL`, `DATABASE_USERNAME` y `DATABASE_PASSWORD`; por defecto, `localhost:5432`).
+  Las pruebas `*ApiTests` y `SynhubBackendApplicationTests` levantan la app completa contra un PostgreSQL efímero de **Testcontainers** (`TestcontainersConfiguration`): solo hace falta Docker. Si se define `DATABASE_URL` (y `DATABASE_USERNAME`/`DATABASE_PASSWORD`), se usa esa base y no se crea el contenedor; sirve para correrlas sin Docker contra una base local de pruebas.
 - **Para retomar**: buscar la primera fila `PENDIENTE` o `EN CURSO` en el orden de las tablas, escribir el archivo, ejecutarlo y actualizar su fila y la [bitácora](#bitácora).
 
 ## Resumen
@@ -78,7 +78,7 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 
 ## Backend: pruebas de API (integración)
 
-`@SpringBootTest(webEnvironment = RANDOM_PORT)` contra PostgreSQL real, usando HTTP con `java.net.http.HttpClient` (sin mocks). Cada prueba crea usuarios con un sufijo aleatorio. Ruta: `backend/src/test/java/com/hub/synhub_backend/api/`.
+`@SpringBootTest(webEnvironment = RANDOM_PORT)` contra PostgreSQL real (Testcontainers, o `DATABASE_URL`), usando HTTP con `java.net.http.HttpClient` (sin mocks). Cada prueba crea usuarios con un sufijo aleatorio. Ruta: `backend/src/test/java/com/hub/synhub_backend/api/`.
 
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|

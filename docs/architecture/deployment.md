@@ -44,7 +44,7 @@ Los workflows están en [`.github/workflows`](../../.github/workflows) y cada un
 | Workflow | Disparador | Qué hace |
 |---|---|---|
 | `frontend-deploy.yml` | PR y push a `main` sobre `frontend/**` | `npm ci`, `ng test` y `ng build`. En `main`: `aws s3 sync` al bucket `synhub-front-<cuenta>` e invalidación de CloudFront si está encendido. |
-| `backend-ci.yml` | PR y push a `main` sobre `backend/**` | `./mvnw -B verify` con un servicio `postgres:16`. |
+| `backend-ci.yml` | PR y push a `main` sobre `backend/**` | `./mvnw -B verify`; las pruebas de integración levantan PostgreSQL con Testcontainers (el runner trae Docker). |
 | `backend-deploy.yml` | Push a `main` sobre `backend/**` | Empaqueta el jar, construye la imagen `linux/arm64` con el `backend/Dockerfile`, la sube a ECR (`synhub-backend:latest` y `:<sha>`) y fuerza un redeploy en ECS si el servicio está activo. |
 
 Requisitos en el repositorio de GitHub: variables `AWS_DEPLOY_ROLE_ARN` y `AWS_ACCOUNT_ID`, y un rol IAM con *trust policy* OIDC para `repo:Synhub-2-0/synhub_2:ref:refs/heads/main`.

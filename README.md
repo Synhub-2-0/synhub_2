@@ -58,7 +58,7 @@ cd frontend && npm ci && npx ng serve
 Pruebas:
 
 ```bash
-cd backend && ./mvnw verify          # necesita PostgreSQL
+cd backend && ./mvnw verify          # necesita Docker (Testcontainers) o DATABASE_URL
 cd frontend && npx ng test --watch=false
 ```
 
@@ -77,5 +77,5 @@ Esto levanta la app y PostgreSQL; la web queda en http://localhost:8080. Variabl
 Los workflows están en `.github/workflows/` y solo se disparan cuando cambian archivos de su carpeta:
 
 - `frontend-deploy.yml`: tests y build del frontend; en `main` despliega a S3/CloudFront.
-- `backend-ci.yml`: `mvnw verify` con PostgreSQL.
+- `backend-ci.yml`: `mvnw verify` (PostgreSQL con Testcontainers).
 - `backend-deploy.yml`: en `main` construye la imagen, la sube a ECR y redepliega en ECS.
