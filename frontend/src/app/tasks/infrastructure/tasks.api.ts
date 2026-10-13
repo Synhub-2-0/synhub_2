@@ -40,6 +40,10 @@ export class TasksApi extends BaseApi {
     return this.tasksEndpoint.getTasksByGroup(groupId, status);
   }
 
+  getMyTasks(): Observable<Task[]> {
+    return this.tasksEndpoint.getMyTasks();
+  }
+
   getTasksByGroupAndUser(groupId: number, userId: number): Observable<Task[]> {
     return this.tasksEndpoint.getTasksByGroupAndUser(groupId, userId);
   }

@@ -67,6 +67,14 @@ export class TasksApiEndpoint extends BaseApiEndpoint<
       );
   }
 
+  /** GET /api/v1/tasks/user: mis tareas en todos mis grupos (AUDIT PERF-03). */
+  getMyTasks(): Observable<Task[]> {
+    return this.http.get<TaskResource[]>(`${tasksEndpointUrl}/user`).pipe(
+      map((resources) => resources.map((resource) => this.assembler.toEntityFromResource(resource))),
+      catchError(this.handleError('Failed to load your tasks')),
+    );
+  }
+
   /** GET /api/v1/tasks/group/{groupId}/user/{userId} */
   getTasksByGroupAndUser(groupId: number, userId: number): Observable<Task[]> {
     return this.http

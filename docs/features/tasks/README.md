@@ -39,7 +39,7 @@ stateDiagram-v2
 | Editar tarea (líder) | `TaskForm` → `TasksStore.updateTask` | `PUT /tasks/{id}` | `updateTaskDetails` → `UpdateTaskCommand` |
 | Ver detalle | `TaskDetails`, `TaskForm` (edición) → `loadTaskById` | `GET /tasks/{id}` | `getTaskById` |
 | Tablero del grupo | `Home`, `GroupDetails`, `LeaderTasks` → `loadTasksByGroup` | `GET /tasks/group/{groupId}[?status=]` | `getByGroup` → `GetTasksByGroupIdAndStatus` |
-| Mis tareas | `MemberTasks` → `loadTasksByGroupAndUser` / `loadTasksByGroupsAndUser` | `GET /tasks/group/{groupId}/user/{userId}` (una por grupo) | `getTaskByGroupIdAndUserId` |
+| Mis tareas | `MemberTasks` → `loadMyTasks` | `GET /tasks/user` (una sola petición) | `getMyTasks` → `GetAllTasksByUserId` |
 | Mover de columna | `TaskBoard` (`statusChange`) → `updateTaskStatus` | `PUT /tasks/{id}/status?status=` | `updateTaskStatus` → `UpdateTaskStatusCommand` |
 | Eliminar (líder) | `GroupDetails`, `LeaderTasks` → `deleteTask` | `DELETE /tasks/{id}` | `deleteTaskById` → `DeleteTaskCommand` |
 | Enviar entrega (miembro) | `TaskCard` → `RequestsStore.submitTask` | `POST /tasks/{id}/requests` | [requests](../requests/README.md) |

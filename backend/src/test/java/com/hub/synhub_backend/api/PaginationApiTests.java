@@ -53,4 +53,23 @@ class PaginationApiTests extends ApiTestSupport {
         assertEquals(400, get(path + "?size=0", team.leader().token()).status());
         assertEquals(100, get(path + "?size=500", team.leader().token()).json().get("size").asInt(), "size se limita a 100");
     }
+
+    // AUDIT PERF-03: mis tareas de todos mis grupos en una sola petición
+    @Test void myTasksAcrossGroupsInOneRequest() {
+        var team = team();
+        var otherLeader = account("otro");
+        var otherGroup = createGroup(otherLeader);
+        join(otherLeader, team.member(), otherGroup);
+        var first = createTask(team.leader(), team.groupId(), team.member());
+        var second = createTask(otherLeader, otherGroup, team.member());
+        createTask(team.leader(), team.groupId(), team.leader());
+
+        var mine = get("/tasks/user", team.member().token());
+        assertEquals(200, mine.status(), mine.raw());
+        assertEquals(2, mine.json().size(), "solo las asignadas al usuario, de ambos grupos");
+        var ids = new java.util.HashSet<Long>();
+        for (var task : mine.json()) ids.add(task.get("id").asLong());
+        assertEquals(java.util.Set.of(first, second), ids);
+        assertEquals(0, get("/tasks/user", team.stranger().token()).json().size());
+    }
 }

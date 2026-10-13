@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.tasks.domain.model.queries.GetAllTasksByUserId;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTasksByGroupIdAndStatus;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTasksByGroupIdAndUserIdQuery;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
@@ -74,6 +75,15 @@ public class TaskController {
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
         var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
         return ResponseEntity.ok(taskResource);
+    }
+
+    @GetMapping("/user")
+    @Operation(summary = "Get my tasks", description = "Tasks assigned to the authenticated user in all of their groups, by due date (AUDIT PERF-03).")
+    public ResponseEntity<List<TaskResource>> getMyTasks(@AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var tasks = this.taskQueryService.handle(new GetAllTasksByUserId(user.getId()));
+        return ResponseEntity.ok(tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList());
     }
 
     @GetMapping("/group/{groupId}")

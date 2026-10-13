@@ -50,7 +50,7 @@ public class TaskQueryServiceImpl implements TaskQueryService {
 
     @Override
     public List<Task> handle(GetAllTasksByUserId query) {
-        return this.taskRepository.findByProfile_User_Id(query.userId());
+        return this.taskRepository.findByProfile_User_IdOrderByDueDateAscIdAsc(query.userId());
     }
 
     @Override

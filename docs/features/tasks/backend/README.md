@@ -9,6 +9,7 @@ Todos requieren token.
 | Método | Ruta | Cuerpo / parámetros | Respuesta | Regla |
 |---|---|---|---|---|
 | `POST` | `/api/v1/tasks` | `CreateTaskResource` | `200 TaskResource` | Solo el líder del grupo; el asignado debe ser integrante (404 si no). |
+| `GET` | `/api/v1/tasks/user` | — | `200 TaskResource[]` por fecha límite | Las tareas asignadas al usuario de la sesión en todos sus grupos (`GetAllTasksByUserId`, AUDIT PERF-03). |
 | `GET` | `/api/v1/tasks/{taskId}` | — | `200 TaskResource` · `403` · `404` | Solo integrantes del grupo de la tarea. |
 | `GET` | `/api/v1/tasks/group/{groupId}` | `?status=` (opcional, `TaskStatus`); `?page=&size=` (opcionales) | `200 TaskResource[]`, o `PageResource<TaskResource>` ordenado por fecha límite si se pide página · `403` | Solo integrantes del grupo. |
 | `GET` | `/api/v1/tasks/group/{groupId}/user/{userId}` | — | `200 TaskResource[]` · `403` | Solo integrantes del grupo. |

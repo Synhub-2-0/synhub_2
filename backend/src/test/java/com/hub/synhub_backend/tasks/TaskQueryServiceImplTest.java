@@ -50,7 +50,7 @@ class TaskQueryServiceImplTest {
         when(repo.findByProfile_Group_IdAndProfile_User_Id(10L, 2L)).thenReturn(List.of(task));
         when(repo.findById(5L)).thenReturn(Optional.of(task));
         when(repo.findByStatus(TaskStatus.EXPIRED)).thenReturn(List.of(task));
-        when(repo.findByProfile_User_Id(2L)).thenReturn(List.of(task));
+        when(repo.findByProfile_User_IdOrderByDueDateAscIdAsc(2L)).thenReturn(List.of(task));
 
         assertEquals(List.of(task), service.handle(new GetTasksByGroupIdAndUserIdQuery(10L, 2L, MEMBER)));
         assertSame(task, service.handle(new GetTaskByIdQuery(5L, MEMBER)).orElseThrow());

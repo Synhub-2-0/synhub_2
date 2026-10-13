@@ -69,7 +69,8 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | POST | `/tasks` | `TaskController` | `TasksStore.addTask` |
 | GET | `/tasks/{taskId}` | `TaskController` | `TasksStore.loadTaskById` |
 | GET | `/tasks/group/{groupId}?status=&page=&size=` | `TaskController` | `TasksStore.loadTasksByGroup` |
-| GET | `/tasks/group/{groupId}/user/{userId}` | `TaskController` | `TasksStore.loadTasksByGroupAndUser`, `loadTasksByGroupsAndUser`, `loadAssignedGroupIds` |
+| GET | `/tasks/user` | `TaskController` | `TasksStore.loadMyTasks` |
+| GET | `/tasks/group/{groupId}/user/{userId}` | `TaskController` | `TasksStore.loadTasksByGroupAndUser` |
 | PUT | `/tasks/{taskId}` | `TaskController` | `TasksStore.updateTask` |
 | PUT | `/tasks/{taskId}/status?status=` | `TaskController` | `TasksStore.updateTaskStatus` |
 | DELETE | `/tasks/{taskId}` | `TaskController` | `TasksStore.deleteTask` |

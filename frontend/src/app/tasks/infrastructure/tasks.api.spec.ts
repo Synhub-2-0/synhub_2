@@ -60,4 +60,11 @@ describe('TasksApi (HTTP)', () => {
     put.flush(resource);
     backend.expectOne({ method: 'DELETE', url: `${url}/7` }).flush(null);
   });
+
+  it('AUDIT PERF-03: mis tareas en una sola petición', () => {
+    let ids: number[] = [];
+    api.getMyTasks().subscribe((tasks) => (ids = tasks.map((t) => t.id)));
+    backend.expectOne({ method: 'GET', url: `${url}/user` }).flush([resource]);
+    expect(ids).toEqual([resource.id]);
+  });
 });

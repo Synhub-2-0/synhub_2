@@ -98,7 +98,7 @@ Los riesgos principales son tres:
 | [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Pendiente |
 | [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Pendiente |
 | [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Resuelto |
-| [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Pendiente |
+| [PERF-03](#perf-03) | Baja | Frontend · tasks | "Mis tareas" hace una petición por grupo | Código | Resuelto |
 | [FE-01](#fe-01) | Baja | Frontend | `console.log` y `console.error` en producción | Código | Resuelto |
 | [FE-02](#fe-02) | Baja | Frontend | Mensajes de error mezclados en inglés y español | Código | Resuelto (traducción centralizada en `ToastStore`) |
 | [FE-03](#fe-03) | Baja | Frontend · iam | El registro no exige una contraseña mínima | Código | Resuelto |
