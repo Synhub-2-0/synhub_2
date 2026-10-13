@@ -43,7 +43,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: backend-jar, path: backend/target }
 
       - uses: aws-actions/configure-aws-credentials@v4
