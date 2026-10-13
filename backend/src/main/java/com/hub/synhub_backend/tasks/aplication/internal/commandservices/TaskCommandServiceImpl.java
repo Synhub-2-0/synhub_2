@@ -3,6 +3,7 @@ package com.hub.synhub_backend.tasks.aplication.internal.commandservices;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.exceptions.TaskStatusTransitionNotAllowedException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
@@ -23,16 +24,19 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
     private final GroupProfileRepository groupProfileRepository;
+    private final RequestsContextFacade requestsContextFacade;
 
     public TaskCommandServiceImpl(
             TaskRepository taskRepository,
             UserRepository userRepository,
             GroupRepository groupRepository,
-            GroupProfileRepository groupProfileRepository) {
+            GroupProfileRepository groupProfileRepository,
+            RequestsContextFacade requestsContextFacade) {
         this.taskRepository = taskRepository;
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
         this.groupProfileRepository = groupProfileRepository;
+        this.requestsContextFacade = requestsContextFacade;
     }
 
     @Transactional
@@ -104,6 +108,8 @@ public class TaskCommandServiceImpl implements TaskCommandService {
             profile.removeTask(task);
             this.groupProfileRepository.save(profile);
         }
+        // Las requests referencian la tarea (FK): se borran primero, en la misma transacción (AUDIT BUG-01).
+        this.requestsContextFacade.deleteAllRequestsByTaskId(task.getId());
         this.taskRepository.deleteById(task.getId());
     }
 
@@ -121,6 +127,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     }
 
     @Override
+    @Transactional
     public void handle(DeleteTasksByUserIdAndGroupIdCommand command) {
         if (!this.userRepository.existsById(command.userId())) {
             throw new IllegalArgumentException("User with id " + command.userId() + " does not exist");
@@ -148,6 +155,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
                     taskProfile.removeTask(task);
                     this.groupProfileRepository.save(taskProfile);
                 }
+                this.requestsContextFacade.deleteAllRequestsByTaskId(task.getId());
                 this.taskRepository.delete(task);
             }
         } catch (Exception e) {

@@ -32,6 +32,7 @@ flowchart TB
     requests -- "ACL: GroupsContextFacade" --> groups
     tasks -- "ACL: GroupsContextFacade (lecturas)" --> groups
     tasks -- "scheduler → RequestCommandService" --> requests
+    tasks -- "ACL: RequestsContextFacade (borrado)" --> requests
     ai -- "TaskQueryService" --> tasks
     ai -- "TaskMetricsQueryService" --> metrics
     ai -- "GroupQueryService" --> groups

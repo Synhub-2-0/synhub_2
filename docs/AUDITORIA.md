@@ -62,7 +62,7 @@ Los riesgos principales son tres:
 | [SEC-03](#sec-03) | Alta | Backend · seguridad | El JWT completo se escribe en los logs | Reproducido | Resuelto |
 | [SEC-04](#sec-04) | Alta | Config · seguridad | Secretos por defecto versionados (JWT y BD) | Código | Resuelto (falta HUM-01) |
 | [DEP-01](#dep-01) | Alta | Frontend · dependencias | 5 vulnerabilidades npm (2 críticas, 3 altas) | `npm audit` | Resuelto |
-| [BUG-01](#bug-01) | Alta | Backend · tasks/requests | Borrar una tarea con requests → 500 | Reproducido | Pendiente |
+| [BUG-01](#bug-01) | Alta | Backend · tasks/requests | Borrar una tarea con requests → 500 | Reproducido | Resuelto |
 | [BUG-02](#bug-02) | Alta | Backend · groups | Borrar un grupo con tareas → 500 | Reproducido | Pendiente |
 | [BUG-03](#bug-03) | Alta | Backend · tasks | Se crean tareas sin título (null persistido) | Reproducido | Resuelto |
 | [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Pendiente |

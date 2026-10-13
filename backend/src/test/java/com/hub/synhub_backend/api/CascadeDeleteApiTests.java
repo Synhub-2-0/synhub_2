@@ -22,7 +22,7 @@ class CascadeDeleteApiTests extends ApiTestSupport {
         assertEquals(404, get("/tasks/" + taskId, team.leader().token()).status());
     }
 
-    @Disabled("AUDIT BUG-01: borrar una tarea con requests viola la FK requests.task_id (500)")
+    // AUDIT BUG-01 (resuelto)
     @Test void taskWithRequestsIsDeleted() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());

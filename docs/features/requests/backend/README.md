@@ -61,6 +61,8 @@ Todos requieren token.
 |---|---|---|
 | tasks | `TasksContextFacade` (ACL) | Cargar la tarea y aplicar el resultado de la revisión. |
 | groups | `GroupsContextFacade` (ACL) | Saber quién es el líder del grupo y si el solicitante es integrante. |
+
+Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsByTaskId`, que usa tasks antes de borrar una tarea. Su implementación usa `RequestRepository` directamente para no formar un ciclo de beans con `RequestCommandService` → `TasksContextFacade`.
 | iam | `UserQueryService` (en los controladores) | Resolver el usuario del token. |
 
 ## Persistencia
@@ -84,4 +86,3 @@ Todos requieren token.
 ## Observaciones
 
 - `RequestController` tiene `@CrossOrigin(origins = "*")` redundante: el CORS ya se configura en `WebSecurityConfiguration`.
-- `DeleteAllRequestsByTaskIdCommand` tiene handler pero nadie lo invoca (ver la observación sobre borrado en [tasks/backend](../../tasks/backend/README.md)).

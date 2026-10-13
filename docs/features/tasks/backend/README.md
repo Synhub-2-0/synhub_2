@@ -52,6 +52,10 @@ Comportamiento del agregado:
 
 ## ACL
 
+Hacia requests: `RequestsContextFacade.deleteAllRequestsByTaskId`, que `DeleteTaskCommand` y `DeleteTasksByUserIdAndGroupIdCommand` llaman antes de borrar cada tarea (las requests la referencian por FK).
+
+Hacia otros contextos:
+
 `TasksContextFacade` (`interfaces/acl`) / `TaskContextFacadeImpl` (`aplication/internal/acl`):
 
 | Método | Lo usa |
@@ -79,5 +83,4 @@ Comportamiento del agregado:
 ## Observaciones
 
 - El comentario de `TaskStatusScheduler` dice "cada 60 segundos", pero `fixedRate = 30000` son 30 s.
-- `DeleteTaskCommand` no borra las solicitudes (`requests`) de la tarea, y `DeleteAllRequestsByTaskIdCommand` de requests no se invoca. Si la tarea tiene solicitudes, la clave foránea `requests.task_id` puede impedir el borrado.
 - `TaskStatusScheduler` es un proceso de aplicación ubicado en `domain/services`.

@@ -26,7 +26,8 @@ class TaskStatusDoneBlockedTest {
         var task = mock(Task.class, RETURNS_DEEP_STUBS);
         when(task.getProfile().getGroup().getLeader().getId()).thenReturn(1L);
         when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
-        var service = new TaskCommandServiceImpl(taskRepository, mock(UserRepository.class), mock(GroupRepository.class), mock(GroupProfileRepository.class));
+        var service = new TaskCommandServiceImpl(taskRepository, mock(UserRepository.class), mock(GroupRepository.class), mock(GroupProfileRepository.class),
+                mock(com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade.class));
 
         var e = assertThrows(TaskStatusTransitionNotAllowedException.class,
                 () -> service.handle(new UpdateTaskStatusCommand(1L, 10L, TaskStatus.DONE)));

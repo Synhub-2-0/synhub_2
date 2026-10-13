@@ -5,6 +5,7 @@ import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.aplication.internal.commandservices.TaskCommandServiceImpl;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
@@ -36,6 +37,7 @@ class TaskCommandServiceImplTest {
     private UserRepository users;
     private GroupRepository groups;
     private GroupProfileRepository profiles;
+    private RequestsContextFacade requests;
     private TaskCommandServiceImpl service;
     private Group group;
     private GroupProfile anaProfile, luisProfile;
@@ -47,7 +49,8 @@ class TaskCommandServiceImplTest {
         users = mock(UserRepository.class);
         groups = mock(GroupRepository.class);
         profiles = mock(GroupProfileRepository.class);
-        service = new TaskCommandServiceImpl(tasks, users, groups, profiles);
+        requests = mock(RequestsContextFacade.class);
+        service = new TaskCommandServiceImpl(tasks, users, groups, profiles, requests);
 
         var ana = user(ANA, "ana");
         var luis = user(LUIS, "luis");
@@ -108,7 +111,10 @@ class TaskCommandServiceImplTest {
     // ---- Borrar
     @Test void leaderDeletesTask() {
         service.handle(new DeleteTaskCommand(LEADER, TASK));
-        verify(tasks).deleteById(TASK);
+        // AUDIT BUG-01: primero las requests (FK), después la tarea
+        var order = inOrder(requests, tasks);
+        order.verify(requests).deleteAllRequestsByTaskId(TASK);
+        order.verify(tasks).deleteById(TASK);
     }
 
     @Test void memberCannotDeleteTask() {
@@ -136,7 +142,9 @@ class TaskCommandServiceImplTest {
     @Test void deletesAllTasksOfAMemberInAGroup() {
         when(tasks.findByProfile_Id(anaProfile.getId())).thenReturn(List.of(task));
         service.handle(new DeleteTasksByUserIdAndGroupIdCommand(ANA, GROUP));
-        verify(tasks).delete(task);
+        var order = inOrder(requests, tasks);
+        order.verify(requests).deleteAllRequestsByTaskId(TASK);
+        order.verify(tasks).delete(task);
     }
 
     @Test void deletingTasksOfUnknownUserFails() {
