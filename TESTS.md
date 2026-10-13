@@ -36,10 +36,10 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 
 | Capa | Archivos | LISTO / PREVIO | LISTO-PARCIAL | PENDIENTE |
 |---|---|---|---|---|
-| Backend: pruebas unitarias | 26 | 12 | 5 | 9 |
+| Backend: pruebas unitarias | 26 | 19 | 7 | 0 |
 | Backend: API (integración) | 6 | 0 | 0 | 6 |
 | Frontend | 37 | 0 | 0 | 37 |
-| **Total** | **69** | **12** | **5** | **52** |
+| **Total** | **69** | **19** | **7** | **43** |
 
 ---
 
@@ -66,15 +66,15 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 | B-TSK-04 | `tasks/TaskQueryServiceImplTest.java` | `TaskQueryServiceImpl` | por grupo con y sin estado · por grupo y usuario · por id · por estado (texto) | — | LISTO |
 | B-TSK-05 | `tasks/TaskStatusSchedulerTest.java` | `TaskStatusScheduler` | marca `EXPIRED` las tareas vencidas y crea una request `EXPIRED` sin solicitante · sin vencidas no hace nada · ejecuciones concurrentes no duplican | BUG-09 | LISTO-PARCIAL |
 | B-TSK-06 | `tasks/TaskContextFacadeImplTest.java` | `TaskContextFacadeImpl` | `getTaskById` · `applySubmissionReview` guarda el nuevo estado · tarea inexistente → 404 · `deleteTasksByUserIdAndGroupId` delega | — | LISTO |
-| B-REQ-01 | `requests/RequestCommandServiceImplTest.java` | `RequestCommandServiceImpl` | (18 casos previos: creación, revisión, permisos y efectos en la tarea) | — | PENDIENTE |
-| B-REQ-02 | `requests/RequestQueryServiceImplTest.java` | `RequestQueryServiceImpl` | (5 casos previos: orden, filtros, líder, grupo inexistente, filtro inválido) | — | PENDIENTE |
-| B-REQ-03 | `requests/RequestDomainAndDeleteTest.java` | `Request`, `RequestType`, `RequestStatus`, borrado | `fromString` sin distinguir mayúsculas e inválido · `Request` nace `PENDING` · borrar una request inexistente → 400 · borrado sin permisos → 403 · `DeleteAllRequestsByTaskId` | SEC-02 | PENDIENTE |
-| B-MET-01 | `metrics/TaskMetricsQueryServiceImplTest.java` | `TaskMetricsQueryServiceImpl` | resumen por estado · reagendados (total e ids) · distribución por integrante · tiempo promedio solo de `DONE` (en días) · grupo inexistente → 0 · duración solo `IN_PROGRESS` · `timePassed` solo `COMPLETED`/`DONE` · las consultas por usuario filtran por grupo | BUG-08 | PENDIENTE |
-| B-AI-01 | `ai/TaskClassificationQueryServiceImplTest.java` | `TaskClassificationQueryServiceImpl` | (3 casos previos: mapeo, normalización, fallo de Bedrock) | — | PENDIENTE |
-| B-AI-02 | `ai/TaskClassificationQueryServiceImplIT.java` | Bedrock real | (previo; solo con `RUN_BEDROCK_IT=1`, no lo ejecuta surefire) | — | PENDIENTE |
-| B-AI-03 | `ai/GroupReportQueryServiceImplTest.java` | `GroupReportQueryServiceImpl` | los hechos incluyen el resumen, los reagendados y una fila por integrante con la carga ponderada (difficulty, o 3 por defecto) · devuelve el texto del modelo · fallo de Bedrock → vacío | — | PENDIENTE |
-| B-SHR-01 | `shared/GlobalExceptionHandlerTest.java` | `GlobalExceptionHandler` | 400 / 401 / 403 / 404 / 409 / 500 con `ErrorResponse` y `path` · el 500 registra la excepción · timestamp con zona | BUG-07, BUG-14 | PENDIENTE |
-| B-SHR-02 | `shared/NamingStrategyTest.java` | `SnakeCaseWithPluralizedTablePhysicalNamingStrategy` | tabla `GroupProfile` → `group_profiles` · columna `dueDate` → `due_date` · null → null | — | PENDIENTE |
+| B-REQ-01 | `requests/RequestCommandServiceImplTest.java` | `RequestCommandServiceImpl` | (18 casos previos: creación, revisión, permisos y efectos en la tarea) | — | PREVIO |
+| B-REQ-02 | `requests/RequestQueryServiceImplTest.java` | `RequestQueryServiceImpl` | (5 casos previos: orden, filtros, líder, grupo inexistente, filtro inválido) | — | PREVIO |
+| B-REQ-03 | `requests/RequestDomainAndDeleteTest.java` | `Request`, `RequestType`, `RequestStatus`, borrado | `fromString` sin distinguir mayúsculas e inválido · `Request` nace `PENDING` · cambio de estado · borrar una request inexistente → 400 · `DeleteAllRequestsByTaskId` (permisos del borrado: ver B-API-03, SEC-02) | — | LISTO |
+| B-MET-01 | `metrics/TaskMetricsQueryServiceImplTest.java` | `TaskMetricsQueryServiceImpl` | resumen por estado · reagendados (total e ids) · distribución por integrante · tiempo promedio solo de `DONE` (en días) · grupo inexistente → 0 · duración solo `IN_PROGRESS` · `timePassed` solo `COMPLETED`/`DONE` · las consultas por usuario filtran por grupo | BUG-08 | LISTO-PARCIAL |
+| B-AI-01 | `ai/TaskClassificationQueryServiceImplTest.java` | `TaskClassificationQueryServiceImpl` | (3 casos previos: mapeo, normalización, fallo de Bedrock) | — | PREVIO |
+| B-AI-02 | `ai/TaskClassificationQueryServiceImplIT.java` | Bedrock real | (previo; se omite salvo con `RUN_BEDROCK_IT=1` y credenciales de AWS) | — | PREVIO |
+| B-AI-03 | `ai/GroupReportQueryServiceImplTest.java` | `GroupReportQueryServiceImpl` | los hechos incluyen el resumen, los reagendados y una fila por integrante con la carga ponderada (difficulty, o 3 por defecto) · devuelve el texto del modelo · fallo de Bedrock → vacío | — | LISTO |
+| B-SHR-01 | `shared/GlobalExceptionHandlerTest.java` | `GlobalExceptionHandler` | 400 / 401 / 403 / 404 / 409 / 500 con `ErrorResponse` y `path` · el 500 registra la excepción · timestamp con zona | BUG-07, BUG-14 | LISTO-PARCIAL |
+| B-SHR-02 | `shared/NamingStrategyTest.java` | `SnakeCaseWithPluralizedTablePhysicalNamingStrategy` | tabla `GroupProfile` → `group_profiles` · columna `dueDate` → `due_date` · null → null | — | LISTO |
 
 ## Backend: pruebas de API (integración)
 
