@@ -69,6 +69,21 @@ class TaskLifecycleApiTests extends ApiTestSupport {
         assertFalse(containsId(get("/groups/" + team.groupId() + "/requests?status=PENDING", team.leader().token()).json(), requestId));
     }
 
+    // AUDIT BUG-18: una tarea DONE es definitiva también para la API (la web ya lo impedía)
+    @Test void doneTaskCannotBeEditedMovedOrDeleted() {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        var requestId = submit(team.member(), taskId);
+        assertEquals(200, put("/tasks/" + taskId + "/requests/" + requestId + "/status/APPROVED", team.leader().token(), null).status());
+
+        assertEquals(409, put("/tasks/" + taskId, team.leader().token(), Map.of("title", "Otra", "userId", team.member().id())).status());
+        assertEquals(409, put("/tasks/" + taskId + "/status?status=IN_PROGRESS", team.member().token(), null).status());
+        assertEquals(409, delete("/tasks/" + taskId, team.leader().token()).status());
+        assertEquals(403, delete("/tasks/" + taskId, team.member().token()).status(), "los permisos se revisan primero");
+        assertEquals("DONE", get("/tasks/" + taskId, team.leader().token()).text("status"));
+        assertEquals(204, delete("/groups/" + team.groupId(), team.leader().token()).status(), "borrar el grupo sí borra sus tareas DONE");
+    }
+
     @Test void rejectedSubmissionReopensTask() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());

@@ -95,6 +95,7 @@ Los riesgos principales son tres:
 | [BUG-15](#bug-15) | Baja | Frontend · iam | `Profile.userId` siempre `undefined` | Código | Resuelto |
 | [BUG-16](#bug-16) | Baja | API · tasks | `UpdateTaskResource.requesterId` se ignora | Código | Resuelto |
 | [BUG-17](#bug-17) | Baja | Frontend · groups | Búsqueda por código comentada aunque el backend la expone | Código | Resuelto (unirse por código, HUM-05) |
+| [BUG-18](#bug-18) | Media | Backend · tasks | Una tarea `DONE` se puede editar, mover o borrar por API | Reproducido | Resuelto |
 | [ARC-02](#arc-02) | Baja | Backend · estructura | Erratas de paquetes y capas mal ubicadas | Código | Pendiente |
 | [ARC-03](#arc-03) | Baja | Backend + frontend | Código muerto o incompleto | Código | Pendiente |
 | [PERF-02](#perf-02) | Baja | API | Listas sin paginación | Código | Resuelto |
@@ -575,6 +576,16 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 **Criterios de aceptación.** No queda código comentado que contradiga el backend.
 
 **Resolución (HUM-05: terminar la función).** Nuevo `POST /groups/join { code }`: el código funciona como invitación abierta y el usuario entra como miembro. La web lo ofrece en "Mis grupos" (panel "Unirse a un grupo"). Se eliminaron el `searchByCode` y el `inviteUserToGroup` comentados.
+
+### BUG-18
+
+**Una tarea `DONE` se puede editar, mover o borrar por API** · Media · Reproducido (hallado durante la corrección, 2026-10-13)
+
+**Evidencia.** La web bloquea las tareas `DONE` (`TasksStore.isDone`, `TaskBoard`), pero `PUT /tasks/{id}`, `PUT /tasks/{id}/status` y `DELETE /tasks/{id}` las aceptaban: en la prueba en Docker, editar una tarea aprobada respondió 200.
+
+**Resolución.** Regla en el dominio: `Task.ensureNotFinished()` lanza `TaskFinishedException` (409) y la usan los tres casos de uso, después de revisar los permisos (un no autorizado sigue recibiendo 403). Borrar el grupo o quitar al integrante sigue borrando sus tareas `DONE` (borrado lógico).
+
+**Criterios de aceptación.** Las tres operaciones sobre una tarea `DONE` responden 409 (`api/TaskLifecycleApiTests`, `tasks/TaskTest`).
 
 ---
 

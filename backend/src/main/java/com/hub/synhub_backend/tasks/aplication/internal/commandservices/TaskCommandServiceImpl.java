@@ -76,6 +76,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (!group.getLeader().getId().equals(command.requesterId())) {
             throw new AccessDeniedException("Only the leader can edit task details");
         }
+        task.ensureNotFinished();
 
         var currentProfile = task.getProfile();
         var newProfile = this.groupProfileRepository.findByGroup_IdAndUser_Id(groupId, command.newUserId())
@@ -104,6 +105,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
             throw new AccessDeniedException("Only the leader of the group can delete tasks");
         }
+        task.ensureNotFinished();
         // Soft delete (HUM-03): la tarea conserva su perfil; solo sale de la colección en memoria.
         var profile = task.getProfile();
         if (profile != null) profile.detachTask(task);
@@ -121,6 +123,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (!(taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId()) || taskToUpdate.getProfile().getUser().getId().equals(command.requesterId()))) {
             throw new AccessDeniedException("Only the leader or the assigned member can update the task status");
         }
+        taskToUpdate.ensureNotFinished();
         taskToUpdate.updateStatus(command);
         return this.taskRepository.save(taskToUpdate);
     }

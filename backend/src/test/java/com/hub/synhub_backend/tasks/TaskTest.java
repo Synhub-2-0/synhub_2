@@ -135,4 +135,14 @@ class TaskTest {
         var noDescription = new CreateTaskCommand(1L, "Login", null, NOW.plusDays(1), 2L, 10L, null, null, null, null, null);
         assertEquals("", new Task(noDescription).getDescription());
     }
+
+    // AUDIT BUG-18
+    @Test void onlyDoneTasksAreFinished() {
+        var task = new Task();
+        ReflectionTestUtils.setField(task, "id", 4L);
+        assertDoesNotThrow(task::ensureNotFinished);
+        task.setStatus(TaskStatus.DONE);
+        var e = assertThrows(com.hub.synhub_backend.tasks.domain.exceptions.TaskFinishedException.class, task::ensureNotFinished);
+        assertTrue(e.getMessage().contains("4"));
+    }
 }

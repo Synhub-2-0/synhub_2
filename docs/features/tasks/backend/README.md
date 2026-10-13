@@ -14,7 +14,7 @@ Todos requieren token.
 | `GET` | `/api/v1/tasks/group/{groupId}` | `?status=` (opcional, `TaskStatus`); `?page=&size=` (opcionales) | `200 TaskResource[]`, o `PageResource<TaskResource>` ordenado por fecha límite si se pide página · `403` | Solo integrantes del grupo. |
 | `GET` | `/api/v1/tasks/group/{groupId}/user/{userId}` | — | `200 TaskResource[]` · `403` | Solo integrantes del grupo. |
 | `PUT` | `/api/v1/tasks/{taskId}` | `UpdateTaskResource` | `200 TaskResource` | Solo el líder. Puede reasignar a otro integrante. |
-| `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | Líder o asignado. `DONE` → 409. |
+| `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | Líder o asignado. `DONE` → 409. Una tarea que ya está `DONE` no cambia de estado (409). |
 | `DELETE` | `/api/v1/tasks/{taskId}` | — | `204` | Solo el líder. |
 
 ```text
@@ -41,6 +41,7 @@ Comportamiento del agregado:
 - `updateStatus(cmd)`: al pasar de `IN_PROGRESS` a `COMPLETED` acumula `timePassed` (desde `createdAt`, o desde `updatedAt` si ya fue reagendada). Las transiciones `COMPLETED`, `ON_HOLD` o `EXPIRED` → `IN_PROGRESS` incrementan `timesRearranged`.
 - `updateTask(cmd)`: actualiza los campos no vacíos; si cambia `dueDate`, recalcula `EXPIRED` / `IN_PROGRESS`.
 - `applySubmissionReview(approved)`: `DONE` si se aprueba, `IN_PROGRESS` si se rechaza. Solo lo invoca requests.
+- `ensureNotFinished()`: una tarea `DONE` es definitiva; editarla, cambiarle el estado o borrarla responde 409 (`TaskFinishedException`, AUDIT BUG-18).
 
 ## Capa de aplicación
 

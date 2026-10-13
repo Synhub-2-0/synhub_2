@@ -12,6 +12,7 @@ import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAg
 import com.hub.synhub_backend.tasks.domain.model.commands.CreateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
+import com.hub.synhub_backend.tasks.domain.exceptions.TaskFinishedException;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 
 import java.time.OffsetDateTime;
@@ -80,6 +81,14 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     /** Resultado de revisar la entrega: aprobada -> DONE; rechazada -> IN_PROGRESS (suma un reagendado). */
     public void applySubmissionReview(boolean approved) {
         this.updateStatus(new UpdateTaskStatusCommand(null, this.getId(), approved ? TaskStatus.DONE : TaskStatus.IN_PROGRESS));
+    }
+
+    /**
+     * Una tarea DONE (entrega aprobada) es definitiva: no se edita, no cambia de estado ni se borra (AUDIT BUG-18).
+     * La web ya lo impedía; ahora lo exige el dominio.
+     */
+    public void ensureNotFinished() {
+        if (this.status == TaskStatus.DONE) throw new TaskFinishedException(this.getId());
     }
 
     public void updateStatus(UpdateTaskStatusCommand command) {
