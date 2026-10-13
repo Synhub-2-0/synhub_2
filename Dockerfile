@@ -10,7 +10,7 @@ COPY frontend/ ./
 RUN npx ng build
 
 # ---- Backend (Spring Boot) ----
-FROM eclipse-temurin:21-jdk AS backend
+FROM eclipse-temurin:25-jdk AS backend
 WORKDIR /src
 COPY backend/.mvn .mvn
 COPY backend/mvnw backend/pom.xml ./
@@ -20,7 +20,7 @@ COPY backend/src src
 RUN ./mvnw -B -q -DskipTests package && cp target/*.jar /app.jar
 
 # ---- Runtime ----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 RUN apt-get update \
  && apt-get install -y --no-install-recommends nginx curl \
  && rm -rf /var/lib/apt/lists/* /etc/nginx/sites-enabled/default \
