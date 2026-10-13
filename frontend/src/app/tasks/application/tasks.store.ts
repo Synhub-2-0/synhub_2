@@ -115,7 +115,7 @@ export class TasksStore {
       ),
     ).subscribe((lists) => {
       this.tasksSignal.set(lists.flat().sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime()));
-      if (failed) this.setError('Failed to load user tasks');
+      if (failed) this.setError('No se pudieron cargar todas tus tareas. Inténtalo nuevamente.');
       this.loadingSignal.set(false);
     });
   }

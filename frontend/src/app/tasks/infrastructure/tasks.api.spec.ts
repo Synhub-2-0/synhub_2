@@ -47,7 +47,7 @@ describe('TasksApi (HTTP)', () => {
     const due = new Date('2026-12-01T10:00:00Z');
     api.createTask(new CreateTaskCommand('T', 'd', due, 5, 10, 3, 'QA', 'LOW', 'x', true)).subscribe();
     api.getTaskById(7).subscribe();
-    api.updateTask(7, new UpdateTaskCommand(1, 'T2', 'd', due, 5)).subscribe();
+    api.updateTask(7, new UpdateTaskCommand('T2', 'd', due, 5)).subscribe();
     api.deleteTask(7).subscribe();
 
     const post = backend.expectOne({ method: 'POST', url });
@@ -56,6 +56,7 @@ describe('TasksApi (HTTP)', () => {
     backend.expectOne({ method: 'GET', url: `${url}/7` }).flush(resource);
     const put = backend.expectOne({ method: 'PUT', url: `${url}/7` });
     expect(put.request.body).toMatchObject({ title: 'T2', userId: 5 });
+    expect(put.request.body).not.toHaveProperty('requesterId'); // AUDIT BUG-16
     put.flush(resource);
     backend.expectOne({ method: 'DELETE', url: `${url}/7` }).flush(null);
   });

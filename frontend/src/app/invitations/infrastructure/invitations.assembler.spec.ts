@@ -7,7 +7,7 @@ describe('InvitationsAssembler', () => {
   const resource: InvitationResource = {
     id: 50,
     group: { id: 10, name: 'Equipo', imgUrl: '', description: 'd', code: 'ABC123XYZ', memberCount: 3 },
-    user: { id: 9, name: 'Luis', surname: 'Paz', email: 'l@x', imgUrl: '', userId: 9, username: 'luis' },
+    user: { id: 9, name: 'Luis', surname: 'Paz', email: 'l@x', imgUrl: '', username: 'luis' },
   };
 
   it('resource → entidad: el "user" del backend pasa a "profile"', () => {

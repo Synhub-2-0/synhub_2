@@ -12,6 +12,7 @@ describe('BaseForm', () => {
   const form = () => new FormGroup({
     name: new FormControl('', [Validators.required]),
     email: new FormControl('x', [Validators.email]),
+    password: new FormControl('Corta12', [Validators.minLength(8)]),
     ok: new FormControl('valor'),
   });
 
@@ -25,7 +26,11 @@ describe('BaseForm', () => {
   it('mensajes para required y para otros errores', () => {
     const f = form();
     expect(helper.messages(f, 'name')).toBe('name es requerido.');
-    expect(helper.messages(f, 'email')).toBe('email es inválido.');
+    expect(helper.messages(f, 'email')).toBe('email no es un correo válido.');
     expect(helper.messages(f, 'ok')).toBe('');
+  });
+
+  it('AUDIT FE-03: mensaje de longitud mínima', () => {
+    expect(helper.messages(form(), 'password')).toBe('password debe tener al menos 8 caracteres.');
   });
 });

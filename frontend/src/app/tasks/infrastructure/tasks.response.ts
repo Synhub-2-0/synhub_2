@@ -55,7 +55,6 @@ export interface CreateTaskRequest {
 }
 
 export interface UpdateTaskRequest {
-  requesterId: number;
   title: string;
   description: string;
   dueDate: string;

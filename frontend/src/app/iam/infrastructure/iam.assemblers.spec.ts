@@ -33,13 +33,13 @@ describe('Assemblers de IAM', () => {
 
   it('Profiles: resource ↔ entidad', () => {
     const assembler = new ProfilesAssembler();
-    const resource: ProfileResource = { id: 5, name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: '', userId: 5, username: 'ana' };
+    const resource: ProfileResource = { id: 5, name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: '', username: 'ana' };
     const profile = assembler.toEntityFromResource(resource);
     expect([profile.id, profile.name, profile.surname, profile.username]).toEqual([5, 'Ana', 'Torres', 'ana']);
     expect(assembler.toResourceFromEntity(profile)).toEqual(resource);
   });
 
-  it.skip('AUDIT BUG-15: un perfil armado desde UserResource (sin userId) no deja userId undefined', () => {
+  it('AUDIT BUG-15: un perfil armado desde UserResource (sin userId) no deja userId undefined', () => {
     const fromBackend = { id: 5, name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: '', username: 'ana' } as ProfileResource;
     expect(new ProfilesAssembler().toEntityFromResource(fromBackend).userId).toBe(5);
   });

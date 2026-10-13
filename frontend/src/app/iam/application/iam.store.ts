@@ -40,15 +40,11 @@ export class IamStore {
 
         this.iamApi.getProfileByUserId(resource.id).subscribe({
           next: profile => this.currentProfileSignal.set(profile),
-          error: err => {
-            console.error('Failed to load profile:', err);
-            this.currentProfileSignal.set(null);
-          },
+          error: () => this.currentProfileSignal.set(null),
         });
         router.navigate(['/home']).then();
       },
       error: err => {
-        console.error('Sign-in failed:', err);
         this.toastStore.error(err.message);
         this.clearSession();
         router.navigate(['/auth/sign-in']).then();
@@ -61,7 +57,6 @@ export class IamStore {
       // The new account is signed in right away with the credentials just registered.
       next: () => this.signIn(new SignInCommand({ username: command.username, password: command.password }), router),
       error: err => {
-        console.error('Sign-up failed:', err);
         this.toastStore.error(err.message);
         this.clearSession();
         router.navigate(['/auth/sign-up']).then();

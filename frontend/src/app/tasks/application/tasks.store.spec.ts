@@ -75,7 +75,7 @@ describe('TasksStore', () => {
         groupId === 1 ? of([task(1)]) : throwError(() => new Error('500')));
       store.loadTasksByGroupsAndUser([1, 2], 5);
       expect(store.tasks().map((t) => t.id)).toEqual([1]);
-      expect(store.error()).toBe('Failed to load user tasks');
+      expect(store.error()).toBe('No se pudieron cargar todas tus tareas. Inténtalo nuevamente.');
     });
 
     it('sin grupos no llama a la API', () => {
@@ -110,7 +110,7 @@ describe('TasksStore', () => {
 
     store.addTask(new CreateTaskCommand('T2', '', new Date(), 5, 10));
     store.updateTaskStatus(1, 'COMPLETED');
-    store.updateTask(2, new UpdateTaskCommand(1, 'Editada', '', new Date(), 5));
+    store.updateTask(2, new UpdateTaskCommand('Editada', '', new Date(), 5));
     store.deleteTask(1);
 
     expect(store.tasks().map((t) => [t.id, t.title])).toEqual([[2, 'Editada']]);
@@ -118,7 +118,7 @@ describe('TasksStore', () => {
 
   it('una tarea DONE no se edita ni se borra', () => {
     loadGroup(task(1, 'DONE'));
-    store.updateTask(1, new UpdateTaskCommand(1, 'x', '', new Date(), 5));
+    store.updateTask(1, new UpdateTaskCommand('x', '', new Date(), 5));
     store.deleteTask(1);
     expect(api.updateTask).not.toHaveBeenCalled();
     expect(api.deleteTask).not.toHaveBeenCalled();

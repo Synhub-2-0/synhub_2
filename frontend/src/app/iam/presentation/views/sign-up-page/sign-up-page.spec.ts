@@ -30,7 +30,7 @@ describe('SignUpPage', () => {
     expect(component.form.controls.email.valid).toBe(false);
   });
 
-  it.skip('AUDIT FE-03: la contraseña exige al menos 8 caracteres', () => {
+  it('AUDIT FE-03: la contraseña exige al menos 8 caracteres', () => {
     component.form.controls.password.setValue('Corta12');
     expect(component.form.controls.password.valid).toBe(false);
   });

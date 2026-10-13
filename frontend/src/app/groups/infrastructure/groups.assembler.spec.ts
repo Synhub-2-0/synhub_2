@@ -24,7 +24,7 @@ describe('GroupsAssembler', () => {
 
   it('integrantes con su perfil y rol', () => {
     const [member] = assembler.toGroupUsersFromResources([
-      { user: { id: 2, name: 'Ana', surname: 'Torres', email: 'a@x', imgUrl: '', userId: 2, username: 'ana' }, roleInGroup: 'GROUP_LEADER' },
+      { user: { id: 2, name: 'Ana', surname: 'Torres', email: 'a@x', imgUrl: '', username: 'ana' }, roleInGroup: 'GROUP_LEADER' },
     ]);
     expect(member.user.username).toBe('ana');
     expect(member.roleInGroup).toBe('GROUP_LEADER');

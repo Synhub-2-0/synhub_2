@@ -6,7 +6,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TasksStore } from '../../../application/tasks.store';
 import { GroupsStore } from '../../../../groups/application/groups.store';
-import { IamStore } from '../../../../iam/application/iam.store';
 import { ToastStore } from '../../../../shared/application/toast.store';
 import { CreateTaskCommand } from '../../../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../../../domain/model/update-task.command';
@@ -26,7 +25,6 @@ export class TaskForm implements OnInit {
   private readonly router = inject(Router);
   readonly tasksStore = inject(TasksStore);
   readonly groupsStore = inject(GroupsStore);
-  readonly iamStore = inject(IamStore);
   private readonly toastStore = inject(ToastStore);
   readonly aiStore = inject(AiStore);
 
@@ -142,7 +140,7 @@ export class TaskForm implements OnInit {
     const dueDate = new Date(this.dueDateTime);
     if (this.isEditMode && this.taskId) {
       this.tasksStore.updateTask(this.taskId, new UpdateTaskCommand(
-        this.iamStore.currentUserId() ?? 0, this.title.trim(), this.description.trim(), dueDate, this.userId,
+        this.title.trim(), this.description.trim(), dueDate, this.userId,
       ));
     } else {
       this.tasksStore.addTask(new CreateTaskCommand(
