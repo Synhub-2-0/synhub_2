@@ -36,10 +36,10 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 
 | Capa | Archivos | LISTO / PREVIO | LISTO-PARCIAL | PENDIENTE |
 |---|---|---|---|---|
-| Backend: unitarias | 26 | 0 | 0 | 26 |
+| Backend: pruebas unitarias | 26 | 5 | 1 | 20 |
 | Backend: API (integración) | 6 | 0 | 0 | 6 |
 | Frontend | 37 | 0 | 0 | 37 |
-| **Total** | **69** | **0** | **0** | **69** |
+| **Total** | **69** | **5** | **1** | **63** |
 
 ---
 
@@ -49,12 +49,12 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|
-| B-IAM-01 | `iam/UserCommandServiceImplTest.java` | `UserCommandServiceImpl` | sign-in correcto devuelve usuario+token · contraseña incorrecta → `BadCredentialsException` · usuario inexistente → `BadCredentialsException` · sign-up guarda con hash y roles resueltos · username duplicado → 409 · rol inexistente · email duplicado → 409 | BUG-04, BUG-05 | PENDIENTE |
-| B-IAM-02 | `iam/RoleTest.java` | `Role`, `RoleCommandServiceImpl` | lista vacía o null → `ROLE_USER` · `toRoleFromName` válido e inválido · el seed crea solo los roles faltantes | — | PENDIENTE |
-| B-IAM-03 | `iam/TokenServiceImplTest.java` | `TokenServiceImpl` | genera un token con el username como subject · valida un token propio · rechaza un token alterado · rechaza un token firmado con otra clave · rechaza un token expirado · extrae el bearer del header (presente, ausente, sin prefijo) | — | PENDIENTE |
-| B-IAM-04 | `iam/UserQueryServiceImplTest.java` | `UserQueryServiceImpl` | por id, por username, todos · usuarios de un grupo a partir de las membresías | — | PENDIENTE |
-| B-IAM-05 | `iam/IamContextFacadeImplTest.java` | `IamContextFacadeImpl` | `fetchUserIdByUsername` (encontrado → id, no encontrado → 0) · `fetchUsernameByUserId` (vacío si no existe) · `fetchUserById` con id null o ≤ 0 → vacío · `createUser` con rol por defecto | — | PENDIENTE |
-| B-IAM-06 | `iam/HashingServiceImplTest.java` | `HashingServiceImpl` (BCrypt) | `encode` ≠ texto plano · `matches` verdadero y falso | — | PENDIENTE |
+| B-IAM-01 | `iam/UserCommandServiceImplTest.java` | `UserCommandServiceImpl` | sign-in correcto devuelve usuario+token · contraseña incorrecta → `BadCredentialsException` · usuario inexistente → `BadCredentialsException` · sign-up guarda con hash y roles resueltos · username duplicado → 409 · rol inexistente · email duplicado → 409 | BUG-04, BUG-05 | LISTO-PARCIAL |
+| B-IAM-02 | `iam/RoleTest.java` | `Role`, `RoleCommandServiceImpl` | lista vacía o null → `ROLE_USER` · `toRoleFromName` válido e inválido · el seed crea solo los roles faltantes | — | LISTO |
+| B-IAM-03 | `iam/TokenServiceImplTest.java` | `TokenServiceImpl` | genera un token con el username como subject · valida un token propio · rechaza un token alterado · rechaza un token firmado con otra clave · rechaza un token expirado · extrae el bearer del header (presente, ausente, sin prefijo) | — | LISTO |
+| B-IAM-04 | `iam/UserQueryServiceImplTest.java` | `UserQueryServiceImpl` | por id, por username, todos · usuarios de un grupo a partir de las membresías | — | LISTO |
+| B-IAM-05 | `iam/IamContextFacadeImplTest.java` | `IamContextFacadeImpl` | `fetchUserIdByUsername` (encontrado → id, no encontrado → 0) · `fetchUsernameByUserId` (vacío si no existe) · `fetchUserById` con id null o ≤ 0 → vacío · `createUser` con rol por defecto | — | LISTO |
+| B-IAM-06 | `iam/HashingServiceImplTest.java` | `HashingServiceImpl` (BCrypt) | `encode` ≠ texto plano · `matches` verdadero y falso | — | LISTO |
 | B-GRP-01 | `groups/GroupDomainTest.java` | `Group`, `GroupCode`, `ImgUrl`, `GroupProfile` | `GroupCode.random` cumple el formato · el código inválido lanza excepción · `ImgUrl` null → "" · `getLeader` y `getMemberCount` · `updateInformation` ignora los vacíos · `addTask` en una membresía nueva | BUG-12 | PENDIENTE |
 | B-GRP-02 | `groups/GroupCommandServiceImplTest.java` | `GroupCommandServiceImpl` | crear: el creador queda líder y se regenera el código si colisiona · líder inexistente → 404 · actualizar: solo el líder · borrar: solo el líder, grupo inexistente → 404 · quitar miembro: OK, no está en el grupo → 404, líder → excepción (409 esperado) | BUG-10 | PENDIENTE |
 | B-GRP-03 | `groups/GroupQueryServiceImplTest.java` | `GroupQueryServiceImpl` | grupos por rol filtra por `GroupRole` · grupos por usuario · miembros de un grupo inexistente → 404 · por código con formato inválido → `IllegalArgumentException` | — | PENDIENTE |
