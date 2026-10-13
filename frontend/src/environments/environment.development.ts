@@ -3,6 +3,7 @@ export const environment = {
   platformProviderApiBaseUrl: 'http://localhost:8080/api/v1',
   platformProviderSignInEndpointPath: '/authentication/sign-in',
   platformProviderSignUpEndpointPath: '/authentication/sign-up',
+  platformProviderSignOutEndpointPath: '/authentication/sign-out',
   platformProviderUserEndpointPath: '/users',
   platformProviderProfileEndpointPath: '/users',
   platformProviderGroupsEndpointPath: '/groups',

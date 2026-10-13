@@ -6,7 +6,8 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 
 | Método | Ruta | Acceso | Cuerpo / parámetros | Respuesta |
 |---|---|---|---|---|
-| `POST` | `/api/v1/authentication/sign-in` | Público | `SignInResource { username, password }` | `200 AuthenticatedUserResource { id, username, token, role[] }` · `401` credenciales inválidas |
+| `POST` | `/api/v1/authentication/sign-in` | Público | `SignInResource { username, password }` | `200 AuthenticatedUserResource { id, username, role[], expiresAt }` + `Set-Cookie: SYNHUB_SESSION=<jwt>; HttpOnly; Secure; SameSite=Strict; Path=/api; Max-Age=86400` · `401` credenciales inválidas |
+| `POST` | `/api/v1/authentication/sign-out` | Público | — | `204` + `Set-Cookie` que borra la sesión (`Max-Age=0`) |
 | `POST` | `/api/v1/authentication/sign-up` | Público | `SignUpResource { username, name, surname, imgUrl?, email, password }` (no acepta roles: siempre `ROLE_USER`; `email` válido, `password` de 8 a 72 caracteres; sin `imgUrl` se usa `/default-avatar.jpg`) | `201 UserResource` · `409` usuario o email repetido |
 | `GET` | `/api/v1/users` | Solo `ROLE_ADMIN` | — | `200 UserResource[]` · `403` para el resto |
 | `GET` | `/api/v1/users/me` | Autenticado | — | `200 UserResource` del usuario de la sesión (único que incluye los roles) |
@@ -48,9 +49,10 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 |---|---|---|
 | Persistencia | `UserRepository`, `RoleRepository` | Spring Data JPA. `findByUsername`, `existsByUsername`, `existsByEmail`, `findByName`, `existsByName`. |
 | Hashing | `BCryptHashingService` | Implementa `HashingService` (puerto de aplicación) y `PasswordEncoder`. |
-| Tokens | `TokenServiceImpl` | JJWT. Secreto en `authorization.jwt.secret` (variable `JWT_SECRET`, obligatoria y de al menos 32 bytes: `validateSecret()` lo comprueba al arrancar) y expiración en `authorization.jwt.expiration.days` (7). |
+| Tokens | `TokenServiceImpl` | JJWT. Secreto en `authorization.jwt.secret` (variable `JWT_SECRET`, obligatoria y de al menos 32 bytes: `validateSecret()` lo comprueba al arrancar) y expiración en `authorization.jwt.expiration.days` (1). |
+| Cookie de sesión | `SessionCookieService` | Construye la cookie `SYNHUB_SESSION` (`HttpOnly`, `SameSite=Strict`, `Path=/api`, misma duración que el token). `Secure` depende de `authorization.cookie.secure` (`AUTH_COOKIE_SECURE`; `false` solo para HTTP local). El token **no** se devuelve en el cuerpo (decisión HUM-04). |
 | Seguridad | `WebSecurityConfiguration` | Stateless, CSRF deshabilitado, CORS solo para `app.cors.allowed-origins`. Rutas públicas: `/api/v1/authentication/**`, `/actuator/health` y Swagger (`/v3/api-docs/**`, `/swagger-ui/**`, solo con el perfil `dev`). El resto requiere token. |
-| Filtro | `BearerAuthorizationRequestFilter` | Lee `Authorization: Bearer …`, valida el token y carga el `UserDetails` (`UserDetailsServiceImpl`) en el `SecurityContext`. |
+| Filtro | `BearerAuthorizationRequestFilter` | Toma el token del header `Authorization: Bearer …` (clientes de API, Swagger) o, si no hay, de la cookie `SYNHUB_SESSION` (la web). Lo valida y carga el `UserDetails` (`UserDetailsServiceImpl`) en el `SecurityContext`. |
 | 401 | `UnauthorizedRequestHandlerEntryPoint` | Respuesta cuando falta el token o no es válido. |
 
 ## Errores

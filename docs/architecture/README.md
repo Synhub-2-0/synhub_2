@@ -22,7 +22,7 @@ flowchart LR
 ```
 
 - **Mismo origen**: en producción el frontend llama a `/api/v1` con una ruta relativa, y el proxy (nginx en Docker, CloudFront en AWS) reenvía las peticiones al backend. No hace falta CORS.
-- **Autenticación stateless**: JWT en el header `Authorization: Bearer`, emitido por IAM y validado en cada petición.
+- **Autenticación stateless**: JWT emitido por IAM y validado en cada petición. La web lo recibe en una cookie `HttpOnly` de 1 día (`SYNHUB_SESSION`) que el JavaScript no puede leer; los clientes de API pueden enviarlo como `Authorization: Bearer`.
 
 ## Stack
 
@@ -60,7 +60,7 @@ sequenceDiagram
     V->>S: statusChange → updateTaskStatus(id, COMPLETED)
     S->>A: updateTaskStatus(id, status)
     A->>I: PUT /api/v1/tasks/{id}/status?status=COMPLETED
-    I->>F: + Authorization: Bearer <jwt>
+    I->>F: withCredentials: cookie SYNHUB_SESSION=<jwt>
     F->>C: SecurityContext con el usuario
     C->>CS: handle(UpdateTaskStatusCommand(userId, id, COMPLETED))
     CS->>R: findById

@@ -71,7 +71,7 @@ Los riesgos principales son tres:
 | [SEC-07](#sec-07) | Media | Backend + frontend | No hay validación de entrada (Bean Validation) | Reproducido | Resuelto (frontend: FE-03) |
 | [SEC-08](#sec-08) | Media | Backend · seguridad | CORS `*`, `@CrossOrigin` duplicado y Swagger público | Código | Resuelto |
 | [SEC-09](#sec-09) | Media | Backend · seguridad | `TestController` activo: nunca se activa el perfil `prod` | Código | Resuelto (ECS: HUM-02) |
-| [SEC-10](#sec-10) | Media | Frontend · sesión | Sesión: el 401 no cierra la sesión; token de 7 días en `localStorage` | Código | Pendiente |
+| [SEC-10](#sec-10) | Media | Frontend · sesión | Sesión: el 401 no cierra la sesión; token de 7 días en `localStorage` | Código | Resuelto (cookie HttpOnly, HUM-04) |
 | [BUG-04](#bug-04) | Media | Backend · iam | Email duplicado → 500 (la validación compara el username) | Reproducido | Resuelto |
 | [BUG-05](#bug-05) | Media | Backend · iam | Rol inexistente en el registro → 500 | Reproducido | Resuelto (por SEC-05) |
 | [BUG-06](#bug-06) | Media | Backend · groups | Grupo sin `name` → 500 | Reproducido | Resuelto (por SEC-07) |
@@ -296,6 +296,13 @@ Al corregirlo aparecieron otros cinco 500 con la misma causa, ya resueltos: regi
 3. Bajar la expiración a 1 día. Ver [HUM-04](#decisiones-humanas-no-automatizar) para la estrategia definitiva (refresh token o cookie `HttpOnly`).
 
 **Criterios de aceptación.** Con un token vencido, al navegar a `/home` se redirige al login. Un 401 en cualquier petición limpia `localStorage` y redirige. Hay specs del interceptor y del guard.
+
+**Resolución (HUM-04: cookie `HttpOnly` de 1 día).**
+
+- Backend: el login responde `Set-Cookie: SYNHUB_SESSION=<jwt>; HttpOnly; Secure; SameSite=Strict; Path=/api; Max-Age=86400` y ya no devuelve el token en el cuerpo, sino `expiresAt`. Nuevo `POST /authentication/sign-out` que borra la cookie. El filtro acepta la cookie o el header `Bearer` (clientes de API). La expiración del JWT pasó de 7 días a 1.
+- Frontend: el JWT no se guarda en ningún lado; `localStorage` solo tiene `userId` y `sessionExpiresAt`. El interceptor envía `withCredentials` a la API y ante un 401 cierra la sesión y lleva a `/auth/sign-in?expired=1`. El guard rechaza una sesión vencida. `signOut` llama al backend.
+- CSRF: la cookie es `SameSite=Strict` y CORS solo admite los orígenes configurados (SEC-08).
+- Despliegue: CloudFront debe reenviar la cookie en `/api/*` (HUM-02).
 
 ### SEC-11
 
@@ -811,7 +818,7 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 | ID | Decisión / acción | Relacionado | Recomendación | Decisión tomada (2026-10-13) |
 |---|---|---|---|---|
 | HUM-01 | **Rotar** `JWT_SECRET` y las credenciales de BD en todos los entornos que hayan usado los valores por defecto. Cargar el secreto en SSM. | SEC-04 | Hacerlo antes de desplegar la fase 1. | Pendiente (requiere acceso a AWS). |
-| HUM-02 | Configurar AWS: `SPRING_PROFILES_ACTIVE=prod` en la task definition de ECS, la *trust policy* OIDC de `synhub_2`, las variables `AWS_DEPLOY_ROLE_ARN`/`AWS_ACCOUNT_ID` del repo y WAF o rate limit en CloudFront/ALB. | SEC-09, SEC-11, OPS-01 | — | Pendiente (requiere acceso a AWS y GitHub). |
+| HUM-02 | Configurar AWS: `SPRING_PROFILES_ACTIVE=prod` en la task definition de ECS, reenvío de cookies (sin caché) en el *behavior* `/api/*` de CloudFront (sesión HUM-04), la *trust policy* OIDC de `synhub_2`, las variables `AWS_DEPLOY_ROLE_ARN`/`AWS_ACCOUNT_ID` del repo y WAF o rate limit en CloudFront/ALB. | SEC-09, SEC-11, OPS-01 | — | Pendiente (requiere acceso a AWS y GitHub). |
 | HUM-03 | Semántica del borrado de grupos y tareas: borrado físico o *soft delete* (archivar). | BUG-01, BUG-02 | Borrado físico ordenado ahora; evaluar *soft delete* si se necesita historial. | **Soft delete.** Grupos, tareas, requests y membresías borrados se marcan y dejan de ser visibles en toda la API; los datos quedan en la base. |
 | HUM-04 | Estrategia de sesión: token corto + refresh token, o cookie `HttpOnly`. | SEC-10 | Token de 1 día + logout ante un 401 ahora; cookie `HttpOnly` en una iteración posterior. | **Cookie `HttpOnly` válida por 1 día.** El JWT deja de guardarse en `localStorage`; un 401 cierra la sesión. |
 | HUM-05 | Funciones a medio hacer: unión a un grupo por código, expulsar miembros (`RemoveMemberUserFromGroupCommand`) y endpoints de metrics. | BUG-17, ARC-03 | Eliminar lo que no esté en el roadmap. | **Terminarlas.** Unirse por código y expulsar miembros quedan completos (API y web); metrics recibe una implementación base de sus endpoints. |

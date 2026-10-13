@@ -164,7 +164,7 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
 ```mermaid
 flowchart LR
     R[Request] --> F[BearerAuthorizationRequestFilter]
-    F -->|token válido| SC[SecurityContext<br/>UserDetailsImpl]
+    F -->|"token válido (Bearer o cookie SYNHUB_SESSION)"| SC[SecurityContext<br/>UserDetailsImpl]
     F -->|sin token| AZ{¿ruta pública?}
     SC --> C[Controller<br/>@AuthenticationPrincipal]
     AZ -->|sí| C

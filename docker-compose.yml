@@ -25,6 +25,8 @@ services:
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Define DATABASE_PASSWORD en .env}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (al menos 32 caracteres)}
+      # Compose sirve HTTP plano: la cookie de sesión no puede exigir HTTPS. Detrás de HTTPS, ponlo en true.
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       # Opcional, para las funciones de IA (Bedrock):
       AWS_REGION: ${AWS_REGION:-us-east-1}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}

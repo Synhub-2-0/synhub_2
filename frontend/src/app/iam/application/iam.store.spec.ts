@@ -7,10 +7,12 @@ import { SignInCommand } from '../domain/model/sign-in.command';
 import { SignUpCommand } from '../domain/model/sign-up.command';
 import { Profile } from '../domain/model/profile.entity';
 import { ToastStore } from '../../shared/application/toast.store';
+import { saveSession } from '../infrastructure/session';
 
 describe('IamStore', () => {
   const profile = new Profile({ id: 5, name: 'Ana', surname: 'Torres', email: 'ana@synhub.io', imgUrl: '', userId: 5, username: 'ana' });
-  let api: Record<'signIn' | 'signUp' | 'autoSignIn' | 'getProfileByUserId', ReturnType<typeof vi.fn>>;
+  const future = '2099-01-01T00:00:00Z';
+  let api: Record<'signIn' | 'signUp' | 'signOut' | 'autoSignIn' | 'getProfileByUserId', ReturnType<typeof vi.fn>>;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let store: IamStore;
   let toasts: ToastStore;
@@ -23,21 +25,22 @@ describe('IamStore', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    api = { signIn: vi.fn(), signUp: vi.fn(), autoSignIn: vi.fn(), getProfileByUserId: vi.fn() };
+    api = { signIn: vi.fn(), signUp: vi.fn(), signOut: vi.fn(), autoSignIn: vi.fn(), getProfileByUserId: vi.fn() };
     router = { navigate: vi.fn().mockResolvedValue(true) };
   });
 
   describe('signIn', () => {
     beforeEach(() => (store = createStore()));
 
-    it('guarda token y userId, carga el perfil y navega a /home', () => {
-      api.signIn.mockReturnValue(of({ id: 5, username: 'ana', token: 'jwt', role: ['ROLE_USER'] }));
+    it('guarda userId y vencimiento (nunca el token), carga el perfil y navega a /home', () => {
+      api.signIn.mockReturnValue(of({ id: 5, username: 'ana', role: ['ROLE_USER'], expiresAt: future }));
       api.getProfileByUserId.mockReturnValue(of(profile));
 
       store.signIn(new SignInCommand({ username: 'ana', password: 'x' }), router as unknown as Router);
 
-      expect(localStorage.getItem('token')).toBe('jwt');
+      expect(localStorage.getItem('token')).toBeNull();
       expect(localStorage.getItem('userId')).toBe('5');
+      expect(localStorage.getItem('sessionExpiresAt')).toBe(future);
       expect(store.isSignedIn()).toBe(true);
       expect(store.currentUserId()).toBe(5);
       expect(store.currentUsername()).toBe('ana');
@@ -47,7 +50,7 @@ describe('IamStore', () => {
     });
 
     it('un perfil que no carga no impide la sesión', () => {
-      api.signIn.mockReturnValue(of({ id: 5, username: 'ana', token: 'jwt', role: [] }));
+      api.signIn.mockReturnValue(of({ id: 5, username: 'ana', role: [], expiresAt: future }));
       api.getProfileByUserId.mockReturnValue(throwError(() => new Error('404')));
       store.signIn(new SignInCommand({ username: 'ana', password: 'x' }), router as unknown as Router);
       expect(store.isSignedIn()).toBe(true);
@@ -60,7 +63,7 @@ describe('IamStore', () => {
       store.signIn(new SignInCommand({ username: 'ana', password: 'mal' }), router as unknown as Router);
 
       expect(store.isSignedIn()).toBe(false);
-      expect(localStorage.getItem('token')).toBeNull();
+      expect(localStorage.getItem('userId')).toBeNull();
       expect(toasts.toasts()[0].message).toBe('Usuario o contraseña incorrectos.');
       expect(router.navigate).toHaveBeenCalledWith(['/auth/sign-in']);
     });
@@ -75,7 +78,7 @@ describe('IamStore', () => {
 
     it('tras registrarse inicia sesión con las mismas credenciales', () => {
       api.signUp.mockReturnValue(of({ id: 5 }));
-      api.signIn.mockReturnValue(of({ id: 5, username: 'ana', token: 'jwt', role: [] }));
+      api.signIn.mockReturnValue(of({ id: 5, username: 'ana', role: [], expiresAt: future }));
       api.getProfileByUserId.mockReturnValue(of(profile));
 
       store.signUp(command, router as unknown as Router);
@@ -95,30 +98,47 @@ describe('IamStore', () => {
     });
   });
 
-  it('signOut limpia la sesión y navega al login', () => {
-    localStorage.setItem('token', 'jwt');
-    localStorage.setItem('userId', '5');
+  it('signOut borra la cookie en el backend, limpia la sesión y navega al login', () => {
+    saveSession(5, future);
     store = createStore();
     expect(store.isSignedIn()).toBe(true);
+    api.signOut.mockReturnValue(of(undefined));
 
     store.signOut(router as unknown as Router);
 
+    expect(api.signOut).toHaveBeenCalled();
     expect(store.isSignedIn()).toBe(false);
     expect(store.currentUserId()).toBeNull();
-    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('userId')).toBeNull();
     expect(router.navigate).toHaveBeenCalledWith(['/auth/sign-in']);
   });
 
+  it('signOut cierra la sesión local aunque el backend no responda', () => {
+    saveSession(5, future);
+    store = createStore();
+    api.signOut.mockReturnValue(throwError(() => new Error('0')));
+    store.signOut(router as unknown as Router);
+    expect(store.isSignedIn()).toBe(false);
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/sign-in']);
+  });
+
+  it('una sesión guardada pero vencida arranca cerrada', () => {
+    saveSession(5, '2000-01-01T00:00:00Z');
+    store = createStore();
+    expect(store.isSignedIn()).toBe(false);
+    expect(store.currentUserId()).toBeNull();
+  });
+
   describe('restoreSession', () => {
-    it('sin token no llama a la API', async () => {
+    it('sin sesión no llama a la API', async () => {
       store = createStore();
       await store.restoreSession();
       expect(api.autoSignIn).not.toHaveBeenCalled();
       expect(store.isSignedIn()).toBe(false);
     });
 
-    it('con token válido recupera el usuario y su perfil', async () => {
-      localStorage.setItem('token', 'jwt');
+    it('con sesión vigente recupera el usuario y su perfil', async () => {
+      saveSession(5, future);
       store = createStore();
       api.autoSignIn.mockReturnValue(of({ id: 5, username: 'ana', accountRoles: [] }));
       api.getProfileByUserId.mockReturnValue(of(profile));
@@ -131,15 +151,15 @@ describe('IamStore', () => {
       expect(localStorage.getItem('userId')).toBe('5');
     });
 
-    it('con token inválido limpia la sesión', async () => {
-      localStorage.setItem('token', 'vencido');
+    it('si el backend rechaza la cookie limpia la sesión', async () => {
+      saveSession(5, future);
       store = createStore();
       api.autoSignIn.mockReturnValue(throwError(() => new Error('401')));
 
       await store.restoreSession();
 
       expect(store.isSignedIn()).toBe(false);
-      expect(localStorage.getItem('token')).toBeNull();
+      expect(localStorage.getItem('userId')).toBeNull();
     });
   });
 });

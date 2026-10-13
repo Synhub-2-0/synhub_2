@@ -11,6 +11,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Registro, login, token y endpoints públicos por HTTP. */
 class AuthApiTests extends ApiTestSupport {
 
+    @org.springframework.beans.factory.annotation.Value("${local.server.port}")
+    private int port;
+
     @Test void signUpCreatesUserWithoutExposingThePassword() {
         var username = unique("nuevo");
         var res = post("/authentication/sign-up", null, signUpBody(username, username + "@synhub.test", "Secret123!", List.of("ROLE_USER")));
@@ -26,6 +29,39 @@ class AuthApiTests extends ApiTestSupport {
         assertEquals(200, me.status());
         assertEquals(account.username(), me.text("username"));
         assertEquals(account.id(), me.id());
+    }
+
+    // HUM-04: la sesión es una cookie HttpOnly de 1 día y el token no aparece en el cuerpo
+    @Test void signInOpensAnHttpOnlySessionCookie() {
+        var username = unique("cookie");
+        post("/authentication/sign-up", null, signUpBody(username, username + "@synhub.test", "Secret123!", null));
+        var signIn = post("/authentication/sign-in", null, Map.of("username", username, "password", "Secret123!"));
+        assertEquals(200, signIn.status());
+        assertNull(signIn.json().get("token"), "el token no se expone al JavaScript");
+        var cookie = signIn.headers().firstValue("Set-Cookie").orElseThrow();
+        assertTrue(cookie.startsWith(SESSION_COOKIE + "="));
+        for (var attribute : List.of("HttpOnly", "Secure", "SameSite=Strict", "Path=/api", "Max-Age=86400")) {
+            assertTrue(cookie.contains(attribute), cookie + " sin " + attribute);
+        }
+        var expiresAt = java.time.Instant.parse(signIn.text("expiresAt"));
+        var inOneDay = java.time.Instant.now().plus(java.time.Duration.ofDays(1));
+        assertTrue(Math.abs(java.time.Duration.between(expiresAt, inOneDay).toSeconds()) < 60, "expiresAt = ahora + 1 día");
+    }
+
+    @Test void signOutClearsTheCookie() {
+        var account = account("salir");
+        var res = post("/authentication/sign-out", account.token(), null);
+        assertEquals(204, res.status());
+        var cookie = res.headers().firstValue("Set-Cookie").orElseThrow();
+        assertTrue(cookie.startsWith(SESSION_COOKIE + "=;") && cookie.contains("Max-Age=0"), cookie);
+    }
+
+    @Test void bearerHeaderStillWorksForApiClients() throws Exception {
+        var account = account("bearer");
+        var request = java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://localhost:" + port + "/api/v1/users/me"))
+                .header("Authorization", "Bearer " + account.token()).build();
+        var response = java.net.http.HttpClient.newHttpClient().send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
     }
 
     @Test void wrongPasswordIs401() {

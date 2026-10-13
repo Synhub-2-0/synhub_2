@@ -24,7 +24,8 @@ describe('GroupsStore', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    api = { getLeaderGroups: vi.fn(), getMemberGroups: vi.fn(), getGroupMembers: vi.fn(), createGroup: vi.fn(), updateGroup: vi.fn() };
+    // Con sesión iniciada, el store carga los grupos al crearse.
+    api = { getLeaderGroups: vi.fn().mockReturnValue(of([])), getMemberGroups: vi.fn().mockReturnValue(of([])), getGroupMembers: vi.fn(), createGroup: vi.fn(), updateGroup: vi.fn() };
     isSignedIn = signal(true);
     router = { navigate: vi.fn().mockResolvedValue(true) };
     TestBed.configureTestingModule({

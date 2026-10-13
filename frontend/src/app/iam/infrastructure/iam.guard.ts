@@ -1,15 +1,14 @@
 import { CanActivateFn, Router } from '@angular/router';
-import {IamStore} from '../application/iam.store';
-import {inject} from '@angular/core';
+import { IamStore } from '../application/iam.store';
+import { inject } from '@angular/core';
+import { hasActiveSession } from './session';
 
-export const iamGuard: CanActivateFn = (route, state) => {
+/** Deja pasar solo con una sesión iniciada y vigente; una sesión vencida se cierra (AUDIT SEC-10). */
+export const iamGuard: CanActivateFn = () => {
   const store = inject(IamStore);
   const router = inject(Router);
-
-  console.log(`trying to navigate to ${route.url} with state ${state.url}`);
-  if (store.isSignedIn()) return true;
-  else {
-    router.navigate(['/auth/sign-in']).then();
-    return false;
-  }
-}
+  if (store.isSignedIn() && hasActiveSession()) return true;
+  if (store.isSignedIn()) store.endSession();
+  router.navigate(['/auth/sign-in']).then();
+  return false;
+};

@@ -6,16 +6,15 @@ import { SignUpCommand } from '../domain/model/sign-up.command';
 import { User } from '../domain/model/user.entity';
 import { IamApi } from '../infrastructure/iam.api';
 import { ToastStore } from '../../shared/application/toast.store';
+import { clearStoredSession, hasActiveSession, saveSession, storedUserId } from '../infrastructure/session';
 
 @Injectable({ providedIn: 'root' })
 export class IamStore {
-  private readonly isSignedInSignal = signal(!!localStorage.getItem('token'));
+  // El JWT vive en una cookie HttpOnly (HUM-04); aquí solo se conoce si hay una sesión vigente.
+  private readonly isSignedInSignal = signal(hasActiveSession());
   private readonly currentUsernameSignal = signal<string | null>(null);
-  private readonly currentUserIdSignal = signal<number | null>(
-    localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : null,
-  );
+  private readonly currentUserIdSignal = signal<number | null>(hasActiveSession() ? storedUserId() : null);
   private readonly currentProfileSignal = signal<Profile | null>(null);
-  private readonly currentTokenSignal = signal<string | null>(localStorage.getItem('token'));
   private readonly usersSignal = signal<User[]>([]);
 
   readonly isSignedIn = this.isSignedInSignal.asReadonly();
@@ -23,7 +22,6 @@ export class IamStore {
   readonly currentUsername = this.currentUsernameSignal.asReadonly();
   readonly currentUserId = this.currentUserIdSignal.asReadonly();
   readonly currentProfile = this.currentProfileSignal.asReadonly();
-  readonly currentToken = this.currentTokenSignal.asReadonly();
   readonly loadingUsers = signal(false);
   readonly isLoadingUsers = this.loadingUsers.asReadonly();
 
@@ -35,9 +33,7 @@ export class IamStore {
     this.clearSession();
     this.iamApi.signIn(command).subscribe({
       next: resource => {
-        localStorage.setItem('token', resource.token);
-        localStorage.setItem('userId', String(resource.id));
-        this.currentTokenSignal.set(resource.token);
+        saveSession(resource.id, resource.expiresAt);
         this.isSignedInSignal.set(true);
         this.currentUsernameSignal.set(resource.username);
         this.currentUserIdSignal.set(resource.id);
@@ -73,9 +69,18 @@ export class IamStore {
     });
   }
 
+  /** Borra la cookie en el backend y la sesión local; navega al login aunque la petición falle. */
   signOut(router: Router): void {
+    const leave = () => {
+      this.clearSession();
+      router.navigate(['/auth/sign-in']).then();
+    };
+    this.iamApi.signOut().subscribe({ next: leave, error: leave });
+  }
+
+  /** Cierra la sesión local sin llamar a la API (sesión vencida o rechazada con 401). */
+  endSession(): void {
     this.clearSession();
-    router.navigate(['/auth/sign-in']).then();
   }
 
   loadUsers(): void {
@@ -83,7 +88,10 @@ export class IamStore {
   }
 
   restoreSession(): Promise<void> {
-    if (!localStorage.getItem('token')) return Promise.resolve();
+    if (!hasActiveSession()) {
+      this.clearSession();
+      return Promise.resolve();
+    }
 
     return new Promise(resolve => {
       this.iamApi.autoSignIn().subscribe({
@@ -91,7 +99,6 @@ export class IamStore {
           this.isSignedInSignal.set(true);
           this.currentUsernameSignal.set(user.username);
           this.currentUserIdSignal.set(user.id);
-          localStorage.setItem('userId', String(user.id));
           this.iamApi.getProfileByUserId(user.id).subscribe({
             next: profile => this.currentProfileSignal.set(profile),
             error: () => this.currentProfileSignal.set(null),
@@ -107,9 +114,7 @@ export class IamStore {
   }
 
   private clearSession(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    this.currentTokenSignal.set(null);
+    clearStoredSession();
     this.isSignedInSignal.set(false);
     this.currentUsernameSignal.set(null);
     this.currentUserIdSignal.set(null);

@@ -7,8 +7,8 @@ export class SignInAssembler {
     return {
       id: response.id,
       username: response.username,
-      token: response.token,
-      role: response.role
+      role: response.role,
+      expiresAt: response.expiresAt
     } as SignInResource;
   }
 

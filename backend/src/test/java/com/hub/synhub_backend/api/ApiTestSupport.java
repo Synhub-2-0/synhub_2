@@ -33,19 +33,23 @@ abstract class ApiTestSupport {
     private int port;
 
     /** Respuesta HTTP con el cuerpo ya parseado (null si está vacío o no es JSON). */
-    protected record Res(int status, String raw, JsonNode json) {
+    protected record Res(int status, String raw, JsonNode json, java.net.http.HttpHeaders headers) {
         long id() { return json.get("id").asLong(); }
         String text(String field) { return json.get(field).asString(); }
     }
 
-    /** Usuario registrado y autenticado. */
+    /** Usuario registrado y autenticado; {@code token} es el valor de la cookie de sesión. */
     protected record Account(long id, String username, String token) {}
+
+    /** Nombre de la cookie HttpOnly de sesión (HUM-04). */
+    protected static final String SESSION_COOKIE = "SYNHUB_SESSION";
 
     // ---- HTTP
     protected Res call(String method, String path, String token, Object body) {
         var uri = URI.create("http://localhost:" + port + (path.startsWith("/actuator") ? path : "/api/v1" + path));
         var builder = HttpRequest.newBuilder(uri).header("Content-Type", "application/json");
-        if (token != null) builder.header("Authorization", "Bearer " + token);
+        // Igual que el navegador: la sesión viaja en la cookie HttpOnly.
+        if (token != null) builder.header("Cookie", SESSION_COOKIE + "=" + token);
         var publisher = body == null ? HttpRequest.BodyPublishers.noBody()
                 : HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body));
         try {
@@ -56,7 +60,7 @@ abstract class ApiTestSupport {
             } catch (RuntimeException notJson) {
                 // cuerpo de texto plano
             }
-            return new Res(response.statusCode(), response.body(), json);
+            return new Res(response.statusCode(), response.body(), json, response.headers());
         } catch (Exception e) {
             throw new IllegalStateException(method + " " + path + " falló", e);
         }
@@ -89,7 +93,15 @@ abstract class ApiTestSupport {
         var signUp = post("/authentication/sign-up", null, signUpBody(username, username + "@synhub.test", "Secret123!", java.util.List.of("ROLE_USER")));
         if (signUp.status() != 201) throw new IllegalStateException("sign-up " + signUp.status() + ": " + signUp.raw());
         var signIn = post("/authentication/sign-in", null, Map.of("username", username, "password", "Secret123!"));
-        return new Account(signIn.id(), username, signIn.text("token"));
+        return new Account(signIn.id(), username, sessionTokenFrom(signIn));
+    }
+
+    /** Valor de la cookie de sesión que fija una respuesta (Set-Cookie), o null. */
+    protected static String sessionTokenFrom(Res res) {
+        return res.headers().allValues("Set-Cookie").stream()
+                .filter(cookie -> cookie.startsWith(SESSION_COOKIE + "="))
+                .map(cookie -> cookie.substring(SESSION_COOKIE.length() + 1, cookie.indexOf(';')))
+                .findFirst().orElse(null);
     }
 
     protected long createGroup(Account leader) {

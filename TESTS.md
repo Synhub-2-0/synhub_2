@@ -51,7 +51,7 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 |---|---|---|---|---|---|
 | B-IAM-01 | `iam/UserCommandServiceImplTest.java` | `UserCommandServiceImpl` | sign-in correcto devuelve usuario+token · contraseña incorrecta → `BadCredentialsException` · usuario inexistente → `BadCredentialsException` · sign-up guarda con hash y roles resueltos · username duplicado → 409 · rol inexistente · email duplicado → 409 | BUG-04, BUG-05 | LISTO |
 | B-IAM-02 | `iam/RoleTest.java` | `Role`, `RoleCommandServiceImpl` | lista vacía o null → `ROLE_USER` · `toRoleFromName` válido e inválido · el seed crea solo los roles faltantes | — | LISTO |
-| B-IAM-03 | `iam/TokenServiceImplTest.java` | `TokenServiceImpl` | genera un token con el username como subject · valida un token propio · rechaza un token alterado · rechaza un token firmado con otra clave · rechaza un token expirado · extrae el bearer del header (presente, ausente, sin prefijo) | — | LISTO |
+| B-IAM-03 | `iam/TokenServiceImplTest.java` | `TokenServiceImpl` | genera un token con el username como subject · valida un token propio · rechaza un token alterado · rechaza un token firmado con otra clave · rechaza un token expirado · extrae el bearer del header (presente, ausente, sin prefijo) · extrae el token de la cookie `SYNHUB_SESSION` (el header tiene prioridad) | SEC-10 | LISTO |
 | B-IAM-04 | `iam/UserQueryServiceImplTest.java` | `UserQueryServiceImpl` | por id, por username, todos · usuarios de un grupo a partir de las membresías | — | LISTO |
 | B-IAM-05 | `iam/IamContextFacadeImplTest.java` | `IamContextFacadeImpl` | `fetchUserIdByUsername` (encontrado → id, no encontrado → 0) · `fetchUsernameByUserId` (vacío si no existe) · `fetchUserById` con id null o ≤ 0 → vacío · `createUser` con rol por defecto | — | LISTO |
 | B-IAM-06 | `iam/HashingServiceImplTest.java` | `HashingServiceImpl` (BCrypt) | `encode` ≠ texto plano · `matches` verdadero y falso | — | LISTO |
@@ -83,12 +83,13 @@ JUnit 5 + Mockito, sin Spring ni base de datos. Ruta base: `backend/src/test/jav
 
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|
-| B-API-00 | `api/ApiTestSupport.java` | Utilidad compartida | cliente HTTP, registro y login, creación de grupo, invitación y tarea | — | LISTO |
-| B-API-01 | `api/AuthApiTests.java` | IAM por HTTP | sign-up 201 · sign-in 200 con token · contraseña incorrecta 401 · sin token 401 · token alterado 401 · `/users/me` · `/actuator/health` público · rol `ROLE_ADMIN` ignorado · email duplicado 409 · rol inválido no da 500 | SEC-05, BUG-04, BUG-05 | LISTO |
+| B-API-00 | `api/ApiTestSupport.java` | Utilidad compartida | cliente HTTP (la sesión viaja en la cookie `SYNHUB_SESSION`, como en el navegador), registro y login, creación de grupo, invitación y tarea | — | LISTO |
+| B-API-01 | `api/AuthApiTests.java` | IAM por HTTP | sign-up 201 · sign-in 200 con cookie `HttpOnly; Secure; SameSite=Strict; Path=/api; Max-Age=86400` y sin token en el cuerpo · sign-out borra la cookie · el header Bearer sigue funcionando · contraseña incorrecta 401 · sin token 401 · token alterado 401 · `/users/me` · `/actuator/health` público · rol `ROLE_ADMIN` ignorado · email duplicado 409 · rol inválido no da 500 | SEC-05, BUG-04, BUG-05, SEC-10 | LISTO |
 | B-API-02 | `api/TaskLifecycleApiTests.java` | Flujo completo | crear grupo → invitar → aceptar → miembro listado · crear tarea → miembro `COMPLETED` → entrega → líder aprueba → `DONE` · rechazar → `IN_PROGRESS` · `DONE` directo 409 · segunda entrega pendiente 409 · bandeja del líder filtra por estado | — | LISTO |
 | B-API-03 | `api/AuthorizationApiTests.java` | Matriz de permisos | (vigentes) miembro no puede editar ni borrar el grupo, ni invitar, ni crear o borrar tareas, ni revisar · ajeno no puede cambiar el estado · (esperados) ajeno → 403 en las lecturas del grupo, tareas, requests e invitaciones · ajeno no borra requests · `GET /users` solo admin · usuarios anidados sin roles | SEC-01, SEC-02, SEC-06 | LISTO |
 | B-API-04 | `api/ValidationApiTests.java` | Validación de entrada | (vigentes) `GroupCode` mal formado 400 · código inexistente 404 · tipo de request inválido 400 · un miembro no crea requests `EXPIRED` · (esperados) tarea sin título 400 · grupo sin nombre 400 · registro débil 400 · difficulty fuera de 1..5 400 · enum inválido en un parámetro 400 | SEC-07, BUG-03, BUG-06 | LISTO |
 | B-API-05 | `api/CascadeDeleteApiTests.java` | Borrados | (vigente) borrar un grupo vacío 204 · borrar una tarea sin requests 204 · (esperados) tarea con requests 204 · grupo con tareas y requests 204 | BUG-01, BUG-02 | LISTO |
+| B-API-06 | `api/HardeningApiTests.java` | Configuración HTTP | CORS solo para orígenes configurados (con credenciales) · Swagger apagado fuera de `dev` · `/tests/*` ya no existe · ruta inexistente 404 y método no soportado 405 | SEC-08, SEC-09 | LISTO |
 
 ## Frontend
 
@@ -96,12 +97,13 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 
 | ID | Archivo | Objetivo | Casos | Auditoría | Estado |
 |---|---|---|---|---|---|
-| F-IAM-01 | `iam/application/iam.store.spec.ts` | `IamStore` | signIn guarda el token y el userId, carga el perfil y navega a `/home` · un error de signIn no inicia sesión · signUp navega al login · signOut limpia y navega · restoreSession sin token no llama a la API · restoreSession con un token inválido limpia la sesión | — | LISTO |
-| F-IAM-02 | `iam/infrastructure/iam.interceptor.spec.ts` | `iamInterceptor` | agrega Bearer · no lo agrega en sign-in ni sign-up · no agrega `undefined`/`null` · un 401 cierra la sesión y redirige | SEC-10 | LISTO-PARCIAL |
-| F-IAM-03 | `iam/infrastructure/iam.guard.spec.ts` | `iamGuard` | con sesión permite · sin sesión redirige a `/auth/sign-in` · un token vencido redirige | SEC-10 | LISTO-PARCIAL |
+| F-IAM-01 | `iam/application/iam.store.spec.ts` | `IamStore` | signIn guarda userId y vencimiento (nunca el token), carga el perfil y navega a `/home` · un error de signIn no inicia sesión · signUp inicia sesión · signOut llama al backend, limpia y navega (también si falla) · una sesión vencida arranca cerrada · restoreSession sin sesión no llama a la API · restoreSession con la cookie rechazada limpia la sesión | SEC-10 | LISTO |
+| F-IAM-02 | `iam/infrastructure/iam.interceptor.spec.ts` | `iamInterceptor` | la API recibe `withCredentials` y nunca `Authorization` · otros dominios sin credenciales · un 401 cierra la sesión y redirige con `?expired=1` · un 401 del login no redirige · un 403 no cierra la sesión | SEC-10 | LISTO |
+| F-IAM-03 | `iam/infrastructure/iam.guard.spec.ts` | `iamGuard` | con sesión vigente permite · sin sesión redirige a `/auth/sign-in` · una sesión vencida se cierra y redirige | SEC-10 | LISTO |
+| F-IAM-08 | `iam/infrastructure/session.spec.ts` | `session.ts` | guarda userId y vencimiento, nunca el token · sesión vencida, inválida o sin usuario no está activa · limpia el token de versiones anteriores | SEC-10 | LISTO |
 | F-IAM-04 | `iam/infrastructure/iam.assemblers.spec.ts` | Assemblers de sign-in, sign-up, users y profiles | comando → request · respuesta → recurso o entidad · `Profile.userId` | BUG-15 | LISTO-PARCIAL |
 | F-IAM-05 | `iam/infrastructure/iam.api.spec.ts` | `IamApi` (HTTP) | URLs y verbos: sign-in, sign-up, `/users/me`, `/users/{id}`, `/users/username?username=` codificado | — | LISTO |
-| F-IAM-06 | `iam/presentation/views/sign-in-page/sign-in-page.spec.ts` | `SignInPage` | (previo) se crea | — | PREVIO |
+| F-IAM-06 | `iam/presentation/views/sign-in-page/sign-in-page.spec.ts` | `SignInPage` | se crea sin aviso · con `?expired=1` avisa que la sesión expiró | SEC-10 | LISTO |
 | F-IAM-07 | `iam/presentation/views/sign-up-page/sign-up-page.spec.ts` | `SignUpPage` | (previo) se crea · (esperado) contraseña < 8 caracteres inválida | FE-03 | LISTO-PARCIAL |
 | F-SHR-01 | `shared/application/toast.store.spec.ts` | `ToastStore` | success, info y error agregan un toast · dismiss · los mensajes técnicos con códigos HTTP se vuelven amigables · desaparece por tiempo | — | LISTO |
 | F-SHR-02 | `shared/infrastructure/base-api-endpoint.spec.ts` | `BaseApiEndpoint` | getAll (arreglo y objeto envoltorio), getById, create, update y delete: URL, verbo y mapeo · `handleError` con 404 / estado / ErrorEvent | — | LISTO |

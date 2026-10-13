@@ -6,7 +6,7 @@
 |---|---|
 | Base | `/api/v1` |
 | Formato | JSON en ambos sentidos; fechas en ISO-8601 (`OffsetDateTime`) |
-| Autenticación | `Authorization: Bearer <jwt>`. Son públicas solo `/api/v1/authentication/**`, `/actuator/health` y Swagger. |
+| Autenticación | Cookie `HttpOnly` `SYNHUB_SESSION` (la web) o `Authorization: Bearer <jwt>` (clientes de API). La sesión dura 1 día. Son públicas solo `/api/v1/authentication/**`, `/actuator/health` y Swagger (perfil `dev`). |
 | Identidad | El usuario que actúa **siempre** se toma del token; nunca de un campo del cuerpo. |
 | Recursos | Sustantivo en plural por recurso raíz (`/groups`, `/tasks`, `/invitations`); relaciones como sub-recursos (`/tasks/{taskId}/requests`, `/groups/{groupId}/members`). |
 | Vistas del usuario actual | Segmento `user` o `me` (`/groups/user`, `/invitations/user`, `/users/me`). |

@@ -41,11 +41,14 @@ Perfiles:
 | `DATABASE_USERNAME` | `spring.datasource.username` | `postgres` | — |
 | `DATABASE_PASSWORD` | `spring.datasource.password` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio. |
 | `JWT_SECRET` | `authorization.jwt.secret` | **sin valor por defecto** (el perfil `dev` trae uno local) | Obligatorio, al menos 32 bytes: si falta o es más corto, la app no arranca. En AWS se inyecta desde SSM. |
+| `AUTH_COOKIE_SECURE` | `authorization.cookie.secure` | `true` (`false` en `dev` y en compose) | Atributo `Secure` de la cookie de sesión. Debe ser `true` detrás de HTTPS (AWS). |
 | `CORS_ALLOWED_ORIGINS` | `app.cors.allowed-origins` | vacío (`http://localhost:4200` en `dev`) | Orígenes separados por comas. En producción no hace falta: front y API comparten origen. |
 | `AWS_REGION` | `ai.bedrock.region` | `us-east-1` | — |
 | `BEDROCK_MODEL_ID` | `ai.bedrock.model-id` | Claude Haiku 4.5 (perfil `us.`) | — |
 | Credenciales de AWS | — | cadena por defecto del SDK | Necesarias solo para las funciones de IA. |
 | `RUN_BEDROCK_IT=1` | — | — | Activa la prueba de integración con Bedrock. |
+
+**Sesión por cookie (HUM-04).** La web autentica con la cookie `HttpOnly` `SYNHUB_SESSION` (`Path=/api`, `SameSite=Strict`, 1 día). Funciona porque front y API comparten origen. En CloudFront, el *behavior* de `/api/*` debe **reenviar las cookies** al origen (política de *origin request* `AllViewer`, o al menos la cookie `SYNHUB_SESSION`) y **no cachear** esas respuestas; si no, toda petición autenticada responde 401 (ver HUM-02).
 
 ## CI/CD (GitHub Actions)
 

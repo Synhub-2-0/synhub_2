@@ -3,11 +3,13 @@ package com.hub.synhub_backend.iam.interfaces.rest;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.iam.domain.services.UserCommandService;
+import com.hub.synhub_backend.iam.infrastructure.tokens.jwt.SessionCookieService;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.AuthenticatedUserResource;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.SignInResource;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.SignUpResource;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
 import com.hub.synhub_backend.iam.interfaces.rest.transform.*;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * AuthenticationController
  * <p>
- *     This controller is responsible for handling authentication requests.
- *     It exposes two endpoints:
+ *     Registro e inicio y cierre de sesión. La sesión es una cookie HttpOnly de 1 día (HUM-04):
  *     <ul>
- *         <li>POST /api/v1/auth/sign-in</li>
- *         <li>POST /api/v1/auth/sign-up</li>
+ *         <li>POST /api/v1/authentication/sign-in: abre la sesión (Set-Cookie)</li>
+ *         <li>POST /api/v1/authentication/sign-up</li>
+ *         <li>POST /api/v1/authentication/sign-out: borra la cookie</li>
  *     </ul>
  * </p>
  */
@@ -33,9 +35,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
   private final UserCommandService userCommandService;
+  private final SessionCookieService sessionCookieService;
 
-  public AuthenticationController(UserCommandService userCommandService) {
+  public AuthenticationController(UserCommandService userCommandService, SessionCookieService sessionCookieService) {
     this.userCommandService = userCommandService;
+    this.sessionCookieService = sessionCookieService;
   }
 
   /**
@@ -51,10 +55,22 @@ public class AuthenticationController {
         .toCommandFromResource(signInResource);
     var authenticatedUser = userCommandService.handle(signInCommand);
 
+    var cookie = sessionCookieService.create(authenticatedUser.get().getRight());
     var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler
-        .toResourceFromEntity(
-            authenticatedUser.get().getLeft(), authenticatedUser.get().getRight());
-    return ResponseEntity.ok(authenticatedUserResource);
+        .toResourceFromEntity(authenticatedUser.get().getLeft(), sessionCookieService.expiresAtFromNow());
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, cookie.toString())
+        .body(authenticatedUserResource);
+  }
+
+  /**
+   * Cierra la sesión borrando la cookie. Es pública: funciona aunque la sesión ya haya vencido.
+   */
+  @PostMapping("/sign-out")
+  public ResponseEntity<Void> signOut() {
+    return ResponseEntity.noContent()
+        .header(HttpHeaders.SET_COOKIE, sessionCookieService.clear().toString())
+        .build();
   }
 
   /**

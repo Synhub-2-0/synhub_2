@@ -69,6 +69,20 @@ class TokenServiceImplTest {
     }
 
     // ---- AUDIT SEC-04: el secreto es obligatorio y de al menos 32 bytes
+    // HUM-04: la web envía el token en la cookie HttpOnly; el header Bearer tiene prioridad
+    @Test void extractsTokenFromSessionCookie() {
+        var request = new MockHttpServletRequest();
+        request.setCookies(new jakarta.servlet.http.Cookie("otra", "x"), new jakarta.servlet.http.Cookie("SYNHUB_SESSION", "abc.def.ghi"));
+        assertEquals("abc.def.ghi", service.getBearerTokenFrom(request));
+
+        request.addHeader("Authorization", "Bearer header.token.value");
+        assertEquals("header.token.value", service.getBearerTokenFrom(request));
+
+        var empty = new MockHttpServletRequest();
+        empty.setCookies(new jakarta.servlet.http.Cookie("SYNHUB_SESSION", ""));
+        assertNull(service.getBearerTokenFrom(empty));
+    }
+
     @Test void missingOrShortSecretFailsAtStartup() {
         assertThrows(IllegalStateException.class, () -> tokenService(null, 7).validateSecret());
         assertThrows(IllegalStateException.class, () -> tokenService("corto", 7).validateSecret());

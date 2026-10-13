@@ -3,8 +3,10 @@ package com.hub.synhub_backend.iam.infrastructure.tokens.jwt.services;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import com.hub.synhub_backend.iam.infrastructure.tokens.jwt.BearerTokenService;
+import com.hub.synhub_backend.iam.infrastructure.tokens.jwt.SessionCookieService;
 import org.apache.commons.lang3.time.DateUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -170,11 +172,24 @@ public class TokenServiceImpl implements BearerTokenService {
     return request.getHeader(AUTHORIZATION_PARAMETER_NAME);
   }
 
+  /**
+   * Token de la petición: primero el header {@code Authorization: Bearer} (clientes de API y Swagger),
+   * después la cookie de sesión {@code HttpOnly} que usa la web (HUM-04).
+   */
   @Override
   public String getBearerTokenFrom(HttpServletRequest request) {
     String parameter = getAuthorizationParameterFrom(request);
     if (isTokenPresentIn(parameter) && isBearerTokenIn(parameter))
       return extractTokenFrom(parameter);
+    return getSessionCookieFrom(request);
+  }
+
+  private String getSessionCookieFrom(HttpServletRequest request) {
+    if (request.getCookies() == null) return null;
+    for (Cookie cookie : request.getCookies()) {
+      if (SessionCookieService.COOKIE_NAME.equals(cookie.getName()) && StringUtils.hasText(cookie.getValue()))
+        return cookie.getValue();
+    }
     return null;
   }
 }

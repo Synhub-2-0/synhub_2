@@ -40,6 +40,10 @@ export class IamApi extends BaseApi {
     return this.signInEndpoint.signIn(signInCommand);
   }
 
+  signOut(): Observable<void> {
+    return this.signInEndpoint.signOut();
+  }
+
   // Users
   getUser(id: number): Observable<UserResource> {
     return this.usersEndpoint.getById(id);

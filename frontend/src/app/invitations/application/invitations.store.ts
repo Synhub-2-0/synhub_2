@@ -34,7 +34,7 @@ export class InvitationsStore {
     effect(() => {
       if (!this.iamStore.isSignedIn()) this.reset();
     });
-    if (localStorage.getItem('token')) {
+    if (this.iamStore.isSignedIn()) {
       this.loadInvitations();
     }
   }

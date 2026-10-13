@@ -10,8 +10,8 @@ describe('Assemblers de IAM', () => {
   it('SignIn: comando → request y respuesta → recurso', () => {
     const assembler = new SignInAssembler();
     expect(assembler.toRequestFromCommand(new SignInCommand({ username: 'ana', password: 'x' }))).toEqual({ username: 'ana', password: 'x' });
-    expect(assembler.toResourceFromResponse({ id: 5, username: 'ana', token: 'jwt', role: ['ROLE_USER'] }))
-      .toEqual({ id: 5, username: 'ana', token: 'jwt', role: ['ROLE_USER'] });
+    expect(assembler.toResourceFromResponse({ id: 5, username: 'ana', role: ['ROLE_USER'], expiresAt: '2099-01-01T00:00:00Z' }))
+      .toEqual({ id: 5, username: 'ana', role: ['ROLE_USER'], expiresAt: '2099-01-01T00:00:00Z' });
   });
 
   it('SignUp: envía los campos del formulario y nunca roles (AUDIT SEC-05)', () => {

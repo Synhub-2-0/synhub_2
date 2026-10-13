@@ -51,7 +51,7 @@ flowchart LR
     Store -->|Command / Entity| Api["*Api<br/>(fachada)"]
     Api --> EP["*ApiEndpoint<br/>(extiende BaseApiEndpoint)"]
     EP -->|"assembler.toRequestFrom…"| HTTP[HttpClient]
-    HTTP -->|"+ Bearer (iamInterceptor)"| BE[(API REST)]
+    HTTP -->|"+ cookie de sesión (iamInterceptor)"| BE[(API REST)]
     BE -->|JSON Resource| EP
     EP -->|"assembler.toEntityFromResource"| Store
 ```
@@ -87,7 +87,7 @@ flowchart LR
 |---|---|---|
 | Rutas de primer nivel | `app.routes.ts` | `auth`, `home`, `groups`, `tasks`, `validations` y `recorrido`, cargadas de forma diferida con `loadChildren`/`loadComponent`. `''` → `/auth/sign-in`; `**` → `PageNotFound`. |
 | Guard | `iam/infrastructure/iam.guard.ts` | `iamGuard` protege todo salvo `auth`. |
-| Interceptor | `iam/infrastructure/iam.interceptor.ts` | Agrega `Authorization: Bearer` desde `localStorage.token`, salvo en sign-in y sign-up. |
+| Interceptor | `iam/infrastructure/iam.interceptor.ts` | Envía las peticiones a la API con `withCredentials` (cookie `HttpOnly` de sesión). Ante un 401 cierra la sesión y redirige al login. |
 | Restaurar la sesión | `app.config.ts` → `provideAppInitializer` | `IamStore.restoreSession()` antes del primer render. |
 | HTTP | `app.config.ts` | `provideHttpClient(withFetch(), withInterceptors([iamInterceptor]))` |
 
