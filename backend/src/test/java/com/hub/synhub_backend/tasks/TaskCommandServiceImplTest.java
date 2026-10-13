@@ -1,5 +1,10 @@
 package com.hub.synhub_backend.tasks;
 
+import static com.hub.synhub_backend.groups.GroupFixtures.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
@@ -11,20 +16,14 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.*;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
-
-import static com.hub.synhub_backend.groups.GroupFixtures.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /** Casos de uso de escritura de tareas y sus permisos. */
 class TaskCommandServiceImplTest {
@@ -57,8 +56,10 @@ class TaskCommandServiceImplTest {
 
         task = new Task(new CreateTaskCommand(LEADER, "Login", "desc", DUE, ANA, GROUP, null, null, null, null, null));
         ReflectionTestUtils.setField(task, "id", TASK);
-        ReflectionTestUtils.setField(task, "createdAt", OffsetDateTime.now(ZoneOffset.UTC).minusHours(1));
-        ReflectionTestUtils.setField(task, "updatedAt", OffsetDateTime.now(ZoneOffset.UTC).minusHours(1));
+        ReflectionTestUtils.setField(
+                task, "createdAt", OffsetDateTime.now(ZoneOffset.UTC).minusHours(1));
+        ReflectionTestUtils.setField(
+                task, "updatedAt", OffsetDateTime.now(ZoneOffset.UTC).minusHours(1));
         anaProfile.addTask(task);
 
         when(users.fetchUserById(ANA)).thenReturn(Optional.of(ana));
@@ -76,36 +77,44 @@ class TaskCommandServiceImplTest {
     }
 
     // ---- Crear
-    @Test void leaderCreatesTaskForMember() {
+    @Test
+    void leaderCreatesTaskForMember() {
         var created = service.handle(createFor(LEADER, LUIS));
         assertSame(luisProfile, created.getProfile());
         verify(tasks).save(created);
     }
 
-    @Test void memberCannotCreateTasks() {
+    @Test
+    void memberCannotCreateTasks() {
         assertThrows(AccessDeniedException.class, () -> service.handle(createFor(ANA, LUIS)));
         verify(tasks, never()).save(any());
     }
 
-    @Test void assigneeMustBelongToTheGroup() {
+    @Test
+    void assigneeMustBelongToTheGroup() {
         when(users.fetchUserById(STRANGER)).thenReturn(Optional.of(user(STRANGER, "ajeno")));
         when(groups.fetchMembership(GROUP, STRANGER)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.handle(createFor(LEADER, STRANGER)));
     }
 
     // ---- Editar
-    @Test void leaderReassignsAndEdits() {
+    @Test
+    void leaderReassignsAndEdits() {
         var updated = service.handle(new UpdateTaskCommand(LEADER, TASK, "Login v2", "", null, LUIS));
         assertSame(luisProfile, updated.getProfile());
         assertEquals("Login v2", updated.getTitle());
     }
 
-    @Test void memberCannotEditTaskDetails() {
-        assertThrows(AccessDeniedException.class, () -> service.handle(new UpdateTaskCommand(ANA, TASK, "x", "", null, ANA)));
+    @Test
+    void memberCannotEditTaskDetails() {
+        assertThrows(
+                AccessDeniedException.class,
+                () -> service.handle(new UpdateTaskCommand(ANA, TASK, "x", "", null, ANA)));
     }
 
     // ---- Borrar
-    @Test void leaderDeletesTask() {
+    @Test
+    void leaderDeletesTask() {
         service.handle(new DeleteTaskCommand(LEADER, TASK));
         // AUDIT BUG-01: primero las requests (FK), después la tarea
         var order = inOrder(requests, tasks);
@@ -115,29 +124,46 @@ class TaskCommandServiceImplTest {
         assertSame(anaProfile, task.getProfile());
     }
 
-    @Test void memberCannotDeleteTask() {
+    @Test
+    void memberCannotDeleteTask() {
         assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteTaskCommand(ANA, TASK)));
         verify(tasks, never()).delete(any(Task.class));
     }
 
     // ---- Estado
-    @Test void assignedMemberAndLeaderCanChangeStatus() {
-        assertEquals(TaskStatus.COMPLETED, service.handle(new UpdateTaskStatusCommand(ANA, TASK, TaskStatus.COMPLETED)).getStatus());
-        assertEquals(TaskStatus.IN_PROGRESS, service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.IN_PROGRESS)).getStatus());
+    @Test
+    void assignedMemberAndLeaderCanChangeStatus() {
+        assertEquals(
+                TaskStatus.COMPLETED,
+                service.handle(new UpdateTaskStatusCommand(ANA, TASK, TaskStatus.COMPLETED))
+                        .getStatus());
+        assertEquals(
+                TaskStatus.IN_PROGRESS,
+                service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.IN_PROGRESS))
+                        .getStatus());
     }
 
-    @Test void otherMembersCannotChangeStatus() {
-        assertThrows(AccessDeniedException.class, () -> service.handle(new UpdateTaskStatusCommand(LUIS, TASK, TaskStatus.COMPLETED)));
-        assertThrows(AccessDeniedException.class, () -> service.handle(new UpdateTaskStatusCommand(STRANGER, TASK, TaskStatus.COMPLETED)));
+    @Test
+    void otherMembersCannotChangeStatus() {
+        assertThrows(
+                AccessDeniedException.class,
+                () -> service.handle(new UpdateTaskStatusCommand(LUIS, TASK, TaskStatus.COMPLETED)));
+        assertThrows(
+                AccessDeniedException.class,
+                () -> service.handle(new UpdateTaskStatusCommand(STRANGER, TASK, TaskStatus.COMPLETED)));
     }
 
-    @Test void unknownTaskIs404() {
+    @Test
+    void unknownTaskIs404() {
         when(tasks.findById(999L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.handle(new UpdateTaskStatusCommand(LEADER, 999L, TaskStatus.ON_HOLD)));
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> service.handle(new UpdateTaskStatusCommand(LEADER, 999L, TaskStatus.ON_HOLD)));
     }
 
     // ---- Borrar tareas de un integrante
-    @Test void deletesAllTasksOfAMemberInAGroup() {
+    @Test
+    void deletesAllTasksOfAMemberInAGroup() {
         when(tasks.findByProfile_Id(anaProfile.getId())).thenReturn(List.of(task));
         service.handle(new DeleteTasksByUserIdAndGroupIdCommand(ANA, GROUP));
         var order = inOrder(requests, tasks);
@@ -145,12 +171,16 @@ class TaskCommandServiceImplTest {
         order.verify(tasks).delete(task);
     }
 
-    @Test void deletingTasksOfUnknownUserFails() {
-        assertThrows(IllegalArgumentException.class, () -> service.handle(new DeleteTasksByUserIdAndGroupIdCommand(99L, GROUP)));
+    @Test
+    void deletingTasksOfUnknownUserFails() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.handle(new DeleteTasksByUserIdAndGroupIdCommand(99L, GROUP)));
     }
 
     // ---- AUDIT BUG-02: borrar todas las tareas de un grupo
-    @Test void deletesAllTasksOfAGroupWithTheirRequests() {
+    @Test
+    void deletesAllTasksOfAGroupWithTheirRequests() {
         when(tasks.findByProfile_Group_Id(GROUP)).thenReturn(List.of(task));
         service.handle(new DeleteTasksByGroupIdCommand(GROUP));
         var order = inOrder(requests, tasks);

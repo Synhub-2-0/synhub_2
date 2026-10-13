@@ -1,6 +1,7 @@
 package com.hub.synhub_backend.groups.domain.model.aggregates;
 
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
+import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -8,7 +9,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
-import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 
 /**
  * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila

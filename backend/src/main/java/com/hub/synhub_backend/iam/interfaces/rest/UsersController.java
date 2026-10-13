@@ -1,24 +1,23 @@
 package com.hub.synhub_backend.iam.interfaces.rest;
 
-import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
-import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import com.hub.synhub_backend.iam.domain.model.queries.GetAllUsersQuery;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByIdQuery;
+import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.PublicUserResource;
 import com.hub.synhub_backend.iam.interfaces.rest.resources.UserResource;
 import com.hub.synhub_backend.iam.interfaces.rest.transform.PublicUserResourceFromEntityAssembler;
 import com.hub.synhub_backend.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * Usuarios.
@@ -31,67 +30,67 @@ import java.util.List;
 @Tag(name = "Users", description = "User Management Endpoints")
 public class UsersController {
 
-  private final UserQueryService userQueryService;
+    private final UserQueryService userQueryService;
 
-
-  public UsersController(UserQueryService userQueryService) {
-    this.userQueryService = userQueryService;
-  }
-
-  /**
-   * This method returns all the users.
-   *
-   * @return a list of user resources.
-   * @see UserResource
-   */
-  @GetMapping
-  @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<List<UserResource>> getAllUsers() {
-    var getAllUsersQuery = new GetAllUsersQuery();
-    var users = userQueryService.handle(getAllUsersQuery);
-    var userResources = users.stream()
-        .map(UserResourceFromEntityAssembler::toResourceFromEntity)
-        .toList();
-    return ResponseEntity.ok(userResources);
-  }
-
-  @GetMapping("/me")
-  public ResponseEntity<UserResource> me(@AuthenticationPrincipal UserDetails userDetails) {
-    var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-    var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
-    return ResponseEntity.ok(userResource);
-  }
-
-  /**
-   * This method returns the user with the given id.
-   *
-   * @param userId the user id.
-   * @return the user resource with the given id
-   * @throws RuntimeException if the user is not found
-   * @see PublicUserResource
-   */
-  @GetMapping(value = "/{userId}")
-  public ResponseEntity<PublicUserResource> getUserById(@PathVariable Long userId) {
-    var getUserByIdQuery = new GetUserByIdQuery(userId);
-    var user = userQueryService.handle(getUserByIdQuery);
-    if (user.isEmpty()) {
-      return ResponseEntity.notFound().build();
+    public UsersController(UserQueryService userQueryService) {
+        this.userQueryService = userQueryService;
     }
-    var userResource = PublicUserResourceFromEntityAssembler.toResourceFromEntity(user.get());
-    return ResponseEntity.ok(userResource);
-  }
 
-  @GetMapping("/username")
-  @Operation(summary = "Get user by username", description = "Get user by username")
-  public ResponseEntity<PublicUserResource> getUserByUsername(@RequestParam String username) {
-    var getUserByUsernameQuery = new GetUserByUsernameQuery(username);
-    var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
-    if (userOpt.isEmpty()) {
-      return ResponseEntity.notFound().build();
+    /**
+     * This method returns all the users.
+     *
+     * @return a list of user resources.
+     * @see UserResource
+     */
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserResource>> getAllUsers() {
+        var getAllUsersQuery = new GetAllUsersQuery();
+        var users = userQueryService.handle(getAllUsersQuery);
+        var userResources = users.stream()
+                .map(UserResourceFromEntityAssembler::toResourceFromEntity)
+                .toList();
+        return ResponseEntity.ok(userResources);
     }
-    var user = userOpt.get();
-    var userResource = PublicUserResourceFromEntityAssembler.toResourceFromEntity(user);
-    return ResponseEntity.ok(userResource);
-  }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResource> me(@AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+        return ResponseEntity.ok(userResource);
+    }
+
+    /**
+     * This method returns the user with the given id.
+     *
+     * @param userId the user id.
+     * @return the user resource with the given id
+     * @throws RuntimeException if the user is not found
+     * @see PublicUserResource
+     */
+    @GetMapping(value = "/{userId}")
+    public ResponseEntity<PublicUserResource> getUserById(@PathVariable Long userId) {
+        var getUserByIdQuery = new GetUserByIdQuery(userId);
+        var user = userQueryService.handle(getUserByIdQuery);
+        if (user.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        var userResource = PublicUserResourceFromEntityAssembler.toResourceFromEntity(user.get());
+        return ResponseEntity.ok(userResource);
+    }
+
+    @GetMapping("/username")
+    @Operation(summary = "Get user by username", description = "Get user by username")
+    public ResponseEntity<PublicUserResource> getUserByUsername(@RequestParam String username) {
+        var getUserByUsernameQuery = new GetUserByUsernameQuery(username);
+        var userOpt = this.userQueryService.handle(getUserByUsernameQuery);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        var user = userOpt.get();
+        var userResource = PublicUserResourceFromEntityAssembler.toResourceFromEntity(user);
+        return ResponseEntity.ok(userResource);
+    }
 }

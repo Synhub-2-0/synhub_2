@@ -16,7 +16,6 @@ public class CreateTaskCommandFromResourceAssembler {
                 resource.context(),
                 resource.urgency(),
                 resource.labels(),
-                resource.aiAccepted()
-        );
+                resource.aiAccepted());
     }
 }

@@ -1,14 +1,13 @@
 package com.hub.synhub_backend.iam.domain.model.entities;
 
+import com.hub.synhub_backend.iam.domain.model.valueobjects.AccountRole;
 import jakarta.persistence.*;
+import java.util.List;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.hub.synhub_backend.iam.domain.model.valueobjects.AccountRole;
-
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Rol de cuenta. Vive dentro de {@code User.accountRoles} (un {@code Set}): la igualdad se basa en {@code name},

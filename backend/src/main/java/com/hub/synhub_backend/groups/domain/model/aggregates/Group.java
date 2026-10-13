@@ -1,22 +1,21 @@
 package com.hub.synhub_backend.groups.domain.model.aggregates;
 
+import com.hub.synhub_backend.groups.domain.model.commands.UpdateGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
+import com.hub.synhub_backend.groups.domain.model.valueobjects.ImgUrl;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
+import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.SoftDeleteType;
 import jakarta.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.hub.synhub_backend.groups.domain.model.commands.UpdateGroupCommand;
-import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
-import com.hub.synhub_backend.groups.domain.model.valueobjects.ImgUrl;
-import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
 /**
  * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila

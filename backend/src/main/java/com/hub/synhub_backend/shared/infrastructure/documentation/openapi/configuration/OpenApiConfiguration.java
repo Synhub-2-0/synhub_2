@@ -13,17 +13,16 @@ public class OpenApiConfiguration {
     @Bean
     public OpenAPI synHubApi() {
         var openApi = new OpenAPI();
-        openApi
-                .info(new Info()
-                        .title("SynHub API")
-                        .description("API documentation for SynHub, a platform for managing teams, projects, and tasks.")
-                        .version("1.0.0"));
+        openApi.info(new Info()
+                .title("SynHub API")
+                .description("API documentation for SynHub, a platform for managing teams, projects, and tasks.")
+                .version("1.0.0"));
         final String securitySchemeName = "bearerAuth";
 
-        openApi.addSecurityItem(new SecurityRequirement()
-                        .addList(securitySchemeName))
+        openApi.addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
-                        .addSecuritySchemes(securitySchemeName,
+                        .addSecuritySchemes(
+                                securitySchemeName,
                                 new SecurityScheme()
                                         .name(securitySchemeName)
                                         .type(SecurityScheme.Type.HTTP)
@@ -31,6 +30,5 @@ public class OpenApiConfiguration {
                                         .bearerFormat("JWT")));
 
         return openApi;
-
     }
 }

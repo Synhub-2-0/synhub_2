@@ -1,7 +1,14 @@
 package com.hub.synhub_backend.groups;
 
+import static com.hub.synhub_backend.groups.GroupFixtures.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.*;
+
 import com.hub.synhub_backend.groups.application.internal.commandservices.GroupCommandServiceImpl;
 import com.hub.synhub_backend.groups.domain.exceptions.LeaderCannotBeRemovedException;
+import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserNotInGroupException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.commands.*;
@@ -10,23 +17,15 @@ import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
-import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.BusinessRuleViolationException;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
-
-import java.util.Optional;
-
-import static com.hub.synhub_backend.groups.GroupFixtures.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
 
 /** Crear, editar, borrar grupos y quitar integrantes. */
 class GroupCommandServiceImplTest {
@@ -58,7 +57,8 @@ class GroupCommandServiceImplTest {
     }
 
     // ---- Crear
-    @Test void creatorBecomesLeaderAndCodeIsRegeneratedOnCollision() {
+    @Test
+    void creatorBecomesLeaderAndCodeIsRegeneratedOnCollision() {
         when(groups.existsByCode(any(GroupCode.class))).thenReturn(true, false);
 
         var created = service.handle(new CreateGroupCommand("Nuevo", "", "desc", 1L));
@@ -70,25 +70,29 @@ class GroupCommandServiceImplTest {
         verify(groups).save(created);
     }
 
-    @Test void createWithUnknownLeaderIs404() {
+    @Test
+    void createWithUnknownLeaderIs404() {
         when(users.fetchUserById(99L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.handle(new CreateGroupCommand("G", "", "d", 99L)));
         verify(groups, never()).save(any());
     }
 
     // ---- Editar
-    @Test void leaderUpdatesGroup() {
+    @Test
+    void leaderUpdatesGroup() {
         var updated = service.handle(new UpdateGroupCommand(1L, 10L, "Renombrado", "", ""));
         assertEquals("Renombrado", updated.getName());
     }
 
-    @Test void memberCannotUpdateGroup() {
+    @Test
+    void memberCannotUpdateGroup() {
         assertThrows(AccessDeniedException.class, () -> service.handle(new UpdateGroupCommand(2L, 10L, "X", "", "")));
         verify(groups, never()).save(any());
     }
 
     // ---- Borrar
-    @Test void leaderDeletesGroup() {
+    @Test
+    void leaderDeletesGroup() {
         service.handle(new DeleteGroupCommand(1L, 10L));
         // AUDIT BUG-02: primero las tareas (y sus requests), después el grupo
         var order = inOrder(tasks, groups);
@@ -96,19 +100,22 @@ class GroupCommandServiceImplTest {
         order.verify(groups).delete(group);
     }
 
-    @Test void memberCannotDeleteGroup() {
+    @Test
+    void memberCannotDeleteGroup() {
         assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteGroupCommand(2L, 10L)));
         verify(groups, never()).delete(any());
         verifyNoInteractions(tasks);
     }
 
-    @Test void deletingUnknownGroupIs404() {
+    @Test
+    void deletingUnknownGroupIs404() {
         when(groups.findById(99L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.handle(new DeleteGroupCommand(1L, 99L)));
     }
 
     // ---- Quitar integrante (HUM-05): el líder expulsa, un miembro puede salir
-    @Test void leaderRemovesMemberWithTheirTasks() {
+    @Test
+    void leaderRemovesMemberWithTheirTasks() {
         var membership = group.getUserProfiles().get(1);
         when(profiles.findByGroup_IdAndUser_Id(10L, 2L)).thenReturn(Optional.of(membership));
 
@@ -121,43 +128,57 @@ class GroupCommandServiceImplTest {
         assertFalse(member.getGroupProfiles().contains(membership));
     }
 
-    @Test void memberLeavesTheGroup() {
+    @Test
+    void memberLeavesTheGroup() {
         var membership = group.getUserProfiles().get(1);
         when(profiles.findByGroup_IdAndUser_Id(10L, 2L)).thenReturn(Optional.of(membership));
         service.handle(new RemoveMemberUserFromGroupCommand(2L, 2L, 10L));
         verify(profiles).delete(membership);
     }
 
-    @Test void memberCannotRemoveSomeoneElse() {
+    @Test
+    void memberCannotRemoveSomeoneElse() {
         var other = user(3, "luis");
         GroupFixtures.join(group, other, GroupRole.GROUP_MEMBER);
-        when(profiles.findByGroup_IdAndUser_Id(10L, 3L)).thenReturn(Optional.of(group.getUserProfiles().get(2)));
-        assertThrows(AccessDeniedException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(2L, 3L, 10L)));
+        when(profiles.findByGroup_IdAndUser_Id(10L, 3L))
+                .thenReturn(Optional.of(group.getUserProfiles().get(2)));
+        assertThrows(
+                AccessDeniedException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(2L, 3L, 10L)));
         verify(profiles, never()).delete(any());
         verifyNoInteractions(tasks);
     }
 
-    @Test void removingSomeoneOutsideTheGroupIs404() {
+    @Test
+    void removingSomeoneOutsideTheGroupIs404() {
         when(profiles.findByGroup_IdAndUser_Id(10L, 2L)).thenReturn(Optional.empty());
-        assertThrows(UserNotInGroupException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(1L, 2L, 10L)));
+        assertThrows(
+                UserNotInGroupException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(1L, 2L, 10L)));
     }
 
-    @Test void leaderCannotBeRemoved() {
-        when(profiles.findByGroup_IdAndUser_Id(10L, 1L)).thenReturn(Optional.of(group.getUserProfiles().getFirst()));
+    @Test
+    void leaderCannotBeRemoved() {
+        when(profiles.findByGroup_IdAndUser_Id(10L, 1L))
+                .thenReturn(Optional.of(group.getUserProfiles().getFirst()));
         assertEquals(GroupRole.GROUP_LEADER, group.getUserProfiles().getFirst().getRoleInGroup());
-        assertThrows(LeaderCannotBeRemovedException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(1L, 1L, 10L)));
+        assertThrows(
+                LeaderCannotBeRemovedException.class,
+                () -> service.handle(new RemoveMemberUserFromGroupCommand(1L, 1L, 10L)));
         verifyNoInteractions(tasks);
     }
 
     // AUDIT BUG-10 (resuelto)
-    @Test void removingLeaderIsABusinessRuleViolation() {
-        when(profiles.findByGroup_IdAndUser_Id(10L, 1L)).thenReturn(Optional.of(group.getUserProfiles().getFirst()));
-        var e = assertThrows(RuntimeException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(1L, 1L, 10L)));
+    @Test
+    void removingLeaderIsABusinessRuleViolation() {
+        when(profiles.findByGroup_IdAndUser_Id(10L, 1L))
+                .thenReturn(Optional.of(group.getUserProfiles().getFirst()));
+        var e = assertThrows(
+                RuntimeException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(1L, 1L, 10L)));
         assertInstanceOf(BusinessRuleViolationException.class, e);
     }
 
     // ---- Unirse por código (HUM-05)
-    @Test void joiningByCodeCreatesAMembershipAndConsumesPendingInvitations() {
+    @Test
+    void joiningByCodeCreatesAMembershipAndConsumesPendingInvitations() {
         var newcomer = user(3, "luis");
         var pending = GroupFixtures.invitation(50, newcomer, group);
         when(groups.findByCode(group.getCode())).thenReturn(Optional.of(group));
@@ -172,15 +193,20 @@ class GroupCommandServiceImplTest {
         verify(invitations).deleteAll(java.util.List.of(pending));
     }
 
-    @Test void joiningTwiceIsAConflict() {
+    @Test
+    void joiningTwiceIsAConflict() {
         when(groups.findByCode(group.getCode())).thenReturn(Optional.of(group));
         when(profiles.existsByGroup_IdAndUser_Id(10L, 2L)).thenReturn(true);
-        assertThrows(UserAlreadyInGroupException.class, () -> service.handle(new JoinGroupByCodeCommand(group.getCode().code(), 2L)));
+        assertThrows(
+                UserAlreadyInGroupException.class,
+                () -> service.handle(new JoinGroupByCodeCommand(group.getCode().code(), 2L)));
         verify(profiles, never()).save(any());
     }
 
-    @Test void unknownCodeIs404() {
+    @Test
+    void unknownCodeIs404() {
         when(groups.findByCode(any())).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.handle(new JoinGroupByCodeCommand("ZZZZZZZZZ", 2L)));
+        assertThrows(
+                ResourceNotFoundException.class, () -> service.handle(new JoinGroupByCodeCommand("ZZZZZZZZZ", 2L)));
     }
 }

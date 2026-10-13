@@ -7,10 +7,9 @@ import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAnd
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.stereotype.Service;
 
 @Service
 public class TaskContextFacadeImpl implements TasksContextFacade {
@@ -37,7 +36,8 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
     // DONE solo se alcanza por aquí: el endpoint de status lo rechaza (TaskStatusTransitionNotAllowedException).
     @Override
     public Task applySubmissionReview(Long taskId, boolean approved) {
-        var task = taskRepository.findById(taskId)
+        var task = taskRepository
+                .findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
         task.applySubmissionReview(approved);
         return taskRepository.save(task);

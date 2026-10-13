@@ -1,20 +1,16 @@
 package com.hub.synhub_backend.iam;
 
-import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
-import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
-import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.hub.synhub_backend.iam.application.internal.queryservices.UserQueryServiceImpl;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.domain.model.queries.*;
 import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Consultas de usuarios. */
 class UserQueryServiceImplTest {
@@ -29,7 +25,8 @@ class UserQueryServiceImplTest {
         service = new UserQueryServiceImpl(users);
     }
 
-    @Test void byIdUsernameAndAll() {
+    @Test
+    void byIdUsernameAndAll() {
         when(users.findById(1L)).thenReturn(Optional.of(ana));
         when(users.findByUsername("ana")).thenReturn(Optional.of(ana));
         when(users.findAll()).thenReturn(List.of(ana));
@@ -39,5 +36,4 @@ class UserQueryServiceImplTest {
         assertEquals(List.of(ana), service.handle(new GetAllUsersQuery()));
         assertTrue(service.handle(new GetUserByUsernameQuery("nobody")).isEmpty());
     }
-
 }

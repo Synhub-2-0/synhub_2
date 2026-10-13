@@ -6,15 +6,13 @@ import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.exceptions.TaskStatusTransitionNotAllowedException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
-import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.model.commands.*;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,8 +28,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
             TaskRepository taskRepository,
             IamContextFacade iamContextFacade,
             GroupsContextFacade groupsContextFacade,
-            RequestsContextFacade requestsContextFacade
-    ) {
+            RequestsContextFacade requestsContextFacade) {
         this.taskRepository = taskRepository;
         this.iamContextFacade = iamContextFacade;
         this.groupsContextFacade = groupsContextFacade;
@@ -41,15 +38,22 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     @Transactional
     @Override
     public Task handle(CreateTaskCommand command) {
-        var user = this.iamContextFacade.fetchUserById(command.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
-        var leaderId = this.groupsContextFacade.fetchLeaderIdByGroupId(command.groupId())
-                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
+        var user = this.iamContextFacade
+                .fetchUserById(command.userId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
+        var leaderId = this.groupsContextFacade
+                .fetchLeaderIdByGroupId(command.groupId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
         if (!leaderId.equals(command.requesterId())) {
-            throw new AccessDeniedException("User with id " + command.requesterId() + " is not the leader of the group");
+            throw new AccessDeniedException(
+                    "User with id " + command.requesterId() + " is not the leader of the group");
         }
-        var profile = this.groupsContextFacade.fetchMembership(command.groupId(), user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " is not in group with id " + command.groupId()));
+        var profile = this.groupsContextFacade
+                .fetchMembership(command.groupId(), user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with id " + command.userId() + " is not in group with id " + command.groupId()));
 
         var task = new Task(command);
         profile.addTask(task);
@@ -60,10 +64,14 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     @Override
     @Transactional
     public Task handle(UpdateTaskCommand command) {
-        var task = this.taskRepository.findById(command.taskId())
-                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
-        this.iamContextFacade.fetchUserById(command.newUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " does not exist"));
+        var task = this.taskRepository
+                .findById(command.taskId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        this.iamContextFacade
+                .fetchUserById(command.newUserId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("User with id " + command.newUserId() + " does not exist"));
 
         var currentUser = task.getProfile().getUser();
         var groupId = task.getProfile().getGroup().getId();
@@ -74,8 +82,10 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         task.ensureNotFinished();
 
         var currentProfile = task.getProfile();
-        var newProfile = this.groupsContextFacade.fetchMembership(groupId, command.newUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " is not part of group with id " + groupId));
+        var newProfile = this.groupsContextFacade
+                .fetchMembership(groupId, command.newUserId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with id " + command.newUserId() + " is not part of group with id " + groupId));
 
         if (currentProfile != null && !currentProfile.equals(newProfile)) {
             // Las membresías son entidades gestionadas: los cambios se guardan al cerrar la transacción.
@@ -91,8 +101,10 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     @Override
     @Transactional
     public void handle(DeleteTaskCommand command) {
-        var task = this.taskRepository.findById(command.taskId())
-                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        var task = this.taskRepository
+                .findById(command.taskId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
             throw new AccessDeniedException("Only the leader of the group can delete tasks");
         }
@@ -107,11 +119,15 @@ public class TaskCommandServiceImpl implements TaskCommandService {
 
     @Override
     public Task handle(UpdateTaskStatusCommand command) {
-        var taskToUpdate = this.taskRepository.findById(command.taskId())
-                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        var taskToUpdate = this.taskRepository
+                .findById(command.taskId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
         if (command.status() == TaskStatus.DONE)
-            throw new TaskStatusTransitionNotAllowedException("A task can only be marked as DONE by approving its submission request");
-        if (!(taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId()) || taskToUpdate.getProfile().getUser().getId().equals(command.requesterId()))) {
+            throw new TaskStatusTransitionNotAllowedException(
+                    "A task can only be marked as DONE by approving its submission request");
+        if (!(taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId())
+                || taskToUpdate.getProfile().getUser().getId().equals(command.requesterId()))) {
             throw new AccessDeniedException("Only the leader or the assigned member can update the task status");
         }
         taskToUpdate.ensureNotFinished();
@@ -131,8 +147,9 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         }
 
         var profileOpt = this.groupsContextFacade.fetchMembership(command.groupId(), command.userId());
-        if(profileOpt.isEmpty()) {
-            throw new IllegalArgumentException("User with id " + command.userId() + " is not in group with id " + command.groupId());
+        if (profileOpt.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "User with id " + command.userId() + " is not in group with id " + command.groupId());
         }
 
         var profile = profileOpt.get();

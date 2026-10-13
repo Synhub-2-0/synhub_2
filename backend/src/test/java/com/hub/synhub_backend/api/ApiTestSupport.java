@@ -1,12 +1,6 @@
 package com.hub.synhub_backend.api;
 
-import org.springframework.beans.factory.annotation.Value;
 import com.hub.synhub_backend.TestcontainersConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,6 +10,11 @@ import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Base de las pruebas de API: levanta la aplicación completa en un puerto aleatorio contra un PostgreSQL en
@@ -34,8 +33,13 @@ abstract class ApiTestSupport {
 
     /** Respuesta HTTP con el cuerpo ya parseado (null si está vacío o no es JSON). */
     protected record Res(int status, String raw, JsonNode json, java.net.http.HttpHeaders headers) {
-        long id() { return json.get("id").asLong(); }
-        String text(String field) { return json.get(field).asString(); }
+        long id() {
+            return json.get("id").asLong();
+        }
+
+        String text(String field) {
+            return json.get(field).asString();
+        }
     }
 
     /** Usuario registrado y autenticado; {@code token} es el valor de la cookie de sesión. */
@@ -50,7 +54,8 @@ abstract class ApiTestSupport {
         var builder = HttpRequest.newBuilder(uri).header("Content-Type", "application/json");
         // Igual que el navegador: la sesión viaja en la cookie HttpOnly.
         if (token != null) builder.header("Cookie", SESSION_COOKIE + "=" + token);
-        var publisher = body == null ? HttpRequest.BodyPublishers.noBody()
+        var publisher = body == null
+                ? HttpRequest.BodyPublishers.noBody()
                 : HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body));
         try {
             var response = HTTP.send(builder.method(method, publisher).build(), HttpResponse.BodyHandlers.ofString());
@@ -66,10 +71,21 @@ abstract class ApiTestSupport {
         }
     }
 
-    protected Res get(String path, String token) { return call("GET", path, token, null); }
-    protected Res post(String path, String token, Object body) { return call("POST", path, token, body); }
-    protected Res put(String path, String token, Object body) { return call("PUT", path, token, body); }
-    protected Res delete(String path, String token) { return call("DELETE", path, token, null); }
+    protected Res get(String path, String token) {
+        return call("GET", path, token, null);
+    }
+
+    protected Res post(String path, String token, Object body) {
+        return call("POST", path, token, body);
+    }
+
+    protected Res put(String path, String token, Object body) {
+        return call("PUT", path, token, body);
+    }
+
+    protected Res delete(String path, String token) {
+        return call("DELETE", path, token, null);
+    }
 
     // ---- Datos de prueba
     protected static String unique(String prefix) {
@@ -90,7 +106,10 @@ abstract class ApiTestSupport {
 
     protected Account account(String prefix) {
         var username = unique(prefix);
-        var signUp = post("/authentication/sign-up", null, signUpBody(username, username + "@synhub.test", "Secret123!", java.util.List.of("ROLE_USER")));
+        var signUp = post(
+                "/authentication/sign-up",
+                null,
+                signUpBody(username, username + "@synhub.test", "Secret123!", java.util.List.of("ROLE_USER")));
         if (signUp.status() != 201) throw new IllegalStateException("sign-up " + signUp.status() + ": " + signUp.raw());
         var signIn = post("/authentication/sign-in", null, Map.of("username", username, "password", "Secret123!"));
         return new Account(signIn.id(), username, sessionTokenFrom(signIn));
@@ -101,11 +120,15 @@ abstract class ApiTestSupport {
         return res.headers().allValues("Set-Cookie").stream()
                 .filter(cookie -> cookie.startsWith(SESSION_COOKIE + "="))
                 .map(cookie -> cookie.substring(SESSION_COOKIE.length() + 1, cookie.indexOf(';')))
-                .findFirst().orElse(null);
+                .findFirst()
+                .orElse(null);
     }
 
     protected long createGroup(Account leader) {
-        var res = post("/groups", leader.token(), Map.of("name", unique("Grupo"), "description", "Grupo de pruebas", "imgUrl", ""));
+        var res = post(
+                "/groups",
+                leader.token(),
+                Map.of("name", unique("Grupo"), "description", "Grupo de pruebas", "imgUrl", ""));
         if (res.status() != 200) throw new IllegalStateException("crear grupo " + res.status() + ": " + res.raw());
         return res.id();
     }
@@ -113,7 +136,8 @@ abstract class ApiTestSupport {
     /** Invita y acepta: el usuario queda como GROUP_MEMBER. */
     protected void join(Account leader, Account member, long groupId) {
         var invitation = post("/invitations", leader.token(), Map.of("userId", member.id(), "groupId", groupId));
-        if (invitation.status() != 200) throw new IllegalStateException("invitar " + invitation.status() + ": " + invitation.raw());
+        if (invitation.status() != 200)
+            throw new IllegalStateException("invitar " + invitation.status() + ": " + invitation.raw());
         var accept = post("/invitations/accept?invitationId=" + invitation.id(), member.token(), null);
         if (accept.status() != 200) throw new IllegalStateException("aceptar " + accept.status() + ": " + accept.raw());
     }
@@ -137,9 +161,14 @@ abstract class ApiTestSupport {
     /** El asignado completa la tarea y envía la entrega; devuelve el id de la request. */
     protected long submit(Account member, long taskId) {
         var completed = put("/tasks/" + taskId + "/status?status=COMPLETED", member.token(), null);
-        if (completed.status() != 200) throw new IllegalStateException("completar " + completed.status() + ": " + completed.raw());
-        var request = post("/tasks/" + taskId + "/requests", member.token(), Map.of("description", "Listo", "requestType", "SUBMISSION"));
-        if (request.status() != 201) throw new IllegalStateException("entregar " + request.status() + ": " + request.raw());
+        if (completed.status() != 200)
+            throw new IllegalStateException("completar " + completed.status() + ": " + completed.raw());
+        var request = post(
+                "/tasks/" + taskId + "/requests",
+                member.token(),
+                Map.of("description", "Listo", "requestType", "SUBMISSION"));
+        if (request.status() != 201)
+            throw new IllegalStateException("entregar " + request.status() + ": " + request.raw());
         return request.id();
     }
 

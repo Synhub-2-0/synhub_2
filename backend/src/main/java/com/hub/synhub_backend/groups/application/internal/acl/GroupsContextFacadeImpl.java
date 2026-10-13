@@ -7,9 +7,8 @@ import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import org.springframework.stereotype.Service;
-
 import java.util.Optional;
+import org.springframework.stereotype.Service;
 
 @Service
 public class GroupsContextFacadeImpl implements GroupsContextFacade {
@@ -24,7 +23,8 @@ public class GroupsContextFacadeImpl implements GroupsContextFacade {
 
     @Override
     public Optional<Long> fetchLeaderIdByGroupId(Long groupId) {
-        return groupQueryService.handle(new GetGroupByIdQuery(groupId))
+        return groupQueryService
+                .handle(new GetGroupByIdQuery(groupId))
                 .flatMap(group -> Optional.ofNullable(group.getLeader()))
                 .map(User::getId);
     }
@@ -37,7 +37,8 @@ public class GroupsContextFacadeImpl implements GroupsContextFacade {
     @Override
     public boolean isLeader(Long groupId, Long userId) {
         if (groupId == null || userId == null) return false;
-        return groupProfileRepository.findByGroup_IdAndUser_Id(groupId, userId)
+        return groupProfileRepository
+                .findByGroup_IdAndUser_Id(groupId, userId)
                 .map(profile -> profile.getRoleInGroup() == GroupRole.GROUP_LEADER)
                 .orElse(false);
     }

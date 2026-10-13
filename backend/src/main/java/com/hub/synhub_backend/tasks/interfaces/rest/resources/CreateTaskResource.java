@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
 import java.time.OffsetDateTime;
 
 public record CreateTaskResource(
@@ -18,6 +17,4 @@ public record CreateTaskResource(
         @Size(max = 32) String context,
         @Size(max = 16) String urgency,
         @Size(max = 255) String labels,
-        Boolean aiAccepted
-) {
-}
+        Boolean aiAccepted) {}

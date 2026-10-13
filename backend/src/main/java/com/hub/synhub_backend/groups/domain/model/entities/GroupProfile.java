@@ -6,12 +6,11 @@ import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.shared.domain.model.entities.AuditableModel;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila

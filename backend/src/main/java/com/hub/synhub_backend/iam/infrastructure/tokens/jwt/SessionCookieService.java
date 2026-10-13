@@ -1,11 +1,10 @@
 package com.hub.synhub_backend.iam.infrastructure.tokens.jwt;
 
+import java.time.Duration;
+import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
-
-import java.time.Duration;
-import java.time.Instant;
 
 /**
  * Cookie de sesión (decisión HUM-04): el JWT viaja en una cookie {@code HttpOnly} válida por
@@ -17,39 +16,39 @@ import java.time.Instant;
 @Component
 public class SessionCookieService {
 
-  public static final String COOKIE_NAME = "SYNHUB_SESSION";
-  private static final String COOKIE_PATH = "/api";
+    public static final String COOKIE_NAME = "SYNHUB_SESSION";
+    private static final String COOKIE_PATH = "/api";
 
-  private final Duration lifetime;
-  private final boolean secure;
+    private final Duration lifetime;
+    private final boolean secure;
 
-  public SessionCookieService(
-      @Value("${authorization.jwt.expiration.days}") int expirationDays,
-      @Value("${authorization.cookie.secure:true}") boolean secure) {
-    this.lifetime = Duration.ofDays(expirationDays);
-    this.secure = secure;
-  }
+    public SessionCookieService(
+            @Value("${authorization.jwt.expiration.days}") int expirationDays,
+            @Value("${authorization.cookie.secure:true}") boolean secure) {
+        this.lifetime = Duration.ofDays(expirationDays);
+        this.secure = secure;
+    }
 
-  /** Cookie que abre la sesión con el token recién emitido. */
-  public ResponseCookie create(String token) {
-    return base(token).maxAge(lifetime).build();
-  }
+    /** Cookie que abre la sesión con el token recién emitido. */
+    public ResponseCookie create(String token) {
+        return base(token).maxAge(lifetime).build();
+    }
 
-  /** Cookie vacía y vencida: el navegador borra la sesión. */
-  public ResponseCookie clear() {
-    return base("").maxAge(Duration.ZERO).build();
-  }
+    /** Cookie vacía y vencida: el navegador borra la sesión. */
+    public ResponseCookie clear() {
+        return base("").maxAge(Duration.ZERO).build();
+    }
 
-  /** Momento en que vence una sesión abierta ahora. */
-  public Instant expiresAtFromNow() {
-    return Instant.now().plus(lifetime);
-  }
+    /** Momento en que vence una sesión abierta ahora. */
+    public Instant expiresAtFromNow() {
+        return Instant.now().plus(lifetime);
+    }
 
-  private ResponseCookie.ResponseCookieBuilder base(String value) {
-    return ResponseCookie.from(COOKIE_NAME, value)
-        .httpOnly(true)
-        .secure(secure)
-        .sameSite("Strict")
-        .path(COOKIE_PATH);
-  }
+    private ResponseCookie.ResponseCookieBuilder base(String value) {
+        return ResponseCookie.from(COOKIE_NAME, value)
+                .httpOnly(true)
+                .secure(secure)
+                .sameSite("Strict")
+                .path(COOKIE_PATH);
+    }
 }

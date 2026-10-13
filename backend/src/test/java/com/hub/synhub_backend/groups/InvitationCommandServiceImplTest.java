@@ -1,5 +1,10 @@
 package com.hub.synhub_backend.groups;
 
+import static com.hub.synhub_backend.groups.GroupFixtures.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.hub.synhub_backend.groups.application.internal.commandservices.InvitationCommandServiceImpl;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyHasInvitationForGroupException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
@@ -16,17 +21,11 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.access.AccessDeniedException;
-
-import java.util.Optional;
-
-import static com.hub.synhub_backend.groups.GroupFixtures.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /** Reglas de invitación: crear, aceptar y cancelar. */
 class InvitationCommandServiceImplTest {
@@ -61,39 +60,50 @@ class InvitationCommandServiceImplTest {
     }
 
     // ---- Crear
-    @Test void leaderInvitesUser() {
+    @Test
+    void leaderInvitesUser() {
         var created = service.handle(new CreateInvitationCommand(LEADER, GUEST, GROUP));
         assertSame(guest, created.getUser());
         assertSame(group, created.getGroup());
         verify(invitations).save(created);
     }
 
-    @Test void onlyLeaderCanInvite() {
-        assertThrows(AccessDeniedException.class, () -> service.handle(new CreateInvitationCommand(MEMBER, GUEST, GROUP)));
+    @Test
+    void onlyLeaderCanInvite() {
+        assertThrows(
+                AccessDeniedException.class, () -> service.handle(new CreateInvitationCommand(MEMBER, GUEST, GROUP)));
         verify(invitations, never()).save(any());
     }
 
-    @Test void duplicateInvitationIsRejected() {
+    @Test
+    void duplicateInvitationIsRejected() {
         when(invitations.existsByUser_IdAndGroup_Id(GUEST, GROUP)).thenReturn(true);
-        assertThrows(UserAlreadyHasInvitationForGroupException.class,
+        assertThrows(
+                UserAlreadyHasInvitationForGroupException.class,
                 () -> service.handle(new CreateInvitationCommand(LEADER, GUEST, GROUP)));
     }
 
-    @Test void existingMemberCannotBeInvited() {
+    @Test
+    void existingMemberCannotBeInvited() {
         when(profiles.existsByGroup_IdAndUser_Id(GROUP, GUEST)).thenReturn(true);
-        assertThrows(UserAlreadyInGroupException.class,
+        assertThrows(
+                UserAlreadyInGroupException.class,
                 () -> service.handle(new CreateInvitationCommand(LEADER, GUEST, GROUP)));
     }
 
-    @Test void unknownUserOrGroupIs404() {
+    @Test
+    void unknownUserOrGroupIs404() {
         when(users.fetchUserById(99L)).thenReturn(Optional.empty());
         when(groups.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.handle(new CreateInvitationCommand(LEADER, 99L, GROUP)));
-        assertThrows(ResourceNotFoundException.class, () -> service.handle(new CreateInvitationCommand(LEADER, GUEST, 99L)));
+        assertThrows(
+                ResourceNotFoundException.class, () -> service.handle(new CreateInvitationCommand(LEADER, 99L, GROUP)));
+        assertThrows(
+                ResourceNotFoundException.class, () -> service.handle(new CreateInvitationCommand(LEADER, GUEST, 99L)));
     }
 
     // ---- Aceptar
-    @Test void acceptingCreatesMembershipAndDeletesInvitation() {
+    @Test
+    void acceptingCreatesMembershipAndDeletesInvitation() {
         service.handle(new AcceptInvitationCommand(GUEST, INVITATION));
 
         var membership = ArgumentCaptor.forClass(GroupProfile.class);
@@ -104,34 +114,44 @@ class InvitationCommandServiceImplTest {
         verify(invitations).delete(invitation);
     }
 
-    @Test void onlyTheInvitedUserCanAccept() {
-        assertThrows(AccessDeniedException.class, () -> service.handle(new AcceptInvitationCommand(STRANGER, INVITATION)));
+    @Test
+    void onlyTheInvitedUserCanAccept() {
+        assertThrows(
+                AccessDeniedException.class, () -> service.handle(new AcceptInvitationCommand(STRANGER, INVITATION)));
         verify(profiles, never()).save(any());
     }
 
-    @Test void acceptingWhenAlreadyMemberIsRejected() {
+    @Test
+    void acceptingWhenAlreadyMemberIsRejected() {
         when(profiles.existsByGroup_IdAndUser_Id(GROUP, GUEST)).thenReturn(true);
-        assertThrows(UserAlreadyInGroupException.class, () -> service.handle(new AcceptInvitationCommand(GUEST, INVITATION)));
+        assertThrows(
+                UserAlreadyInGroupException.class,
+                () -> service.handle(new AcceptInvitationCommand(GUEST, INVITATION)));
     }
 
-    @Test void acceptingUnknownInvitationIs404() {
+    @Test
+    void acceptingUnknownInvitationIs404() {
         when(invitations.findById(99L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.handle(new AcceptInvitationCommand(GUEST, 99L)));
     }
 
     // ---- Cancelar / rechazar
-    @Test void invitedUserDeclines() {
+    @Test
+    void invitedUserDeclines() {
         service.handle(new CancelInvitationCommand(GUEST, INVITATION));
         verify(invitations).delete(invitation);
     }
 
-    @Test void leaderCancels() {
+    @Test
+    void leaderCancels() {
         service.handle(new CancelInvitationCommand(LEADER, INVITATION));
         verify(invitations).delete(invitation);
     }
 
-    @Test void strangerCannotCancel() {
-        assertThrows(AccessDeniedException.class, () -> service.handle(new CancelInvitationCommand(STRANGER, INVITATION)));
+    @Test
+    void strangerCannotCancel() {
+        assertThrows(
+                AccessDeniedException.class, () -> service.handle(new CancelInvitationCommand(STRANGER, INVITATION)));
         verify(invitations, never()).delete(any());
     }
 }

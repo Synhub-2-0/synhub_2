@@ -7,9 +7,6 @@ import com.hub.synhub_backend.iam.interfaces.rest.transform.PublicUserResourceFr
 
 public class UserInGroupResourceFromEntityAssembler {
     public static UserInGroupResource toResourceFromEntity(User user, GroupRole roleInGroup) {
-        return new UserInGroupResource(
-                PublicUserResourceFromEntityAssembler.toResourceFromEntity(user),
-                roleInGroup
-        );
+        return new UserInGroupResource(PublicUserResourceFromEntityAssembler.toResourceFromEntity(user), roleInGroup);
     }
 }

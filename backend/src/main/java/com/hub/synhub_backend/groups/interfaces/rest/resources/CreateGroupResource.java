@@ -6,6 +6,4 @@ import jakarta.validation.constraints.Size;
 public record CreateGroupResource(
         @NotBlank @Size(max = 100) String name,
         @Size(max = 1024) String imgUrl,
-        @Size(max = 2000) String description
-) {
-}
+        @Size(max = 2000) String description) {}

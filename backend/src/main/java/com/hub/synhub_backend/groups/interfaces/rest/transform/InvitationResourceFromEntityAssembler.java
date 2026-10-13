@@ -9,7 +9,6 @@ public class InvitationResourceFromEntityAssembler {
         return new InvitationResource(
                 invitation.getId(),
                 GroupResourceReducedFromEntityAssembler.toResourceFromEntity(invitation.getGroup()),
-                PublicUserResourceFromEntityAssembler.toResourceFromEntity(invitation.getUser())
-        );
+                PublicUserResourceFromEntityAssembler.toResourceFromEntity(invitation.getUser()));
     }
 }

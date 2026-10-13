@@ -2,8 +2,6 @@ package com.hub.synhub_backend.groups.interfaces.rest.resources;
 
 import com.hub.synhub_backend.iam.interfaces.rest.resources.PublicUserResource;
 
-import java.util.List;
-
 public record GroupResourceReduced(
         Long id,
         String name,
@@ -11,6 +9,4 @@ public record GroupResourceReduced(
         String description,
         String code,
         int memberCount,
-        PublicUserResource leader
-) {
-}
+        PublicUserResource leader) {}

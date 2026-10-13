@@ -3,19 +3,17 @@ package com.hub.synhub_backend.tasks.application.internal.queryservices;
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.queries.*;
-import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
-import org.springframework.security.access.AccessDeniedException;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -35,8 +33,6 @@ public class TaskQueryServiceImpl implements TaskQueryService {
         }
     }
 
-
-
     @Override
     public Optional<Task> handle(GetTaskByIdQuery query) {
         var task = this.taskRepository.findById(query.taskId());
@@ -48,7 +44,6 @@ public class TaskQueryServiceImpl implements TaskQueryService {
     public List<Task> handle(GetAllTasksByUserId query) {
         return this.taskRepository.findByProfile_User_IdOrderByDueDateAscIdAsc(query.userId());
     }
-
 
     @Override
     public List<Task> handle(GetAllTasksByGroupIdQuery query) {

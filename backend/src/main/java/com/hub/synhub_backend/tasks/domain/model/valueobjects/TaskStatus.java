@@ -5,7 +5,8 @@ public enum TaskStatus {
     IN_PROGRESS,
     COMPLETED,
     DONE,
-    EXPIRED,;
+    EXPIRED,
+    ;
 
     public static TaskStatus fromString(String status) {
         for (TaskStatus taskStatus : TaskStatus.values()) {

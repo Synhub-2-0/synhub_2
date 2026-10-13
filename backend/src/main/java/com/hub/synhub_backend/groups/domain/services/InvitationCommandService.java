@@ -7,6 +7,8 @@ import com.hub.synhub_backend.groups.domain.model.commands.CreateInvitationComma
 
 public interface InvitationCommandService {
     Invitation handle(CreateInvitationCommand command);
+
     void handle(CancelInvitationCommand command);
+
     void handle(AcceptInvitationCommand command);
 }

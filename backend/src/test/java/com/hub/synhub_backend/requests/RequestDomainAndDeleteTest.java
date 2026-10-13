@@ -1,20 +1,17 @@
 package com.hub.synhub_backend.requests;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.hub.synhub_backend.requests.application.internal.commandservices.RequestCommandServiceImpl;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
-import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Value objects y agregado Request, y borrado de todas las requests de una tarea.
@@ -34,7 +31,8 @@ class RequestDomainAndDeleteTest {
     }
 
     // ---- Value objects
-    @Test void typesAndStatusesParseIgnoringCase() {
+    @Test
+    void typesAndStatusesParseIgnoringCase() {
         assertEquals(RequestType.SUBMISSION, RequestType.fromString("submission"));
         assertEquals(RequestType.MODIFICATION, RequestType.fromString("Modification"));
         assertEquals(RequestStatus.APPROVED, RequestStatus.fromString("approved"));
@@ -43,18 +41,18 @@ class RequestDomainAndDeleteTest {
     }
 
     // ---- Agregado
-    @Test void newRequestIsPending() {
+    @Test
+    void newRequestIsPending() {
         var request = new Request(new CreateRequestCommand("Listo", "submission", 1L));
         assertEquals("PENDING", request.getRequestStatus());
         assertEquals("SUBMISSION", request.getRequestType());
         assertEquals("Listo", request.getDescription());
     }
 
-    @Test void statusCanBeUpdated() {
+    @Test
+    void statusCanBeUpdated() {
         var request = new Request(new CreateRequestCommand("Listo", "SUBMISSION", 1L));
         request.updateRequestStatus("rejected");
         assertEquals("REJECTED", request.getRequestStatus());
     }
-
-
 }

@@ -15,6 +15,4 @@ public record SignUpResource(
         @Size(max = 1024) String imgUrl,
         @NotBlank @Email @Size(max = 254) String email,
         // BCrypt solo usa los primeros 72 bytes de la contraseña.
-        @NotBlank @Size(min = 8, max = 72) String password
-) {
-}
+        @NotBlank @Size(min = 8, max = 72) String password) {}

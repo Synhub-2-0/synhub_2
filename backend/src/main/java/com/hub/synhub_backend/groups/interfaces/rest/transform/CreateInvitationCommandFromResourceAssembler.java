@@ -5,10 +5,6 @@ import com.hub.synhub_backend.groups.interfaces.rest.resources.CreateInvitationR
 
 public class CreateInvitationCommandFromResourceAssembler {
     public static CreateInvitationCommand toCommandFromResource(Long requesterId, CreateInvitationResource resource) {
-        return new CreateInvitationCommand(
-                requesterId,
-                resource.userId(),
-                resource.groupId()
-        );
+        return new CreateInvitationCommand(requesterId, resource.userId(), resource.groupId());
     }
 }

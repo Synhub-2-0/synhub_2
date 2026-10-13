@@ -39,8 +39,11 @@ public class MetricsController {
     private final GroupsContextFacade groupsContextFacade;
     private final TasksContextFacade tasksContextFacade;
 
-    public MetricsController(TaskMetricsQueryService metricsQueryService, UserQueryService userQueryService,
-                             GroupsContextFacade groupsContextFacade, TasksContextFacade tasksContextFacade) {
+    public MetricsController(
+            TaskMetricsQueryService metricsQueryService,
+            UserQueryService userQueryService,
+            GroupsContextFacade groupsContextFacade,
+            TasksContextFacade tasksContextFacade) {
         this.metricsQueryService = metricsQueryService;
         this.userQueryService = userQueryService;
         this.groupsContextFacade = groupsContextFacade;
@@ -49,7 +52,8 @@ public class MetricsController {
 
     // ---- Control de acceso
     private Long requesterId(UserDetails userDetails) {
-        return userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+        return userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"))
                 .getId();
     }
@@ -71,7 +75,8 @@ public class MetricsController {
     }
 
     private void requireTaskMember(Long taskId, UserDetails userDetails) {
-        var task = tasksContextFacade.getTaskById(taskId)
+        var task = tasksContextFacade
+                .getTaskById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
         if (!groupsContextFacade.isMember(task.getProfile().getGroup().getId(), requesterId(userDetails)))
             throw new AccessDeniedException("Only members of the group can see the task's metrics");
@@ -80,80 +85,104 @@ public class MetricsController {
     // ---- Grupo
     @GetMapping("/groups/{groupId}/overview")
     @Operation(summary = "Tasks of the group by status")
-    public ResponseEntity<TaskOverviewResource> groupOverview(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<TaskOverviewResource> groupOverview(
+            @PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
         requireGroupMember(groupId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetTaskOverviewInGroupQuery(groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetTaskOverviewInGroupQuery(groupId))));
     }
 
     @GetMapping("/groups/{groupId}/distribution")
     @Operation(summary = "Tasks of the group per member")
-    public ResponseEntity<TaskDistributionResource> groupDistribution(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<TaskDistributionResource> groupDistribution(
+            @PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
         requireGroupMember(groupId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetTaskDistributionInGroupQuery(groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetTaskDistributionInGroupQuery(groupId))));
     }
 
     @GetMapping("/groups/{groupId}/rescheduled")
     @Operation(summary = "Times the group's tasks were rescheduled")
-    public ResponseEntity<RescheduledTasksResource> groupRescheduled(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<RescheduledTasksResource> groupRescheduled(
+            @PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
         requireGroupMember(groupId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetRescheduledTasksInGroupQuery(groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetRescheduledTasksInGroupQuery(groupId))));
     }
 
     @GetMapping("/groups/{groupId}/avg-completion-time")
     @Operation(summary = "Average days to finish (DONE) a task in the group")
-    public ResponseEntity<AvgCompletionTimeResource> groupAvgCompletionTime(@PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<AvgCompletionTimeResource> groupAvgCompletionTime(
+            @PathVariable Long groupId, @AuthenticationPrincipal UserDetails user) {
         requireGroupMember(groupId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetAvgCompletionTimeInGroupQuery(groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetAvgCompletionTimeInGroupQuery(groupId))));
     }
 
     // ---- Integrante dentro del grupo
     @GetMapping("/groups/{groupId}/members/{userId}/overview")
     @Operation(summary = "Tasks of a member in the group by status")
-    public ResponseEntity<TaskOverviewResource> memberOverview(@PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<TaskOverviewResource> memberOverview(
+            @PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
         requireLeaderOrSelf(groupId, userId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetTaskOverviewForUserInGroupQuery(userId, groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetTaskOverviewForUserInGroupQuery(userId, groupId))));
     }
 
     @GetMapping("/groups/{groupId}/members/{userId}/distribution")
     @Operation(summary = "Number of tasks of a member in the group")
-    public ResponseEntity<TaskDistributionResource> memberDistribution(@PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<TaskDistributionResource> memberDistribution(
+            @PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
         requireLeaderOrSelf(groupId, userId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetTaskDistributionForUserInGroupQuery(userId, groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetTaskDistributionForUserInGroupQuery(userId, groupId))));
     }
 
     @GetMapping("/groups/{groupId}/members/{userId}/rescheduled")
     @Operation(summary = "Times a member's tasks in the group were rescheduled")
-    public ResponseEntity<RescheduledTasksResource> memberRescheduled(@PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<RescheduledTasksResource> memberRescheduled(
+            @PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
         requireLeaderOrSelf(groupId, userId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetRescheduledTasksForUserInGroupQuery(userId, groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetRescheduledTasksForUserInGroupQuery(userId, groupId))));
     }
 
     @GetMapping("/groups/{groupId}/members/{userId}/avg-completion-time")
     @Operation(summary = "Average days a member takes to finish (DONE) a task in the group")
-    public ResponseEntity<AvgCompletionTimeResource> memberAvgCompletionTime(@PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<AvgCompletionTimeResource> memberAvgCompletionTime(
+            @PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
         requireLeaderOrSelf(groupId, userId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetAvgCompletionTimeForUserInGroupQuery(userId, groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetAvgCompletionTimeForUserInGroupQuery(userId, groupId))));
     }
 
     @GetMapping("/groups/{groupId}/members/{userId}/time-passed")
     @Operation(summary = "Average time (ms) a member's tasks in the group have taken")
-    public ResponseEntity<TaskTimePassedResource> memberTimePassed(@PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<TaskTimePassedResource> memberTimePassed(
+            @PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails user) {
         requireLeaderOrSelf(groupId, userId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetTaskTimePassedForUserInGroupQuery(userId, groupId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetTaskTimePassedForUserInGroupQuery(userId, groupId))));
     }
 
     // ---- Una tarea
     @GetMapping("/tasks/{taskId}/time-passed")
     @Operation(summary = "Time (ms) a COMPLETED or DONE task took", description = "409 if the task is not finished")
-    public ResponseEntity<TaskTimePassedResource> taskTimePassed(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<TaskTimePassedResource> taskTimePassed(
+            @PathVariable Long taskId, @AuthenticationPrincipal UserDetails user) {
         requireTaskMember(taskId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetTaskTimePassedByIdQuery(taskId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetTaskTimePassedByIdQuery(taskId))));
     }
 
     @GetMapping("/tasks/{taskId}/duration")
-    @Operation(summary = "Planned duration (hours) of an IN_PROGRESS task", description = "409 if the task is not IN_PROGRESS")
-    public ResponseEntity<TaskDurationResource> taskDuration(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails user) {
+    @Operation(
+            summary = "Planned duration (hours) of an IN_PROGRESS task",
+            description = "409 if the task is not IN_PROGRESS")
+    public ResponseEntity<TaskDurationResource> taskDuration(
+            @PathVariable Long taskId, @AuthenticationPrincipal UserDetails user) {
         requireTaskMember(taskId, user);
-        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(metricsQueryService.handle(new GetTaskDurationByIdQuery(taskId))));
+        return ResponseEntity.ok(MetricsResourceFromValueAssembler.toResource(
+                metricsQueryService.handle(new GetTaskDurationByIdQuery(taskId))));
     }
 }

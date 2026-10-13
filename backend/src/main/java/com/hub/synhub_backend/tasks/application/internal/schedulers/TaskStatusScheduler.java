@@ -4,6 +4,8 @@ import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestComman
 import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 /**
  * Vence las tareas {@code IN_PROGRESS} cuya fecha límite pasó y genera su request {@code EXPIRED}.
@@ -34,20 +33,25 @@ public class TaskStatusScheduler {
     private final TransactionOperations transactions;
 
     @Autowired
-    public TaskStatusScheduler(TaskRepository taskRepository, RequestCommandService requestCommandService,
-                               PlatformTransactionManager transactionManager) {
+    public TaskStatusScheduler(
+            TaskRepository taskRepository,
+            RequestCommandService requestCommandService,
+            PlatformTransactionManager transactionManager) {
         this(taskRepository, requestCommandService, new TransactionTemplate(transactionManager));
     }
 
-    public TaskStatusScheduler(TaskRepository taskRepository, RequestCommandService requestCommandService,
-                               TransactionOperations transactions) {
+    public TaskStatusScheduler(
+            TaskRepository taskRepository,
+            RequestCommandService requestCommandService,
+            TransactionOperations transactions) {
         this.taskRepository = taskRepository;
         this.requestCommandService = requestCommandService;
         this.transactions = transactions;
     }
 
-    @Scheduled(fixedDelayString = "${app.tasks.expiration-check-ms:60000}",
-               initialDelayString = "${app.tasks.expiration-check-ms:60000}")
+    @Scheduled(
+            fixedDelayString = "${app.tasks.expiration-check-ms:60000}",
+            initialDelayString = "${app.tasks.expiration-check-ms:60000}")
     public void updateExpiredTasks() {
         var now = OffsetDateTime.now(ZoneOffset.UTC);
         for (var task : taskRepository.findAllByStatusAndDueDateBefore(TaskStatus.IN_PROGRESS, now)) {

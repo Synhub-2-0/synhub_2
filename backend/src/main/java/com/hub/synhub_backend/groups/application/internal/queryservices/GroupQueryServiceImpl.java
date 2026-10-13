@@ -8,13 +8,11 @@ import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.ListResourceBundle;
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -22,9 +20,7 @@ public class GroupQueryServiceImpl implements GroupQueryService {
     private final GroupRepository groupRepository;
     private final GroupProfileRepository groupProfileRepository;
 
-    public GroupQueryServiceImpl(
-            GroupRepository groupRepository,
-            GroupProfileRepository groupProfileRepository) {
+    public GroupQueryServiceImpl(GroupRepository groupRepository, GroupProfileRepository groupProfileRepository) {
         this.groupRepository = groupRepository;
         this.groupProfileRepository = groupProfileRepository;
     }
@@ -56,8 +52,7 @@ public class GroupQueryServiceImpl implements GroupQueryService {
 
     @Override
     public List<Group> handle(GetGroupsByUserRoleQuery query) {
-        var groupProfiles = this.groupProfileRepository.findByUser_Id(query.requesterId())
-                .stream()
+        var groupProfiles = this.groupProfileRepository.findByUser_Id(query.requesterId()).stream()
                 .filter(profile -> profile.getRoleInGroup() == query.role());
         List<Group> groups = new java.util.ArrayList<>(List.of());
         groupProfiles.forEach(groupProfile -> {

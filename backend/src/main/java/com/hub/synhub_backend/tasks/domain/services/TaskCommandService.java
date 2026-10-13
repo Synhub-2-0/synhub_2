@@ -5,9 +5,14 @@ import com.hub.synhub_backend.tasks.domain.model.commands.*;
 
 public interface TaskCommandService {
     Task handle(CreateTaskCommand command);
+
     Task handle(UpdateTaskCommand command);
+
     void handle(DeleteTaskCommand command);
+
     Task handle(UpdateTaskStatusCommand command);
+
     void handle(DeleteTasksByUserIdAndGroupIdCommand command);
+
     void handle(DeleteTasksByGroupIdCommand command);
 }

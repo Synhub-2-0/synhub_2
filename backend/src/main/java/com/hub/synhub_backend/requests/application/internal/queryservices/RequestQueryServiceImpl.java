@@ -11,14 +11,13 @@ import com.hub.synhub_backend.requests.domain.services.RequestQueryService;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
@@ -28,8 +27,10 @@ public class RequestQueryServiceImpl implements RequestQueryService {
     private final GroupsContextFacade groupsContextFacade;
     private final TasksContextFacade tasksContextFacade;
 
-    public RequestQueryServiceImpl(RequestRepository requestRepository, GroupsContextFacade groupsContextFacade,
-                                   TasksContextFacade tasksContextFacade) {
+    public RequestQueryServiceImpl(
+            RequestRepository requestRepository,
+            GroupsContextFacade groupsContextFacade,
+            TasksContextFacade tasksContextFacade) {
         this.requestRepository = requestRepository;
         this.groupsContextFacade = groupsContextFacade;
         this.tasksContextFacade = tasksContextFacade;
@@ -40,10 +41,10 @@ public class RequestQueryServiceImpl implements RequestQueryService {
             throw new AccessDeniedException("Only members of the group can see the requests of its tasks");
     }
 
-
     @Override
     public List<Request> handle(GetRequestsByTaskIdQuery query) {
-        var task = tasksContextFacade.getTaskById(query.taskId())
+        var task = tasksContextFacade
+                .getTaskById(query.taskId())
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + query.taskId() + " does not exist"));
         requireMember(task.getProfile().getGroup().getId(), query.requesterId());
         return requestRepository.findByTaskId(query.taskId());
@@ -52,7 +53,8 @@ public class RequestQueryServiceImpl implements RequestQueryService {
     @Override
     public Optional<Request> handle(GetRequestByIdQuery query) {
         var request = this.requestRepository.findById(query.requestId());
-        request.ifPresent(found -> requireMember(found.getTask().getProfile().getGroup().getId(), query.requesterId()));
+        request.ifPresent(
+                found -> requireMember(found.getTask().getProfile().getGroup().getId(), query.requesterId()));
         return request;
     }
 
@@ -69,8 +71,10 @@ public class RequestQueryServiceImpl implements RequestQueryService {
     }
 
     private void requireGroupLeader(GetRequestsByGroupIdQuery query) {
-        var leaderId = groupsContextFacade.fetchLeaderIdByGroupId(query.groupId())
-                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + query.groupId() + " does not exist"));
+        var leaderId = groupsContextFacade
+                .fetchLeaderIdByGroupId(query.groupId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Group with id " + query.groupId() + " does not exist"));
         if (!leaderId.equals(query.requesterId()))
             throw new AccessDeniedException("Only the leader of the group can list its requests");
     }

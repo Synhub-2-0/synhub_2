@@ -1,12 +1,11 @@
 package com.hub.synhub_backend.tasks.domain.services;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.queries.*;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface TaskQueryService {
 

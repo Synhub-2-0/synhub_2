@@ -6,9 +6,8 @@ import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.util.ArrayList;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /** Objetos de dominio reales con ids asignados, para las pruebas de groups y tasks. */
 public final class GroupFixtures {

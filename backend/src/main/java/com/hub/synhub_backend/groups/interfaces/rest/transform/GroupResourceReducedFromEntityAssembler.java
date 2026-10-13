@@ -13,7 +13,6 @@ public class GroupResourceReducedFromEntityAssembler {
                 group.getDescription(),
                 group.getCode().code(),
                 group.getMemberCount(),
-                PublicUserResourceFromEntityAssembler.toResourceFromEntity(group.getLeader())
-        );
+                PublicUserResourceFromEntityAssembler.toResourceFromEntity(group.getLeader()));
     }
 }

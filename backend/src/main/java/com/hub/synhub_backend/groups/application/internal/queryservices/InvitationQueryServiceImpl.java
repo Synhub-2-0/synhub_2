@@ -1,18 +1,16 @@
 package com.hub.synhub_backend.groups.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Invitation;
-import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByGroupIdQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetInvitationsByUserIdQuery;
 import com.hub.synhub_backend.groups.domain.services.InvitationQueryService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,8 +31,10 @@ public class InvitationQueryServiceImpl implements InvitationQueryService {
 
     @Override
     public List<Invitation> handle(GetInvitationsByGroupIdQuery query) {
-        var group = this.groupRepository.findById(query.groupId())
-                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + query.groupId() + " does not exist"));
+        var group = this.groupRepository
+                .findById(query.groupId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Group with id " + query.groupId() + " does not exist"));
         var leader = group.getLeader();
         if (leader == null || !leader.getId().equals(query.requesterId())) {
             throw new AccessDeniedException("Only the leader of the group can list its invitations");

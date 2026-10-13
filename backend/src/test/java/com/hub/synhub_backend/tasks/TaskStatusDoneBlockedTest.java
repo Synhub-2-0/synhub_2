@@ -1,5 +1,9 @@
 package com.hub.synhub_backend.tasks;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
 import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.tasks.application.internal.commandservices.TaskCommandServiceImpl;
@@ -8,13 +12,8 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
-import org.junit.jupiter.api.Test;
-
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Test;
 
 /** DONE solo se alcanza aprobando la entrega: el endpoint de status lo rechaza para todos. */
 class TaskStatusDoneBlockedTest {
@@ -25,10 +24,14 @@ class TaskStatusDoneBlockedTest {
         var task = mock(Task.class, RETURNS_DEEP_STUBS);
         when(task.getProfile().getGroup().getLeader().getId()).thenReturn(1L);
         when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
-        var service = new TaskCommandServiceImpl(taskRepository, mock(IamContextFacade.class), mock(GroupsContextFacade.class),
+        var service = new TaskCommandServiceImpl(
+                taskRepository,
+                mock(IamContextFacade.class),
+                mock(GroupsContextFacade.class),
                 mock(com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade.class));
 
-        var e = assertThrows(TaskStatusTransitionNotAllowedException.class,
+        var e = assertThrows(
+                TaskStatusTransitionNotAllowedException.class,
                 () -> service.handle(new UpdateTaskStatusCommand(1L, 10L, TaskStatus.DONE)));
         assertEquals("A task can only be marked as DONE by approving its submission request", e.getMessage());
         verify(taskRepository, never()).save(any());

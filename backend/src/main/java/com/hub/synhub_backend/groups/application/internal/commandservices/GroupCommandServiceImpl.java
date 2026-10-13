@@ -2,10 +2,10 @@ package com.hub.synhub_backend.groups.application.internal.commandservices;
 
 import com.hub.synhub_backend.groups.domain.exceptions.LeaderCannotBeRemovedException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
+import com.hub.synhub_backend.groups.domain.exceptions.UserNotInGroupException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.commands.*;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
-import com.hub.synhub_backend.groups.domain.exceptions.UserNotInGroupException;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
@@ -34,8 +34,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             IamContextFacade iamContextFacade,
             GroupProfileRepository groupProfileRepository,
             TasksContextFacade tasksContextFacade,
-            InvitationRepository invitationRepository
-    ) {
+            InvitationRepository invitationRepository) {
         this.groupRepository = groupRepository;
         this.iamContextFacade = iamContextFacade;
         this.groupProfileRepository = groupProfileRepository;
@@ -51,13 +50,8 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             throw new ResourceNotFoundException("User with id " + command.leaderId() + " does not exist");
         }
         var leader = leaderOpt.get();
-        Group group = new Group(
-                command.name(),
-                command.description(),
-                command.imgUrl(),
-                GroupCode.random()
-        );
-        while(groupRepository.existsByCode(group.getCode())) {
+        Group group = new Group(command.name(), command.description(), command.imgUrl(), GroupCode.random());
+        while (groupRepository.existsByCode(group.getCode())) {
             group.setCode(GroupCode.random());
         }
         var newGroupProfile = new GroupProfile(leader, group, GroupRole.GROUP_LEADER);
@@ -70,8 +64,10 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     @Override
     @Transactional
     public Group handle(UpdateGroupCommand command) {
-        var group = groupRepository.findById(command.groupId())
-                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
+        var group = groupRepository
+                .findById(command.groupId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
 
         var leader = group.getLeader();
         if (leader == null || !leader.getId().equals(command.requesterId())) {
@@ -102,17 +98,20 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         // con el grupo (AUDIT BUG-02). Todo queda marcado con deleted_at y deja de ser visible.
         tasksContextFacade.deleteAllTasksByGroupId(group.getId());
         groupRepository.delete(group);
-
     }
 
     @Override
     @Transactional
     public void handle(RemoveMemberUserFromGroupCommand command) {
-        var group = groupRepository.findById(command.groupId())
-                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
+        var group = groupRepository
+                .findById(command.groupId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
 
-        var groupProfile = this.groupProfileRepository.findByGroup_IdAndUser_Id(command.groupId(), command.userId())
-                .orElseThrow(() -> new UserNotInGroupException("User with id " + command.userId() + " is not in group with id " + command.groupId()));
+        var groupProfile = this.groupProfileRepository
+                .findByGroup_IdAndUser_Id(command.groupId(), command.userId())
+                .orElseThrow(() -> new UserNotInGroupException(
+                        "User with id " + command.userId() + " is not in group with id " + command.groupId()));
 
         var leader = group.getLeader();
         var isLeader = leader != null && leader.getId().equals(command.requesterId());
@@ -134,12 +133,17 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     @Override
     @Transactional
     public Group handle(JoinGroupByCodeCommand command) {
-        var group = groupRepository.findByCode(new GroupCode(command.code()))
-                .orElseThrow(() -> new ResourceNotFoundException("Group with code " + command.code() + " does not exist"));
-        var user = iamContextFacade.fetchUserById(command.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
+        var group = groupRepository
+                .findByCode(new GroupCode(command.code()))
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Group with code " + command.code() + " does not exist"));
+        var user = iamContextFacade
+                .fetchUserById(command.userId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
         if (groupProfileRepository.existsByGroup_IdAndUser_Id(group.getId(), user.getId())) {
-            throw new UserAlreadyInGroupException("User with id " + user.getId() + " is already in group with id " + group.getId());
+            throw new UserAlreadyInGroupException(
+                    "User with id " + user.getId() + " is already in group with id " + group.getId());
         }
 
         var membership = new GroupProfile(user, group, GroupRole.GROUP_MEMBER);

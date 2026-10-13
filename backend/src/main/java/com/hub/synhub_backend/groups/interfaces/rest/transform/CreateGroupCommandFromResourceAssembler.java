@@ -9,7 +9,6 @@ public class CreateGroupCommandFromResourceAssembler {
                 resource.name(),
                 resource.imgUrl(),
                 resource.description() == null ? "" : resource.description(),
-                leaderId
-        );
+                leaderId);
     }
 }

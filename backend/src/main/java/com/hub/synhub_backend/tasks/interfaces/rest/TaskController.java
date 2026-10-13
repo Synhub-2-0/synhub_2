@@ -1,37 +1,34 @@
 package com.hub.synhub_backend.tasks.interfaces.rest;
 
-import com.hub.synhub_backend.shared.interfaces.rest.Pagination;
-import com.hub.synhub_backend.shared.interfaces.rest.resources.PageResource;
-import jakarta.validation.Valid;
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
+import com.hub.synhub_backend.shared.interfaces.rest.Pagination;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.shared.interfaces.rest.resources.PageResource;
+import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTaskCommand;
+import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetAllTasksByUserId;
+import com.hub.synhub_backend.tasks.domain.model.queries.GetTaskByIdQuery;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTasksByGroupIdAndStatus;
 import com.hub.synhub_backend.tasks.domain.model.queries.GetTasksByGroupIdAndUserIdQuery;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
+import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
+import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
 import com.hub.synhub_backend.tasks.interfaces.rest.resources.CreateTaskResource;
+import com.hub.synhub_backend.tasks.interfaces.rest.resources.TaskResource;
+import com.hub.synhub_backend.tasks.interfaces.rest.resources.UpdateTaskResource;
 import com.hub.synhub_backend.tasks.interfaces.rest.transform.CreateTaskCommandFromResourceAssembler;
+import com.hub.synhub_backend.tasks.interfaces.rest.transform.TaskResourceFromEntityAssembler;
+import com.hub.synhub_backend.tasks.interfaces.rest.transform.UpdateTaskCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
-import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTaskCommand;
-import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
-import com.hub.synhub_backend.tasks.domain.model.queries.GetTaskByIdQuery;
-import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
-import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
-import com.hub.synhub_backend.tasks.interfaces.rest.resources.TaskResource;
-import com.hub.synhub_backend.tasks.interfaces.rest.resources.UpdateTaskResource;
-import com.hub.synhub_backend.tasks.interfaces.rest.transform.TaskResourceFromEntityAssembler;
-import com.hub.synhub_backend.tasks.interfaces.rest.transform.UpdateTaskCommandFromResourceAssembler;
+import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/v1/tasks")
@@ -53,9 +50,14 @@ public class TaskController {
     }
 
     @PostMapping()
-    @Operation(summary = "Create a new task", description = "Creates a new task within a group and assigns it to a member. Only the group leader can perform this action.")
-    public ResponseEntity<TaskResource> createTask(@Valid @RequestBody CreateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+    @Operation(
+            summary = "Create a new task",
+            description =
+                    "Creates a new task within a group and assigns it to a member. Only the group leader can perform this action.")
+    public ResponseEntity<TaskResource> createTask(
+            @Valid @RequestBody CreateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createTaskCommand = CreateTaskCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
         var task = this.taskCommandService.handle(createTaskCommand);
@@ -64,59 +66,91 @@ public class TaskController {
     }
 
     @GetMapping("/{taskId}")
-    @Operation(summary = "Get a task by ID", description = "Retrieves the details of a single task using its unique identifier.")
-    public ResponseEntity<TaskResource> getTaskById(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+    @Operation(
+            summary = "Get a task by ID",
+            description = "Retrieves the details of a single task using its unique identifier.")
+    public ResponseEntity<TaskResource> getTaskById(
+            @PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var getTaskByIdQuery = new GetTaskByIdQuery(taskId, user.getId());
-        var task = this.taskQueryService.handle(getTaskByIdQuery)
+        var task = this.taskQueryService
+                .handle(getTaskByIdQuery)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
         var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
         return ResponseEntity.ok(taskResource);
     }
 
     @GetMapping("/user")
-    @Operation(summary = "Get my tasks", description = "Tasks assigned to the authenticated user in all of their groups, by due date (AUDIT PERF-03).")
+    @Operation(
+            summary = "Get my tasks",
+            description =
+                    "Tasks assigned to the authenticated user in all of their groups, by due date (AUDIT PERF-03).")
     public ResponseEntity<List<TaskResource>> getMyTasks(@AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var tasks = this.taskQueryService.handle(new GetAllTasksByUserId(user.getId()));
-        return ResponseEntity.ok(tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList());
+        return ResponseEntity.ok(tasks.stream()
+                .map(TaskResourceFromEntityAssembler::toResourceFromEntity)
+                .toList());
     }
 
     @GetMapping("/group/{groupId}")
-    @Operation(summary = "Get tasks by group", description = "Retrieves all tasks belonging to a group, optionally filtered by task status. With ?page or ?size returns a page ordered by due date")
-    public ResponseEntity<?> getByGroup(@PathVariable Long groupId, @RequestParam(required = false) TaskStatus status,
-                                        @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
-                                        @AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+    @Operation(
+            summary = "Get tasks by group",
+            description =
+                    "Retrieves all tasks belonging to a group, optionally filtered by task status. With ?page or ?size returns a page ordered by due date")
+    public ResponseEntity<?> getByGroup(
+            @PathVariable Long groupId,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var getTasksByGroupIdAndStatusQuery = new GetTasksByGroupIdAndStatus(groupId, status, user.getId());
         // ?page / ?size: una página (PageResource); sin ellos, el arreglo completo de siempre (AUDIT PERF-02).
         var pageable = Pagination.of(page, size);
         if (pageable.isPresent())
-            return ResponseEntity.ok(PageResource.of(this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery, pageable.get()), TaskResourceFromEntityAssembler::toResourceFromEntity));
+            return ResponseEntity.ok(PageResource.of(
+                    this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery, pageable.get()),
+                    TaskResourceFromEntityAssembler::toResourceFromEntity));
         var tasks = this.taskQueryService.handle(getTasksByGroupIdAndStatusQuery);
-        var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
+        var taskResources = tasks.stream()
+                .map(TaskResourceFromEntityAssembler::toResourceFromEntity)
+                .toList();
         return ResponseEntity.ok(taskResources);
     }
 
     @GetMapping("/group/{groupId}/user/{userId}")
-    @Operation(summary = "Get tasks by group and user", description = "Retrieves all tasks within a group that are assigned to a specific user.")
-    public ResponseEntity<List<TaskResource>> getTaskByGroupIdAndUserId(@PathVariable Long groupId, @PathVariable Long userId,
-                                                                        @AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+    @Operation(
+            summary = "Get tasks by group and user",
+            description = "Retrieves all tasks within a group that are assigned to a specific user.")
+    public ResponseEntity<List<TaskResource>> getTaskByGroupIdAndUserId(
+            @PathVariable Long groupId, @PathVariable Long userId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var getTasksByGroupIdAndUserIdQuery = new GetTasksByGroupIdAndUserIdQuery(groupId, userId, user.getId());
         var tasks = this.taskQueryService.handle(getTasksByGroupIdAndUserIdQuery);
-        var taskResources = tasks.stream().map(TaskResourceFromEntityAssembler::toResourceFromEntity).toList();
+        var taskResources = tasks.stream()
+                .map(TaskResourceFromEntityAssembler::toResourceFromEntity)
+                .toList();
         return ResponseEntity.ok(taskResources);
     }
 
     @DeleteMapping("/{taskId}")
-    @Operation(summary = "Delete a task", description = "Deletes an existing task by its ID. Requires the authenticated user to have permission to delete the task.")
-    public ResponseEntity<Void> deleteTaskById(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+    @Operation(
+            summary = "Delete a task",
+            description =
+                    "Deletes an existing task by its ID. Requires the authenticated user to have permission to delete the task.")
+    public ResponseEntity<Void> deleteTaskById(
+            @PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var deleteTaskByIdCommand = new DeleteTaskCommand(user.getId(), taskId);
         this.taskCommandService.handle(deleteTaskByIdCommand);
@@ -124,25 +158,38 @@ public class TaskController {
     }
 
     @PutMapping("/{taskId}")
-    @Operation(summary = "Update task details", description = "Updates the editable details of an existing task, such as its title, description, or due date.")
-    public ResponseEntity<TaskResource> updateTaskDetails(@PathVariable Long taskId, @Valid @RequestBody UpdateTaskResource resource, @AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+    @Operation(
+            summary = "Update task details",
+            description =
+                    "Updates the editable details of an existing task, such as its title, description, or due date.")
+    public ResponseEntity<TaskResource> updateTaskDetails(
+            @PathVariable Long taskId,
+            @Valid @RequestBody UpdateTaskResource resource,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        var updateTaskDetailsCommand = UpdateTaskCommandFromResourceAssembler.toCommandFromResource(resource, taskId, user.getId());
+        var updateTaskDetailsCommand =
+                UpdateTaskCommandFromResourceAssembler.toCommandFromResource(resource, taskId, user.getId());
         var task = this.taskCommandService.handle(updateTaskDetailsCommand);
         var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
         return ResponseEntity.ok(taskResource);
     }
 
     @PutMapping("/{taskId}/status")
-    @Operation(summary = "Update task status", description = "Updates the status of an existing task, such as marking it as in progress or completed.")
-    public ResponseEntity<TaskResource> updateTaskStatus(@PathVariable Long taskId, @RequestParam TaskStatus status, @AuthenticationPrincipal UserDetails userDetails) {
-        var user = this.userQueryService.handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+    @Operation(
+            summary = "Update task status",
+            description = "Updates the status of an existing task, such as marking it as in progress or completed.")
+    public ResponseEntity<TaskResource> updateTaskStatus(
+            @PathVariable Long taskId,
+            @RequestParam TaskStatus status,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var updateTaskStatusCommand = new UpdateTaskStatusCommand(user.getId(), taskId, status);
         var task = this.taskCommandService.handle(updateTaskStatusCommand);
         var taskResource = TaskResourceFromEntityAssembler.toResourceFromEntity(task);
         return ResponseEntity.ok(taskResource);
     }
-
 }

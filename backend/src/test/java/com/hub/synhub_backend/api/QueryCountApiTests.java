@@ -1,19 +1,18 @@
 package com.hub.synhub_backend.api;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import jakarta.persistence.EntityManagerFactory;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * AUDIT PERF-01: los listados ejecutan un número de consultas SQL que no crece con la cantidad de elementos.
@@ -57,23 +56,32 @@ class QueryCountApiTests extends ApiTestSupport {
         return new Scenario(leader, groupId, tasks);
     }
 
-    @Test void groupTasksUseAConstantNumberOfQueries() {
+    @Test
+    void groupTasksUseAConstantNumberOfQueries() {
         var small = group(1);
         var large = group(5);
-        var few = statementsOf(() -> get("/tasks/group/" + small.groupId(), small.leader().token()));
-        var many = statementsOf(() -> get("/tasks/group/" + large.groupId(), large.leader().token()));
+        var few = statementsOf(
+                () -> get("/tasks/group/" + small.groupId(), small.leader().token()));
+        var many = statementsOf(
+                () -> get("/tasks/group/" + large.groupId(), large.leader().token()));
         assertEquals(few, many, "GET /tasks/group/{id}: " + few + " sentencias con 1 tarea y " + many + " con 5");
     }
 
-    @Test void groupRequestsUseAConstantNumberOfQueries() {
+    @Test
+    void groupRequestsUseAConstantNumberOfQueries() {
         var small = group(1);
         var large = group(5);
-        var few = statementsOf(() -> get("/groups/" + small.groupId() + "/requests?status=PENDING&type=SUBMISSION", small.leader().token()));
-        var many = statementsOf(() -> get("/groups/" + large.groupId() + "/requests?status=PENDING&type=SUBMISSION", large.leader().token()));
+        var few = statementsOf(() -> get(
+                "/groups/" + small.groupId() + "/requests?status=PENDING&type=SUBMISSION",
+                small.leader().token()));
+        var many = statementsOf(() -> get(
+                "/groups/" + large.groupId() + "/requests?status=PENDING&type=SUBMISSION",
+                large.leader().token()));
         assertEquals(few, many, "GET /groups/{id}/requests: " + few + " sentencias con 1 request y " + many + " con 5");
     }
 
-    @Test void groupsOfALeaderUseAConstantNumberOfQueries() {
+    @Test
+    void groupsOfALeaderUseAConstantNumberOfQueries() {
         var leader = account("lider");
         var other = account("lider2");
         join(leader, account("y"), createGroup(leader));
@@ -86,23 +94,36 @@ class QueryCountApiTests extends ApiTestSupport {
         assertEquals(few, many, "GET /groups/user/role: " + few + " sentencias con 1 grupo y " + many + " con 4");
     }
 
-    @Test void membersOfAGroupUseAConstantNumberOfQueries() {
+    @Test
+    void membersOfAGroupUseAConstantNumberOfQueries() {
         var small = group(1);
         var large = group(5);
-        var few = statementsOf(() -> get("/groups/" + small.groupId() + "/members", small.leader().token()));
-        var many = statementsOf(() -> get("/groups/" + large.groupId() + "/members", large.leader().token()));
-        assertEquals(few, many, "GET /groups/{id}/members: " + few + " sentencias con 2 integrantes y " + many + " con 6");
+        var few = statementsOf(() ->
+                get("/groups/" + small.groupId() + "/members", small.leader().token()));
+        var many = statementsOf(() ->
+                get("/groups/" + large.groupId() + "/members", large.leader().token()));
+        assertEquals(
+                few, many, "GET /groups/{id}/members: " + few + " sentencias con 2 integrantes y " + many + " con 6");
     }
 
-    @Test void invitationsOfAGroupUseAConstantNumberOfQueries() {
+    @Test
+    void invitationsOfAGroupUseAConstantNumberOfQueries() {
         var small = group(0);
         var large = group(0);
-        post("/invitations", small.leader().token(), Map.of("userId", account("i").id(), "groupId", small.groupId()));
+        post(
+                "/invitations",
+                small.leader().token(),
+                Map.of("userId", account("i").id(), "groupId", small.groupId()));
         for (int i = 0; i < 4; i++) {
-            post("/invitations", large.leader().token(), Map.of("userId", account("i" + i).id(), "groupId", large.groupId()));
+            post(
+                    "/invitations",
+                    large.leader().token(),
+                    Map.of("userId", account("i" + i).id(), "groupId", large.groupId()));
         }
-        var few = statementsOf(() -> get("/invitations/group?groupId=" + small.groupId(), small.leader().token()));
-        var many = statementsOf(() -> get("/invitations/group?groupId=" + large.groupId(), large.leader().token()));
+        var few = statementsOf(() -> get(
+                "/invitations/group?groupId=" + small.groupId(), small.leader().token()));
+        var many = statementsOf(() -> get(
+                "/invitations/group?groupId=" + large.groupId(), large.leader().token()));
         assertEquals(few, many, "GET /invitations/group: " + few + " sentencias con 1 invitación y " + many + " con 4");
     }
 }

@@ -1,22 +1,19 @@
 package com.hub.synhub_backend.tasks.domain.model.aggregates;
 
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
-import jakarta.annotation.Nullable;
-import jakarta.persistence.*;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.SoftDeleteType;
-import lombok.Getter;
-import lombok.Setter;
-import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.hub.synhub_backend.tasks.domain.exceptions.TaskFinishedException;
 import com.hub.synhub_backend.tasks.domain.model.commands.CreateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
-import com.hub.synhub_backend.tasks.domain.exceptions.TaskFinishedException;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
-
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
 /**
  * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila
@@ -65,8 +62,7 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     public Task(CreateTaskCommand command) {
         if (command.title() == null || command.title().isBlank())
             throw new IllegalArgumentException("A task needs a title");
-        if (command.dueDate() == null)
-            throw new IllegalArgumentException("A task needs a due date");
+        if (command.dueDate() == null) throw new IllegalArgumentException("A task needs a due date");
         this.title = command.title();
         this.description = command.description() == null ? "" : command.description();
         this.dueDate = command.dueDate();
@@ -80,7 +76,8 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
 
     /** Resultado de revisar la entrega: aprobada -> DONE; rechazada -> IN_PROGRESS (suma un reagendado). */
     public void applySubmissionReview(boolean approved) {
-        this.updateStatus(new UpdateTaskStatusCommand(null, this.getId(), approved ? TaskStatus.DONE : TaskStatus.IN_PROGRESS));
+        this.updateStatus(
+                new UpdateTaskStatusCommand(null, this.getId(), approved ? TaskStatus.DONE : TaskStatus.IN_PROGRESS));
     }
 
     /**
@@ -95,15 +92,16 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
 
         var commandStatus = command.status();
 
-        if(this.status == TaskStatus.IN_PROGRESS && commandStatus == TaskStatus.COMPLETED) {
+        if (this.status == TaskStatus.IN_PROGRESS && commandStatus == TaskStatus.COMPLETED) {
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
             if (timesRearranged > 0) {
                 long updatedAt = this.getUpdatedAt().toInstant().toEpochMilli();
                 this.timePassed += now.toInstant().toEpochMilli() - updatedAt;
             } else {
-                this.timePassed = now.toInstant().toEpochMilli() - this.getCreatedAt().toInstant().toEpochMilli();
+                this.timePassed = now.toInstant().toEpochMilli()
+                        - this.getCreatedAt().toInstant().toEpochMilli();
             }
-        } else if(this.status == TaskStatus.COMPLETED && commandStatus == TaskStatus.IN_PROGRESS) {
+        } else if (this.status == TaskStatus.COMPLETED && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
         } else if (this.status == TaskStatus.ON_HOLD && commandStatus == TaskStatus.IN_PROGRESS) {
             timesRearranged++;
@@ -114,20 +112,20 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     }
 
     public void updateTask(UpdateTaskCommand command) {
-        if(command.title() != null && !command.title().isEmpty()) {
+        if (command.title() != null && !command.title().isEmpty()) {
             this.title = command.title();
         }
-        if(command.description() != null && !command.description().isEmpty()) {
+        if (command.description() != null && !command.description().isEmpty()) {
             this.description = command.description();
         }
-        if(command.dueDate() != null) {
+        if (command.dueDate() != null) {
             this.dueDate = command.dueDate();
-            if(command.dueDate().isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
-                if(this.status != TaskStatus.EXPIRED) {
+            if (command.dueDate().isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
+                if (this.status != TaskStatus.EXPIRED) {
                     this.status = TaskStatus.EXPIRED;
                 }
             } else {
-                if(this.status != TaskStatus.EXPIRED) {
+                if (this.status != TaskStatus.EXPIRED) {
                     this.status = TaskStatus.IN_PROGRESS;
                 }
             }

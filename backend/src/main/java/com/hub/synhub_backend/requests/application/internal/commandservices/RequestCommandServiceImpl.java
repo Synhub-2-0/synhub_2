@@ -14,11 +14,10 @@ import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositori
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
+import java.util.Optional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -27,9 +26,7 @@ public class RequestCommandServiceImpl implements RequestCommandService {
     private final RequestRepository requestRepository;
     private final TasksContextFacade tasksContextFacade;
 
-    public RequestCommandServiceImpl(
-            RequestRepository requestRepository,
-            TasksContextFacade tasksContextFacade) {
+    public RequestCommandServiceImpl(RequestRepository requestRepository, TasksContextFacade tasksContextFacade) {
         this.requestRepository = requestRepository;
         this.tasksContextFacade = tasksContextFacade;
     }
@@ -43,8 +40,10 @@ public class RequestCommandServiceImpl implements RequestCommandService {
             throw new IllegalArgumentException("Invalid request type");
         }
 
-        var task = this.tasksContextFacade.getTaskById(command.taskId())
-                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
+        var task = this.tasksContextFacade
+                .getTaskById(command.taskId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
 
         // requesterId null = la genera el sistema (vencimiento automático): sin reglas de usuario.
         if (command.requesterId() != null) {
@@ -54,8 +53,10 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 throw new AccessDeniedException("Only the member assigned to the task can create requests for it");
             if (requestType == RequestType.SUBMISSION) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
-                    throw new TaskNotCompletedException("A submission can only be created for a COMPLETED task, the task is " + task.getStatus());
-                if (this.requestRepository.existsByTask_IdAndRequestTypeAndRequestStatus(task.getId(), RequestType.SUBMISSION, RequestStatus.PENDING))
+                    throw new TaskNotCompletedException(
+                            "A submission can only be created for a COMPLETED task, the task is " + task.getStatus());
+                if (this.requestRepository.existsByTask_IdAndRequestTypeAndRequestStatus(
+                        task.getId(), RequestType.SUBMISSION, RequestStatus.PENDING))
                     throw new PendingSubmissionAlreadyExistsException(task.getId());
             }
         }
@@ -69,11 +70,14 @@ public class RequestCommandServiceImpl implements RequestCommandService {
     @Override
     @Transactional
     public Optional<Request> handle(UpdateRequestCommand command) {
-        var request = this.requestRepository.findById(command.requestId())
-                .orElseThrow(() -> new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
+        var request = this.requestRepository
+                .findById(command.requestId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
         var task = request.getTask();
         if (!task.getId().equals(command.taskId()))
-            throw new ResourceNotFoundException("Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
+            throw new ResourceNotFoundException(
+                    "Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId()))
             throw new AccessDeniedException("Only the leader of the group can review requests");
 
@@ -87,7 +91,8 @@ public class RequestCommandServiceImpl implements RequestCommandService {
         if (RequestType.SUBMISSION.name().equals(request.getRequestType())) {
             if (newStatus == RequestStatus.APPROVED) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
-                    throw new TaskNotCompletedException("Only a COMPLETED task can be approved, the task is " + task.getStatus());
+                    throw new TaskNotCompletedException(
+                            "Only a COMPLETED task can be approved, the task is " + task.getStatus());
                 this.tasksContextFacade.applySubmissionReview(task.getId(), true);
             } else if (task.getStatus() == TaskStatus.COMPLETED) {
                 // Si el miembro ya la sacó de COMPLETED, rechazar solo cierra la request.
@@ -102,18 +107,21 @@ public class RequestCommandServiceImpl implements RequestCommandService {
     @Override
     @Transactional
     public void handle(DeleteRequestCommand command) {
-        var request = this.requestRepository.findById(command.requestId())
-                .orElseThrow(() -> new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
+        var request = this.requestRepository
+                .findById(command.requestId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
         var task = request.getTask();
         if (!task.getId().equals(command.taskId()))
-            throw new ResourceNotFoundException("Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
+            throw new ResourceNotFoundException(
+                    "Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
         var isLeader = task.getProfile().getGroup().getLeader().getId().equals(command.requesterId());
         var isOwnPendingRequest = task.getProfile().getUser().getId().equals(command.requesterId())
                 && RequestStatus.PENDING.name().equals(request.getRequestStatus())
                 && !RequestType.EXPIRED.name().equals(request.getRequestType());
         if (!isLeader && !isOwnPendingRequest)
-            throw new AccessDeniedException("Only the leader of the group, or the assigned member while the request is pending, can delete it");
+            throw new AccessDeniedException(
+                    "Only the leader of the group, or the assigned member while the request is pending, can delete it");
         this.requestRepository.delete(request);
     }
-
 }

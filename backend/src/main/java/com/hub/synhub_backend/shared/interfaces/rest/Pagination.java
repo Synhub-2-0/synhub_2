@@ -1,9 +1,8 @@
 package com.hub.synhub_backend.shared.interfaces.rest;
 
+import java.util.Optional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
-import java.util.Optional;
 
 /**
  * Paginación opcional de los listados (AUDIT PERF-02): sin {@code page} ni {@code size} la respuesta sigue siendo
@@ -14,8 +13,7 @@ public final class Pagination {
     public static final int DEFAULT_SIZE = 20;
     public static final int MAX_SIZE = 100;
 
-    private Pagination() {
-    }
+    private Pagination() {}
 
     /** Vacío si no se pidió paginación. {@code page} empieza en 0; {@code size} se limita a {@value #MAX_SIZE}. */
     public static Optional<Pageable> of(Integer page, Integer size) {

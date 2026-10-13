@@ -6,7 +6,7 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.interfaces.rest.resources.TaskResource;
 
 public class TaskResourceFromEntityAssembler {
-    public static TaskResource toResourceFromEntity(Task entity){
+    public static TaskResource toResourceFromEntity(Task entity) {
         return new TaskResource(
                 entity.getId(),
                 entity.getTitle(),
@@ -15,13 +15,14 @@ public class TaskResourceFromEntityAssembler {
                 entity.getCreatedAt().toString(),
                 entity.getUpdatedAt().toString(),
                 entity.getStatus().toString(),
-                GroupResourceReducedFromEntityAssembler.toResourceFromEntity(entity.getProfile().getGroup()),
-                PublicUserResourceFromEntityAssembler.toResourceFromEntity(entity.getProfile().getUser()),
+                GroupResourceReducedFromEntityAssembler.toResourceFromEntity(
+                        entity.getProfile().getGroup()),
+                PublicUserResourceFromEntityAssembler.toResourceFromEntity(
+                        entity.getProfile().getUser()),
                 entity.getDifficulty(),
                 entity.getContext(),
                 entity.getUrgency(),
                 entity.getLabels(),
-                entity.getAiAccepted()
-        );
+                entity.getAiAccepted());
     }
 }

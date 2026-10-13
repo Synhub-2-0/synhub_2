@@ -7,12 +7,11 @@ import com.hub.synhub_backend.iam.domain.model.queries.*;
 import com.hub.synhub_backend.iam.domain.services.UserCommandService;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
-import org.apache.logging.log4j.util.Strings;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.util.Strings;
+import org.springframework.stereotype.Service;
 
 @Service
 public class IamContextFacadeImpl implements IamContextFacade {
@@ -35,14 +34,8 @@ public class IamContextFacadeImpl implements IamContextFacade {
      * @return The id of the created user.
      */
     public Long createUser(String username, String name, String surname, String imgUrl, String email, String password) {
-        var signUpCommand = new SignUpCommand(
-                username,
-                name,
-                surname,
-                imgUrl,
-                email,
-                password,
-                List.of(Role.getDefaultRole()));
+        var signUpCommand =
+                new SignUpCommand(username, name, surname, imgUrl, email, password, List.of(Role.getDefaultRole()));
         var result = userCommandService.handle(signUpCommand);
         if (result.isEmpty()) return 0L;
         return result.get().getId();
@@ -59,21 +52,19 @@ public class IamContextFacadeImpl implements IamContextFacade {
      * @param roleNames The names of the roles to be assigned to the user.
      * @return The id of the created user.
      */
-    public Long createUser(String username, String name, String surname, String imgUrl, String email, String password, List<String> roleNames) {
-        var roles = roleNames != null
-                ? roleNames.stream().map(Role::toRoleFromName).toList()
-                : new ArrayList<Role>();
-        var signUpCommand = new SignUpCommand(
-                username,
-                name,
-                surname,
-                imgUrl,
-                email,
-                password,
-                roles);
+    public Long createUser(
+            String username,
+            String name,
+            String surname,
+            String imgUrl,
+            String email,
+            String password,
+            List<String> roleNames) {
+        var roles =
+                roleNames != null ? roleNames.stream().map(Role::toRoleFromName).toList() : new ArrayList<Role>();
+        var signUpCommand = new SignUpCommand(username, name, surname, imgUrl, email, password, roles);
         var result = userCommandService.handle(signUpCommand);
-        if (result.isEmpty())
-            return 0L;
+        if (result.isEmpty()) return 0L;
         return result.get().getId();
     }
 
@@ -85,8 +76,7 @@ public class IamContextFacadeImpl implements IamContextFacade {
     public Long fetchUserIdByUsername(String username) {
         var getUserByUsernameQuery = new GetUserByUsernameQuery(username);
         var result = userQueryService.handle(getUserByUsernameQuery);
-        if (result.isEmpty())
-            return 0L;
+        if (result.isEmpty()) return 0L;
         return result.get().getId();
     }
 
@@ -98,14 +88,13 @@ public class IamContextFacadeImpl implements IamContextFacade {
     public String fetchUsernameByUserId(Long userId) {
         var getUserByIdQuery = new GetUserByIdQuery(userId);
         var result = userQueryService.handle(getUserByIdQuery);
-        if (result.isEmpty())
-            return Strings.EMPTY;
+        if (result.isEmpty()) return Strings.EMPTY;
         return result.get().getUsername();
     }
 
     @Override
     public Optional<User> fetchUserById(Long userId) {
-        if( userId == null || userId <= 0) {
+        if (userId == null || userId <= 0) {
             return Optional.empty();
         }
         var getUserByIdQuery = new GetUserByIdQuery(userId);
@@ -115,5 +104,4 @@ public class IamContextFacadeImpl implements IamContextFacade {
         }
         return Optional.of(result.get());
     }
-
 }

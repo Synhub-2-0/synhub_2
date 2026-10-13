@@ -1,7 +1,6 @@
 package com.hub.synhub_backend.groups.domain.model.valueobjects;
 
 import jakarta.persistence.Embeddable;
-
 import java.security.SecureRandom;
 
 @Embeddable
