@@ -7,7 +7,6 @@ import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.ImgUrl;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.hub.synhub_backend.groups.GroupFixtures.*;
@@ -63,7 +62,7 @@ class GroupDomainTest {
     }
 
     // ---- GroupProfile
-    @Disabled("AUDIT BUG-12: GroupProfile.tasks es null en los constructores y addTask lanza NullPointerException")
+    // AUDIT BUG-12 (resuelto)
     @Test void newMembershipAcceptsTasks() {
         var profile = new GroupProfile(user(2, "ana"), group(10, user(1, "lider")), GroupRole.GROUP_MEMBER);
         var task = new Task();

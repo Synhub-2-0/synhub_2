@@ -33,8 +33,6 @@ public final class GroupFixtures {
 
     public static GroupProfile join(Group group, User user, GroupRole role) {
         var profile = new GroupProfile(user, group, role);
-        // GroupProfile no inicializa su lista de tareas (AUDIT BUG-12); se fija aquí para poder asignar tareas.
-        ReflectionTestUtils.setField(profile, "tasks", new ArrayList<>());
         group.getUserProfiles().add(profile);
         user.getGroupProfiles().add(profile);
         return profile;

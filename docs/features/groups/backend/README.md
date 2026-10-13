@@ -23,8 +23,8 @@ Todos requieren token. El usuario actual se obtiene del token (`@AuthenticationP
 
 | Tipo | Clase | Notas |
 |---|---|---|
-| Agregado | `Group` | `code: GroupCode` (único), `name`, `description` (TEXT), `imgUrl: ImgUrl`, `userProfiles: GroupProfile[]` y `invitations: Invitation[]` (ambas con `cascade = ALL`). `getLeader()` busca el perfil con rol `GROUP_LEADER`; `getMemberCount()`; `updateInformation(UpdateGroupCommand)`. |
-| Entidad | `GroupProfile` | **Membresía**: `user` (IAM), `group`, `roleInGroup`, `tasks` (`@OneToMany(mappedBy = "profile")` hacia `Task` de tasks). `addTask` / `removeTask` mantienen la relación bidireccional. |
+| Agregado | `Group` | `code: GroupCode` (único), `name`, `description` (TEXT), `imgUrl: ImgUrl`, `userProfiles: GroupProfile[]` y `invitations: Invitation[]` (ambas con `cascade = ALL`). `getLeader()` busca el perfil con rol `GROUP_LEADER`; `getMemberCount()`; `updateInformation(UpdateGroupCommand)`. Borrado lógico (`deleted_at`, HUM-03): borrar un grupo marca también sus tareas, requests, membresías e invitaciones. |
+| Entidad | `GroupProfile` | **Membresía**: `user` (IAM), `group`, `roleInGroup`, `tasks` (`@OneToMany(mappedBy = "profile")` hacia `Task` de tasks). `addTask` / `removeTask` mantienen la relación bidireccional; `detachTask` saca una tarea borrada de la colección sin desvincularla. La lista de tareas nunca es `null` (BUG-12). Borrado lógico (`deleted_at`). |
 | Value object | `GroupCode` | 9 caracteres `[0-9A-Z]`. `GroupCode.random()` usa `SecureRandom`; `CreateGroupCommand` vuelve a generarlo mientras `existsByCode` sea verdadero. |
 | Value object | `ImgUrl` | Normaliza `null`/vacío a `""`. |
 | Value object | `GroupRole` | `GROUP_LEADER`, `GROUP_MEMBER`. |

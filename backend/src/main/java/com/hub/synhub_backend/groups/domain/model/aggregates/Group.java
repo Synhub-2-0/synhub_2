@@ -4,6 +4,8 @@ import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,7 +18,12 @@ import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAg
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila
+ * de todas las consultas, cargas y colecciones. Los datos siguen en la base.
+ */
 @Entity
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 @NoArgsConstructor
 @Setter
 @Getter

@@ -93,7 +93,8 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             throw new AccessDeniedException("Only the leader of a group can delete it");
         }
 
-        // Las tareas (y sus requests) se borran primero; membresías e invitaciones caen en cascada con el grupo (AUDIT BUG-02).
+        // Soft delete (HUM-03): primero las tareas y sus requests; membresías e invitaciones caen en cascada
+        // con el grupo (AUDIT BUG-02). Todo queda marcado con deleted_at y deja de ser visible.
         tasksContextFacade.deleteAllTasksByGroupId(group.getId());
         groupRepository.delete(group);
 

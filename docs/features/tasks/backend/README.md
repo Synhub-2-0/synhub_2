@@ -51,7 +51,7 @@ Comportamiento del agregado:
 
 ## ACL
 
-Hacia requests: `RequestsContextFacade.deleteAllRequestsByTaskId`, que `DeleteTaskCommand` y `DeleteTasksByUserIdAndGroupIdCommand` llaman antes de borrar cada tarea (las requests la referencian por FK).
+Hacia requests: `RequestsContextFacade.deleteAllRequestsByTaskId`, que `DeleteTaskCommand` y `DeleteTasksByUserIdAndGroupIdCommand` llaman antes de borrar cada tarea. El borrado es lógico (HUM-03): `Task` y `Request` se marcan con `deleted_at`, dejan de ser visibles y la tarea conserva su perfil (responsable y grupo).
 
 Hacia otros contextos:
 

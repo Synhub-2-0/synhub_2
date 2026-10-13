@@ -3,6 +3,8 @@ package com.hub.synhub_backend.tasks.domain.model.aggregates;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 import lombok.Getter;
 import lombok.Setter;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
@@ -15,8 +17,13 @@ import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila
+ * de todas las consultas, cargas y colecciones. Los datos siguen en la base.
+ */
 @Getter
 @Entity
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 public class Task extends AuditableAbstractAggregateRoot<Task> {
     @Column(nullable = false)
     private String title;

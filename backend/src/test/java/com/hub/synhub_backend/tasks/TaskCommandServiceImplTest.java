@@ -114,12 +114,14 @@ class TaskCommandServiceImplTest {
         // AUDIT BUG-01: primero las requests (FK), después la tarea
         var order = inOrder(requests, tasks);
         order.verify(requests).deleteAllRequestsByTaskId(TASK);
-        order.verify(tasks).deleteById(TASK);
+        order.verify(tasks).delete(task);
+        // HUM-03: soft delete; la tarea conserva su responsable
+        assertSame(anaProfile, task.getProfile());
     }
 
     @Test void memberCannotDeleteTask() {
         assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteTaskCommand(ANA, TASK)));
-        verify(tasks, never()).deleteById(any());
+        verify(tasks, never()).delete(any(Task.class));
     }
 
     // ---- Estado

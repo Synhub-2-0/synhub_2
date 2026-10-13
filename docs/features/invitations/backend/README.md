@@ -31,7 +31,7 @@ Todos requieren token.
 
 ## Modelo de dominio
 
-`Invitation` (agregado, extiende `AuditableAbstractAggregateRoot`): `user` (`@ManyToOne` hacia el `User` de IAM, columna `member_id`) y `group` (`@ManyToOne` hacia `Group`). No tiene estado: **existir** equivale a "pendiente". Aceptarla o rechazarla la borra.
+`Invitation` (agregado, extiende `AuditableAbstractAggregateRoot`): `user` (`@ManyToOne` hacia el `User` de IAM, columna `member_id`) y `group` (`@ManyToOne` hacia `Group`). No tiene estado: **existir** (sin `deleted_at`) equivale a "pendiente". Aceptarla o rechazarla la borra de forma lógica (HUM-03): deja de verse, pero queda como historial.
 
 ## Reglas (`InvitationCommandServiceImpl`)
 

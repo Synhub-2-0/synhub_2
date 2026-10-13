@@ -139,6 +139,7 @@ Las convenciones de URL, verbos y códigos de estado están en [rest-api.md](res
   - `AuditableAbstractAggregateRoot<T>`: extiende `AbstractAggregateRoot` de Spring Data, con `id` autoincremental y `createdAt`/`updatedAt` (`OffsetDateTime` UTC, vía `@PrePersist`/`@PreUpdate`). La usan todos los agregados.
   - `AuditableModel`: `id`, `createdAt` y `updatedAt` (`Instant`, vía `@CreatedDate`/`@LastModifiedDate`). La usa la entidad `GroupProfile`.
 - **Nombres de tablas**: `SnakeCaseWithPluralizedTablePhysicalNamingStrategy` convierte a *snake_case* y pluraliza (`GroupProfile` → `group_profiles`).
+- **Borrado lógico** (decisión HUM-03): `Group`, `GroupProfile`, `Invitation`, `Task` y `Request` llevan `@SoftDelete(strategy = TIMESTAMP, columnName = "deleted_at")` de Hibernate. Un `delete` del repositorio (o una cascada) hace `UPDATE … SET deleted_at = now()`, y Hibernate excluye esas filas de todas las consultas, cargas por id y colecciones: lo borrado no es visible en ninguna parte de la API, pero los datos quedan en la base. `User` y `Role` no se borran. Una tarea borrada conserva su `profile_id` (responsable y grupo) como historial.
 - **Esquema**: `spring.jpa.hibernate.ddl-auto=update`. No hay migraciones (Flyway/Liquibase).
 - **Auditoría y scheduling** se activan en `SynhubBackendApplication` (`@EnableJpaAuditing`, `@EnableScheduling`).
 

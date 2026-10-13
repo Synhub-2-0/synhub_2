@@ -67,6 +67,8 @@ Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsBy
 
 ## Persistencia
 
+`Request` usa borrado lógico (`deleted_at`, HUM-03).
+
 `RequestRepository`: `findByTaskId`, `deleteByTaskId`, `findByTask_Profile_Group_Id` y `existsByTask_IdAndRequestTypeAndRequestStatus`.
 
 ## Errores

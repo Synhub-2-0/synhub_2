@@ -6,9 +6,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 
+/**
+ * Borrado lógico (decisión HUM-03): {@code delete} marca {@code deleted_at} y Hibernate excluye la fila
+ * de todas las consultas, cargas y colecciones. Los datos siguen en la base.
+ */
 @Entity
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 @Setter
 @Getter
 public class Invitation extends AuditableAbstractAggregateRoot<Invitation> {

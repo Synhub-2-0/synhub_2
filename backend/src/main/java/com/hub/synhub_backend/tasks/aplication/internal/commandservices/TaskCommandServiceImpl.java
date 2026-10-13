@@ -103,14 +103,12 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
             throw new AccessDeniedException("Only the leader of the group can delete tasks");
         }
+        // Soft delete (HUM-03): la tarea conserva su perfil; solo sale de la colección en memoria.
         var profile = task.getProfile();
-        if (profile != null) {
-            profile.removeTask(task);
-            this.groupProfileRepository.save(profile);
-        }
-        // Las requests referencian la tarea (FK): se borran primero, en la misma transacción (AUDIT BUG-01).
+        if (profile != null) profile.detachTask(task);
+        // Sus requests se borran con ella, en la misma transacción (AUDIT BUG-01).
         this.requestsContextFacade.deleteAllRequestsByTaskId(task.getId());
-        this.taskRepository.deleteById(task.getId());
+        this.taskRepository.delete(task);
     }
 
     @Override
@@ -151,10 +149,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
             }
             for (var task : tasks) {
                 var taskProfile = task.getProfile();
-                if (taskProfile != null) {
-                    taskProfile.removeTask(task);
-                    this.groupProfileRepository.save(taskProfile);
-                }
+                if (taskProfile != null) taskProfile.detachTask(task);
                 this.requestsContextFacade.deleteAllRequestsByTaskId(task.getId());
                 this.taskRepository.delete(task);
             }
@@ -169,7 +164,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         for (var task : this.taskRepository.findByProfile_Group_Id(command.groupId())) {
             this.requestsContextFacade.deleteAllRequestsByTaskId(task.getId());
             var profile = task.getProfile();
-            if (profile != null) profile.removeTask(task);
+            if (profile != null) profile.detachTask(task);
             this.taskRepository.delete(task);
         }
     }
