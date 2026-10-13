@@ -45,10 +45,10 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 | Dirección | Pieza | Uso |
 |---|---|---|
 | groups → otros | `GroupsContextFacade.fetchLeaderIdByGroupId` | Lo usa `RequestQueryServiceImpl` (requests) para validar que quien lista las solicitudes sea el líder. |
-| groups → otros | `GroupsContextFacade.isMember` / `isLeader` | Control de acceso de las lecturas: `TaskQueryServiceImpl` (tasks) y `RequestQueryServiceImpl` (requests). |
+| groups → otros | `GroupsContextFacade.isMember` / `isLeader` | Control de acceso: `TaskQueryServiceImpl` y `TaskCommandServiceImpl` (tasks), `RequestQueryServiceImpl` (requests) y `MetricsController` (metrics). |
 | groups → tasks | `TasksContextFacade.deleteAllTasksByGroupId` y `deleteTasksByUserIdAndGroupId` | `GroupCommandServiceImpl` borra las tareas al borrar el grupo y al quitar a un integrante. |
-| groups → iam | `UserRepository` (directo) | `GroupCommandServiceImpl` busca al líder y lo guarda. |
-| otros → groups | `GroupRepository`, `GroupProfileRepository` (directo) | `TaskCommandServiceImpl` (tasks) y `UserQueryServiceImpl` (iam). |
+| groups → iam | `IamContextFacade.fetchUserById` | `GroupCommandServiceImpl` e `InvitationCommandServiceImpl` cargan al líder, al invitado o a quien se une. |
+| groups → otros | `GroupsContextFacade.fetchMembership` | `TaskCommandServiceImpl` (tasks): la membresía a la que se asigna una tarea. |
 | otros → groups | `GroupQueryService` (directo) | `AiController` y `TaskMetricsQueryServiceImpl` (metrics). |
 
 ## Persistencia

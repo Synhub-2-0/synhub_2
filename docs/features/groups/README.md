@@ -38,7 +38,7 @@ Endpoints que expone el backend y la web no consume: `GET /groups/{id}`, `GET /g
 - **`GroupProfile` (membresía) contiene las tareas** (`@OneToMany tasks`) y `Task.profile` apunta a ella. El agregado `Task` es de [tasks](../tasks/README.md), pero la relación persistida pasa por esta entidad de groups.
 - **`GET /groups/{groupId}/requests`** está bajo la URL de groups, pero lo implementa `GroupRequestController` en el contexto **requests**. Ver [requests](../requests/README.md).
 - **`GET /ai/groups/{groupId}/report`** consulta un grupo, pero le pertenece a [ai](../ai/README.md).
-- **Otros contextos leen repositorios de groups directamente**: `TaskCommandServiceImpl` (tasks) usa `GroupRepository` y `GroupProfileRepository`, y `UserQueryServiceImpl` (iam) usa `GroupProfileRepository`. La ACL formal de groups (`GroupsContextFacade`) solo la usa requests.
+- **Otros contextos acceden a groups solo por su ACL** (`GroupsContextFacade`: líder, pertenencia y membresía): tasks, requests y metrics (AUDIT ARC-01).
 - **Frontend**: `GroupDetails` es la vista con más acoplamiento: combina `GroupsStore`, `TasksStore` (tablero del grupo), `InvitationsStore` (invitar y cancelar) e `IamStore`.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).

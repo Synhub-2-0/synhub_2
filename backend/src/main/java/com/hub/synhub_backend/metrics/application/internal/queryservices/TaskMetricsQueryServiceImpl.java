@@ -9,7 +9,7 @@ import com.hub.synhub_backend.metrics.domain.model.valueobjects.*;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
-import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
+import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +29,16 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
 
     private static final double MILLIS_PER_DAY = 1000d * 60 * 60 * 24;
 
-    private final TaskRepository taskRepository;
+    private final TasksContextFacade tasksContextFacade;
     private final GroupQueryService groupQueryService;
 
-    public TaskMetricsQueryServiceImpl(TaskRepository taskRepository, GroupQueryService groupQueryService) {
-        this.taskRepository = taskRepository;
+    public TaskMetricsQueryServiceImpl(TasksContextFacade tasksContextFacade, GroupQueryService groupQueryService) {
+        this.tasksContextFacade = tasksContextFacade;
         this.groupQueryService = groupQueryService;
     }
 
     private List<Task> memberTasks(Long groupId, Long userId) {
-        return taskRepository.findByProfile_Group_IdAndProfile_User_Id(groupId, userId);
+        return tasksContextFacade.fetchTasksByGroupIdAndUserId(groupId, userId);
     }
 
     private static Map<String, Integer> countByStatus(List<Task> tasks) {
@@ -66,13 +66,13 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     // ---- Grupo
     @Override
     public TaskOverview handle(GetTaskOverviewInGroupQuery query) {
-        var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
+        var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
         return new TaskOverview("TASK_OVERVIEW", tasks.size(), countByStatus(tasks));
     }
 
     @Override
     public TaskDistribution handle(GetTaskDistributionInGroupQuery query) {
-        var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
+        var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
         Map<String, MemberTaskCount> details = new HashMap<>();
         tasks.stream()
                 .filter(task -> task.getProfile().getUser() != null)
@@ -84,7 +84,7 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
 
     @Override
     public RescheduledTasks handle(GetRescheduledTasksInGroupQuery query) {
-        var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
+        var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
         var rescheduledUserIds = tasks.stream()
                 .filter(task -> task.getTimesRearranged() > 0 && task.getProfile().getUser() != null)
                 .map(task -> task.getProfile().getUser().getId())
@@ -100,7 +100,7 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
         if (groupQueryService.handle(new GetGroupByIdQuery(query.groupId())).isEmpty()) {
             return new AvgCompletionTime("AVG_COMPLETION_TIME", 0, Map.of("completedTasks", 0));
         }
-        var tasks = taskRepository.findByProfile_Group_Id(query.groupId());
+        var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
         return new AvgCompletionTime("AVG_COMPLETION_TIME", averageDaysToDone(tasks), Map.of("completedTasks", countDone(tasks)));
     }
 
@@ -143,7 +143,7 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
 
     // ---- Una tarea
     private Task task(Long taskId) {
-        return taskRepository.findById(taskId)
+        return tasksContextFacade.getTaskById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
     }
 

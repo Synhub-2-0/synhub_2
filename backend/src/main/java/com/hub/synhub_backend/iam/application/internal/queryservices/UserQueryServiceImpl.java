@@ -1,7 +1,6 @@
 package com.hub.synhub_backend.iam.application.internal.queryservices;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.domain.model.queries.*;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
@@ -19,7 +18,6 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class UserQueryServiceImpl implements UserQueryService {
   private final UserRepository userRepository;
-  private final GroupProfileRepository groupProfileRepository;
 
   /**
    * Constructor.
@@ -27,11 +25,9 @@ public class UserQueryServiceImpl implements UserQueryService {
    * @param userRepository {@link UserRepository} instance.
    */
   public UserQueryServiceImpl(
-          UserRepository userRepository,
-          GroupProfileRepository groupProfileRepository
+          UserRepository userRepository
   ) {
     this.userRepository = userRepository;
-    this.groupProfileRepository = groupProfileRepository;
   }
 
   /**
@@ -67,13 +63,4 @@ public class UserQueryServiceImpl implements UserQueryService {
     return userRepository.findByUsername(query.username());
   }
 
-  @Override
-  public List<User> handle(GetUsersByGroupIdQuery query) {
-    var groupProfiles = this.groupProfileRepository.findByGroup_Id(query.groupId());
-    List<User> users = new java.util.ArrayList<>(List.of());
-    groupProfiles.forEach(groupProfile -> {
-      users.add(groupProfile.getUser());
-    });
-    return users;
-  }
 }

@@ -22,5 +22,4 @@ public interface IamContextFacade {
   Long fetchUserIdByUsername(String username);
   String fetchUsernameByUserId(Long userId);
   Optional<User> fetchUserById(Long userId);
-  List<User> fetchUsersByGroupId(Long groupId);
 }

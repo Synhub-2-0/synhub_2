@@ -12,7 +12,7 @@ import com.hub.synhub_backend.groups.domain.services.GroupCommandService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,20 +24,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class GroupCommandServiceImpl implements GroupCommandService {
 
     private final GroupRepository groupRepository;
-    private final UserRepository userRepository;
+    private final IamContextFacade iamContextFacade;
     private final GroupProfileRepository groupProfileRepository;
     private final TasksContextFacade tasksContextFacade;
     private final InvitationRepository invitationRepository;
 
     public GroupCommandServiceImpl(
             GroupRepository groupRepository,
-            UserRepository userRepository,
+            IamContextFacade iamContextFacade,
             GroupProfileRepository groupProfileRepository,
             TasksContextFacade tasksContextFacade,
             InvitationRepository invitationRepository
     ) {
         this.groupRepository = groupRepository;
-        this.userRepository = userRepository;
+        this.iamContextFacade = iamContextFacade;
         this.groupProfileRepository = groupProfileRepository;
         this.tasksContextFacade = tasksContextFacade;
         this.invitationRepository = invitationRepository;
@@ -46,7 +46,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     @Override
     @Transactional
     public Group handle(CreateGroupCommand command) {
-        var leaderOpt = userRepository.findById(command.leaderId());
+        var leaderOpt = iamContextFacade.fetchUserById(command.leaderId());
         if (leaderOpt.isEmpty()) {
             throw new ResourceNotFoundException("User with id " + command.leaderId() + " does not exist");
         }
@@ -64,7 +64,6 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         leader.getGroupProfiles().add(newGroupProfile);
         group.getUserProfiles().add(newGroupProfile);
         this.groupRepository.save(group);
-        this.userRepository.save(leader);
         return group;
     }
 
@@ -137,7 +136,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     public Group handle(JoinGroupByCodeCommand command) {
         var group = groupRepository.findByCode(new GroupCode(command.code()))
                 .orElseThrow(() -> new ResourceNotFoundException("Group with code " + command.code() + " does not exist"));
-        var user = userRepository.findById(command.userId())
+        var user = iamContextFacade.fetchUserById(command.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
         if (groupProfileRepository.existsByGroup_IdAndUser_Id(group.getId(), user.getId())) {
             throw new UserAlreadyInGroupException("User with id " + user.getId() + " is already in group with id " + group.getId());

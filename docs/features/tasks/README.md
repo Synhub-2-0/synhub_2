@@ -47,11 +47,11 @@ stateDiagram-v2
 ## Propiedad compartida
 
 - **Asignación mediante groups**: `Task.profile` apunta a `GroupProfile` (la membresía de groups) y `GroupProfile.tasks` es la colección inversa. Una tarea no tiene `userId` ni `groupId` propios: ambos se derivan de la membresía. `TaskResource` expone `group` y `assignedTo` armados con assemblers de groups e IAM.
-- **`TaskCommandServiceImpl` usa repositorios de otros contextos** (`GroupRepository`, `GroupProfileRepository` de groups y `UserRepository` de IAM) en lugar de sus ACL.
+- **`TaskCommandServiceImpl` usa las ACL de groups e IAM** (`GroupsContextFacade`, `IamContextFacade`) para el líder, la membresía y el usuario (AUDIT ARC-01).
 - **Scheduler de vencimiento**: `TaskStatusScheduler` está en `tasks/application/internal/schedulers`, pero escribe en **requests** (`RequestCommandService`, solicitud `EXPIRED`). El proceso es de tasks y el dato resultante es de requests.
 - **`DONE` lo decide requests**: requests llama a `TasksContextFacade.applySubmissionReview` al revisar una entrega. Es la única vía hacia `DONE`.
 - **Campos de IA en `Task`** (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`): se persisten en tasks, pero los produce [ai](../ai/README.md) y los consume su informe de grupo.
-- **Métricas**: `TaskMetricsQueryServiceImpl` ([metrics](../metrics/README.md)) lee `TaskRepository` directamente.
+- **Métricas**: `TaskMetricsQueryServiceImpl` ([metrics](../metrics/README.md)) lee las tareas por `TasksContextFacade`.
 - **Frontend**: `TaskCard` (tasks) usa `RequestsStore`; `TaskForm` usa `AiStore` y `GroupsStore`; `LeaderTasks` incrusta `AiReportCard` (ai); `Home` (shared) y `GroupDetails` (groups) usan `TasksStore`.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).

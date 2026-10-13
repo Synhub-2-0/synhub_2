@@ -1,8 +1,7 @@
 package com.hub.synhub_backend.tasks;
 
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
+import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.tasks.application.internal.commandservices.TaskCommandServiceImpl;
 import com.hub.synhub_backend.tasks.domain.exceptions.TaskStatusTransitionNotAllowedException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
@@ -26,7 +25,7 @@ class TaskStatusDoneBlockedTest {
         var task = mock(Task.class, RETURNS_DEEP_STUBS);
         when(task.getProfile().getGroup().getLeader().getId()).thenReturn(1L);
         when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
-        var service = new TaskCommandServiceImpl(taskRepository, mock(UserRepository.class), mock(GroupRepository.class), mock(GroupProfileRepository.class),
+        var service = new TaskCommandServiceImpl(taskRepository, mock(IamContextFacade.class), mock(GroupsContextFacade.class),
                 mock(com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade.class));
 
         var e = assertThrows(TaskStatusTransitionNotAllowedException.class,

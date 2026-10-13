@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.groups.application.internal.acl;
 
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.queries.GetGroupByIdQuery;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
 import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
@@ -39,5 +40,11 @@ public class GroupsContextFacadeImpl implements GroupsContextFacade {
         return groupProfileRepository.findByGroup_IdAndUser_Id(groupId, userId)
                 .map(profile -> profile.getRoleInGroup() == GroupRole.GROUP_LEADER)
                 .orElse(false);
+    }
+
+    @Override
+    public Optional<GroupProfile> fetchMembership(Long groupId, Long userId) {
+        if (groupId == null || userId == null) return Optional.empty();
+        return groupProfileRepository.findByGroup_IdAndUser_Id(groupId, userId);
     }
 }

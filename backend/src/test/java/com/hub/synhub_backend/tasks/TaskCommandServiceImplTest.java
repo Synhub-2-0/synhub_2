@@ -2,9 +2,8 @@ package com.hub.synhub_backend.tasks;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
+import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.application.internal.commandservices.TaskCommandServiceImpl;
@@ -34,9 +33,8 @@ class TaskCommandServiceImplTest {
     private static final OffsetDateTime DUE = OffsetDateTime.now(ZoneOffset.UTC).plusDays(2);
 
     private TaskRepository tasks;
-    private UserRepository users;
-    private GroupRepository groups;
-    private GroupProfileRepository profiles;
+    private IamContextFacade users;
+    private GroupsContextFacade groups;
     private RequestsContextFacade requests;
     private TaskCommandServiceImpl service;
     private Group group;
@@ -46,11 +44,10 @@ class TaskCommandServiceImplTest {
     @BeforeEach
     void setUp() {
         tasks = mock(TaskRepository.class);
-        users = mock(UserRepository.class);
-        groups = mock(GroupRepository.class);
-        profiles = mock(GroupProfileRepository.class);
+        users = mock(IamContextFacade.class);
+        groups = mock(GroupsContextFacade.class);
         requests = mock(RequestsContextFacade.class);
-        service = new TaskCommandServiceImpl(tasks, users, groups, profiles, requests);
+        service = new TaskCommandServiceImpl(tasks, users, groups, requests);
 
         var ana = user(ANA, "ana");
         var luis = user(LUIS, "luis");
@@ -64,13 +61,12 @@ class TaskCommandServiceImplTest {
         ReflectionTestUtils.setField(task, "updatedAt", OffsetDateTime.now(ZoneOffset.UTC).minusHours(1));
         anaProfile.addTask(task);
 
-        when(users.findById(ANA)).thenReturn(Optional.of(ana));
-        when(users.findById(LUIS)).thenReturn(Optional.of(luis));
-        when(users.existsById(ANA)).thenReturn(true);
-        when(groups.findById(GROUP)).thenReturn(Optional.of(group));
-        when(groups.existsById(GROUP)).thenReturn(true);
-        when(profiles.findByGroup_IdAndUser_Id(GROUP, ANA)).thenReturn(Optional.of(anaProfile));
-        when(profiles.findByGroup_IdAndUser_Id(GROUP, LUIS)).thenReturn(Optional.of(luisProfile));
+        when(users.fetchUserById(ANA)).thenReturn(Optional.of(ana));
+        when(users.fetchUserById(LUIS)).thenReturn(Optional.of(luis));
+        when(groups.fetchLeaderIdByGroupId(GROUP)).thenReturn(Optional.of(LEADER));
+        when(groups.isLeader(GROUP, LEADER)).thenReturn(true);
+        when(groups.fetchMembership(GROUP, ANA)).thenReturn(Optional.of(anaProfile));
+        when(groups.fetchMembership(GROUP, LUIS)).thenReturn(Optional.of(luisProfile));
         when(tasks.findById(TASK)).thenReturn(Optional.of(task));
         when(tasks.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -92,8 +88,8 @@ class TaskCommandServiceImplTest {
     }
 
     @Test void assigneeMustBelongToTheGroup() {
-        when(users.findById(STRANGER)).thenReturn(Optional.of(user(STRANGER, "ajeno")));
-        when(profiles.findByGroup_IdAndUser_Id(GROUP, STRANGER)).thenReturn(Optional.empty());
+        when(users.fetchUserById(STRANGER)).thenReturn(Optional.of(user(STRANGER, "ajeno")));
+        when(groups.fetchMembership(GROUP, STRANGER)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.handle(createFor(LEADER, STRANGER)));
     }
 

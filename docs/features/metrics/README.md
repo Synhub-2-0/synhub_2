@@ -19,5 +19,5 @@ La web todavía no consume `/api/v1/metrics`: ve las métricas de forma indirect
 
 ## Propiedad compartida
 
-- **Los datos son de tasks**: metrics no persiste nada. `TaskMetricsQueryServiceImpl` lee `TaskRepository` (tasks) directamente y `GroupQueryService` (groups) para el promedio de cierre. El control de acceso de `MetricsController` usa las ACL de groups y tasks.
+- **Los datos son de tasks**: metrics no persiste nada. `TaskMetricsQueryServiceImpl` lee las tareas por `TasksContextFacade` (tasks) y `GroupQueryService` (groups) para el promedio de cierre. El control de acceso de `MetricsController` usa las ACL de groups y tasks.
 - **Los campos que mide** (`timePassed`, `timesRearranged`) los calcula el agregado `Task` al cambiar de estado: si se cambia cómo se calculan, el cambio va en tasks.

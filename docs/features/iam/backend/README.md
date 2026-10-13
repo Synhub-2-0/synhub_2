@@ -33,14 +33,14 @@ Paquete: [`com.hub.synhub_backend.iam`](../../../../backend/src/main/java/com/hu
 |---|---|
 | `UserCommandServiceImpl` | `SignInCommand` → valida con `HashingService`, genera el token con `TokenService` y devuelve `(User, token)`.<br>`SignUpCommand` → valida unicidad, resuelve los roles en `RoleRepository` y guarda el usuario. Desde el registro público el comando siempre trae `ROLE_USER` (`SignUpCommandFromResourceAssembler`). |
 | `RoleCommandServiceImpl` | `SeedRolesCommand` → crea los roles de `AccountRole` que falten. |
-| `UserQueryServiceImpl` | `GetAllUsersQuery`, `GetUserByIdQuery`, `GetUserByUsernameQuery`, `GetUsersByGroupIdQuery` (esta última lee `GroupProfileRepository` de groups). |
+| `UserQueryServiceImpl` | `GetAllUsersQuery`, `GetUserByIdQuery` y `GetUserByUsernameQuery`. |
 | `RoleQueryServiceImpl` | `GetAllRolesQuery`, `GetRoleByNameQuery`. |
 | `ApplicationReadyEventHandler` | Al recibir `ApplicationReadyEvent`, ejecuta `SeedRolesCommand`: los roles siempre existen al arrancar. |
 
 
 ## ACL hacia otros contextos
 
-`IamContextFacade` (interfaz en `interfaces/acl`, implementación en `application/internal/acl`) expone `createUser`, `fetchUserIdByUsername`, `fetchUsernameByUserId`, `fetchUserById` y `fetchUsersByGroupId`.
+`IamContextFacade` (interfaz en `interfaces/acl`, implementación en `application/internal/acl`) expone `createUser`, `fetchUserIdByUsername`, `fetchUsernameByUserId`, `fetchUserById`. groups y tasks usan `fetchUserById` para cargar usuarios sin tocar `UserRepository` (AUDIT ARC-01).
 
 ## Infraestructura
 

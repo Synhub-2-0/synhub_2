@@ -116,10 +116,4 @@ public class IamContextFacadeImpl implements IamContextFacade {
         return Optional.of(result.get());
     }
 
-    @Override
-    public List<User> fetchUsersByGroupId(Long groupId) {
-        var getUserByGroupIdQuery = new GetUsersByGroupIdQuery(groupId);
-        var result = userQueryService.handle(getUserByGroupIdQuery);
-        return result;
-    }
 }

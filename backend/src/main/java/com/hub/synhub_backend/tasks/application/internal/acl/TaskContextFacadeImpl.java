@@ -9,6 +9,7 @@ import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,5 +46,15 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
     @Override
     public void deleteAllTasksByGroupId(Long groupId) {
         taskCommandService.handle(new DeleteTasksByGroupIdCommand(groupId));
+    }
+
+    @Override
+    public List<Task> fetchTasksByGroupId(Long groupId) {
+        return taskRepository.findByProfile_Group_Id(groupId);
+    }
+
+    @Override
+    public List<Task> fetchTasksByGroupIdAndUserId(Long groupId, Long userId) {
+        return taskRepository.findByProfile_Group_IdAndProfile_User_Id(groupId, userId);
     }
 }

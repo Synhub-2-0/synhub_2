@@ -35,7 +35,7 @@ Todos requieren token.
 
 ## Reglas (`InvitationCommandServiceImpl`)
 
-1. **Crear**: carga el usuario (`UserRepository` de IAM) y el grupo; exige que el solicitante sea `group.getLeader()`; rechaza duplicados (`existsByUser_IdAndGroup_Id`) y miembros existentes (`GroupProfileRepository.existsByGroup_IdAndUser_Id`).
+1. **Crear**: carga el usuario (`IamContextFacade.fetchUserById` de IAM) y el grupo; exige que el solicitante sea `group.getLeader()`; rechaza duplicados (`existsByUser_IdAndGroup_Id`) y miembros existentes (`GroupProfileRepository.existsByGroup_IdAndUser_Id`).
 2. **Aceptar**: exige que el solicitante sea el invitado y crea `new GroupProfile(user, group, GROUP_MEMBER)`. **Aquí se crea la membresía**, por eso la feature le pertenece a groups.
 3. **Cancelar**: exige que el solicitante sea el invitado o el líder.
 

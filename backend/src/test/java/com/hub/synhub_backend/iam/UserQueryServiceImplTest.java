@@ -3,7 +3,6 @@ package com.hub.synhub_backend.iam;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupRole;
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.iam.application.internal.queryservices.UserQueryServiceImpl;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.domain.model.queries.*;
@@ -21,15 +20,13 @@ import static org.mockito.Mockito.*;
 class UserQueryServiceImplTest {
 
     private UserRepository users;
-    private GroupProfileRepository profiles;
     private UserQueryServiceImpl service;
     private final User ana = new User("ana", "Ana", "Torres", "img", "ana@synhub.io", "hash");
 
     @BeforeEach
     void setUp() {
         users = mock(UserRepository.class);
-        profiles = mock(GroupProfileRepository.class);
-        service = new UserQueryServiceImpl(users, profiles);
+        service = new UserQueryServiceImpl(users);
     }
 
     @Test void byIdUsernameAndAll() {
@@ -43,13 +40,4 @@ class UserQueryServiceImplTest {
         assertTrue(service.handle(new GetUserByUsernameQuery("nobody")).isEmpty());
     }
 
-    @Test void usersOfAGroupComeFromItsMemberships() {
-        var luis = new User("luis", "Luis", "Paz", "img", "luis@synhub.io", "hash");
-        var group = new Group();
-        when(profiles.findByGroup_Id(7L)).thenReturn(List.of(
-                new GroupProfile(ana, group, GroupRole.GROUP_LEADER),
-                new GroupProfile(luis, group, GroupRole.GROUP_MEMBER)));
-
-        assertEquals(List.of(ana, luis), service.handle(new GetUsersByGroupIdQuery(7L)));
-    }
 }

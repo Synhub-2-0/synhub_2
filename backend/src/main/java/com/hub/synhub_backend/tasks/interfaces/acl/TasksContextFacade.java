@@ -2,10 +2,17 @@ package com.hub.synhub_backend.tasks.interfaces.acl;
 
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TasksContextFacade {
     Optional<Task> getTaskById(Long taskId);
+
+    /** Tareas activas de un grupo (sin control de acceso: lo hace quien consulta). */
+    List<Task> fetchTasksByGroupId(Long groupId);
+
+    /** Tareas activas de un integrante dentro de un grupo. */
+    List<Task> fetchTasksByGroupIdAndUserId(Long groupId, Long userId);
     void deleteTasksByUserIdAndGroupId(Long userId, Long groupId);
 
     /** Borra todas las tareas del grupo y sus requests (antes de borrar el grupo). */

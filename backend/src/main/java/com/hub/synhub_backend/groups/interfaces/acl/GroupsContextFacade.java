@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.groups.interfaces.acl;
 
+import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import java.util.Optional;
 
 public interface GroupsContextFacade {
@@ -11,4 +12,7 @@ public interface GroupsContextFacade {
 
     /** true si el usuario es el líder del grupo. */
     boolean isLeader(Long groupId, Long userId);
+
+    /** Membresía del usuario en el grupo (a ella se asignan las tareas); vacío si no pertenece. */
+    Optional<GroupProfile> fetchMembership(Long groupId, Long userId);
 }

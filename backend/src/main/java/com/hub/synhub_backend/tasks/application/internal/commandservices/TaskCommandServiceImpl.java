@@ -1,8 +1,7 @@
 package com.hub.synhub_backend.tasks.application.internal.commandservices;
 
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
-import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
+import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.exceptions.TaskStatusTransitionNotAllowedException;
@@ -22,35 +21,34 @@ import java.util.Optional;
 public class TaskCommandServiceImpl implements TaskCommandService {
 
     private final TaskRepository taskRepository;
-    private final GroupRepository groupRepository;
-    private final UserRepository userRepository;
-    private final GroupProfileRepository groupProfileRepository;
+    private final IamContextFacade iamContextFacade;
+    private final GroupsContextFacade groupsContextFacade;
     private final RequestsContextFacade requestsContextFacade;
 
+    /** Usuarios y membresías llegan por las ACL de iam y groups, no por sus repositorios (AUDIT ARC-01). */
     public TaskCommandServiceImpl(
             TaskRepository taskRepository,
-            UserRepository userRepository,
-            GroupRepository groupRepository,
-            GroupProfileRepository groupProfileRepository,
-            RequestsContextFacade requestsContextFacade) {
+            IamContextFacade iamContextFacade,
+            GroupsContextFacade groupsContextFacade,
+            RequestsContextFacade requestsContextFacade
+    ) {
         this.taskRepository = taskRepository;
-        this.groupRepository = groupRepository;
-        this.userRepository = userRepository;
-        this.groupProfileRepository = groupProfileRepository;
+        this.iamContextFacade = iamContextFacade;
+        this.groupsContextFacade = groupsContextFacade;
         this.requestsContextFacade = requestsContextFacade;
     }
 
     @Transactional
     @Override
     public Task handle(CreateTaskCommand command) {
-        var user = this.userRepository.findById(command.userId())
+        var user = this.iamContextFacade.fetchUserById(command.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " does not exist"));
-        var group = this.groupRepository.findById(command.groupId())
+        var leaderId = this.groupsContextFacade.fetchLeaderIdByGroupId(command.groupId())
                 .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
-        if (!group.getLeader().getId().equals(command.requesterId())) {
+        if (!leaderId.equals(command.requesterId())) {
             throw new AccessDeniedException("User with id " + command.requesterId() + " is not the leader of the group");
         }
-        var profile = this.groupProfileRepository.findByGroup_IdAndUser_Id(group.getId(), user.getId())
+        var profile = this.groupsContextFacade.fetchMembership(command.groupId(), user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " is not in group with id " + command.groupId()));
 
         var task = new Task(command);
@@ -64,34 +62,27 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     public Task handle(UpdateTaskCommand command) {
         var task = this.taskRepository.findById(command.taskId())
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
-        this.userRepository.findById(command.newUserId())
+        this.iamContextFacade.fetchUserById(command.newUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " does not exist"));
 
         var currentUser = task.getProfile().getUser();
         var groupId = task.getProfile().getGroup().getId();
 
-        var group = this.groupRepository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Group with id " + groupId + " does not exist"));
-
-        if (!group.getLeader().getId().equals(command.requesterId())) {
+        if (!this.groupsContextFacade.isLeader(groupId, command.requesterId())) {
             throw new AccessDeniedException("Only the leader can edit task details");
         }
         task.ensureNotFinished();
 
         var currentProfile = task.getProfile();
-        var newProfile = this.groupProfileRepository.findByGroup_IdAndUser_Id(groupId, command.newUserId())
+        var newProfile = this.groupsContextFacade.fetchMembership(groupId, command.newUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.newUserId() + " is not part of group with id " + groupId));
 
         if (currentProfile != null && !currentProfile.equals(newProfile)) {
+            // Las membresías son entidades gestionadas: los cambios se guardan al cerrar la transacción.
             currentProfile.removeTask(task);
-            this.groupProfileRepository.save(currentProfile);
             newProfile.addTask(task);
-            task.setProfile(newProfile);
-            this.groupProfileRepository.save(newProfile);
         } else if (currentUser == null) {
             newProfile.addTask(task);
-            task.setProfile(newProfile);
-            this.groupProfileRepository.save(newProfile);
         }
         task.updateTask(command);
         return this.taskRepository.save(task);
@@ -131,15 +122,15 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     @Override
     @Transactional
     public void handle(DeleteTasksByUserIdAndGroupIdCommand command) {
-        if (!this.userRepository.existsById(command.userId())) {
+        if (this.iamContextFacade.fetchUserById(command.userId()).isEmpty()) {
             throw new IllegalArgumentException("User with id " + command.userId() + " does not exist");
         }
 
-        if (!this.groupRepository.existsById(command.groupId())) {
+        if (this.groupsContextFacade.fetchLeaderIdByGroupId(command.groupId()).isEmpty()) {
             throw new IllegalArgumentException("Group with id: " + command.groupId() + " does not exist");
         }
 
-        var profileOpt = this.groupProfileRepository.findByGroup_IdAndUser_Id(command.groupId(), command.userId());
+        var profileOpt = this.groupsContextFacade.fetchMembership(command.groupId(), command.userId());
         if(profileOpt.isEmpty()) {
             throw new IllegalArgumentException("User with id " + command.userId() + " is not in group with id " + command.groupId());
         }

@@ -12,7 +12,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.BusinessRuleViolationException;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 class GroupCommandServiceImplTest {
 
     private GroupRepository groups;
-    private UserRepository users;
+    private IamContextFacade users;
     private GroupProfileRepository profiles;
     private TasksContextFacade tasks;
     private InvitationRepository invitations;
@@ -43,7 +43,7 @@ class GroupCommandServiceImplTest {
     @BeforeEach
     void setUp() {
         groups = mock(GroupRepository.class);
-        users = mock(UserRepository.class);
+        users = mock(IamContextFacade.class);
         profiles = mock(GroupProfileRepository.class);
         tasks = mock(TasksContextFacade.class);
         invitations = mock(InvitationRepository.class);
@@ -53,8 +53,8 @@ class GroupCommandServiceImplTest {
         group = group(10, leader, member);
         when(groups.findById(10L)).thenReturn(Optional.of(group));
         when(groups.save(any(Group.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(users.findById(1L)).thenReturn(Optional.of(leader));
-        when(users.findById(2L)).thenReturn(Optional.of(member));
+        when(users.fetchUserById(1L)).thenReturn(Optional.of(leader));
+        when(users.fetchUserById(2L)).thenReturn(Optional.of(member));
     }
 
     // ---- Crear
@@ -71,7 +71,7 @@ class GroupCommandServiceImplTest {
     }
 
     @Test void createWithUnknownLeaderIs404() {
-        when(users.findById(99L)).thenReturn(Optional.empty());
+        when(users.fetchUserById(99L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.handle(new CreateGroupCommand("G", "", "d", 99L)));
         verify(groups, never()).save(any());
     }
@@ -161,7 +161,7 @@ class GroupCommandServiceImplTest {
         var newcomer = user(3, "luis");
         var pending = GroupFixtures.invitation(50, newcomer, group);
         when(groups.findByCode(group.getCode())).thenReturn(Optional.of(group));
-        when(users.findById(3L)).thenReturn(Optional.of(newcomer));
+        when(users.fetchUserById(3L)).thenReturn(Optional.of(newcomer));
         when(invitations.findByUser_IdAndGroup_Id(3L, 10L)).thenReturn(java.util.List.of(pending));
 
         var joined = service.handle(new JoinGroupByCodeCommand(group.getCode().code(), 3L));

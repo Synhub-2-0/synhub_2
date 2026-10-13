@@ -14,7 +14,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
 import com.hub.synhub_backend.iam.domain.model.aggregates.User;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class InvitationCommandServiceImplTest {
 
     private InvitationRepository invitations;
     private GroupRepository groups;
-    private UserRepository users;
+    private IamContextFacade users;
     private GroupProfileRepository profiles;
     private InvitationCommandServiceImpl service;
     private User guest;
@@ -46,16 +46,16 @@ class InvitationCommandServiceImplTest {
     void setUp() {
         invitations = mock(InvitationRepository.class);
         groups = mock(GroupRepository.class);
-        users = mock(UserRepository.class);
+        users = mock(IamContextFacade.class);
         profiles = mock(GroupProfileRepository.class);
         service = new InvitationCommandServiceImpl(invitations, groups, users, profiles);
 
         guest = user(GUEST, "invitado");
         group = group(GROUP, user(LEADER, "lider"), user(MEMBER, "ana"));
         invitation = invitation(INVITATION, guest, group);
-        when(users.findById(GUEST)).thenReturn(Optional.of(guest));
-        when(users.findById(LEADER)).thenReturn(Optional.of(group.getLeader()));
-        when(users.findById(STRANGER)).thenReturn(Optional.of(user(STRANGER, "ajeno")));
+        when(users.fetchUserById(GUEST)).thenReturn(Optional.of(guest));
+        when(users.fetchUserById(LEADER)).thenReturn(Optional.of(group.getLeader()));
+        when(users.fetchUserById(STRANGER)).thenReturn(Optional.of(user(STRANGER, "ajeno")));
         when(groups.findById(GROUP)).thenReturn(Optional.of(group));
         when(invitations.findById(INVITATION)).thenReturn(Optional.of(invitation));
     }
@@ -86,7 +86,7 @@ class InvitationCommandServiceImplTest {
     }
 
     @Test void unknownUserOrGroupIs404() {
-        when(users.findById(99L)).thenReturn(Optional.empty());
+        when(users.fetchUserById(99L)).thenReturn(Optional.empty());
         when(groups.findById(99L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> service.handle(new CreateInvitationCommand(LEADER, 99L, GROUP)));
         assertThrows(ResourceNotFoundException.class, () -> service.handle(new CreateInvitationCommand(LEADER, GUEST, 99L)));

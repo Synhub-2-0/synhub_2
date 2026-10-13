@@ -78,7 +78,7 @@ Los riesgos principales son tres:
 | [BUG-07](#bug-07) | Media | Backend · shared | El handler de 500 no registra la excepción | Código | Resuelto |
 | [BUG-08](#bug-08) | Media | Backend · metrics | Las métricas "por usuario en grupo" ignoran `groupId` | Código | Resuelto |
 | [BUG-09](#bug-09) | Media | Backend · tasks | Scheduler: duplicados con varias instancias, `System.out` y comentario incorrecto | Código | Resuelto |
-| [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Pendiente |
+| [ARC-01](#arc-01) | Media | Backend · arquitectura | Acceso directo a repositorios de otros contextos | Código | Resuelto |
 | [ARC-04](#arc-04) | Media | Backend · persistencia | `ddl-auto=update` sin migraciones, OSIV activo y `show-sql` | Código | Resuelto |
 | [PERF-01](#perf-01) | Media | Backend · rendimiento | Consultas N+1 y filtrado en memoria | Código | Resuelto |
 | [OPS-02](#ops-02) | Media | Docker | Credenciales por defecto, sin perfil y sin `.env.example` | Código | Resuelto |
@@ -613,6 +613,8 @@ Reemplazar las inyecciones directas. Mover `GetUsersByGroupIdQuery` a groups.
 La relación JPA `Task.profile → GroupProfile` se **mantiene**: cambiarla por ids es una refactorización mayor que queda fuera de alcance.
 
 **Criterios de aceptación.** `grep` de `…\.groups\.infrastructure` dentro de `tasks/`, `iam/` y `metrics/` (y equivalentes) sin resultados, salvo las entidades JPA. Los tests pasan.
+
+**Resolución.** Los siete accesos se reemplazaron por las fachadas: groups usa `IamContextFacade.fetchUserById`; tasks usa `GroupsContextFacade` (`fetchLeaderIdByGroupId`, `isLeader` y el nuevo `fetchMembership`) e `IamContextFacade`; metrics usa `TasksContextFacade` (nuevos `fetchTasksByGroupId` y `fetchTasksByGroupIdAndUserId`). `GetUsersByGroupIdQuery` no se movió sino que se eliminó, junto con `IamContextFacade.fetchUsersByGroupId`, porque no tenía consumidores. `architecture/BoundedContextIsolationTest` falla si un contexto vuelve a importar la infraestructura de otro.
 
 ### ARC-02
 

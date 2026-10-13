@@ -12,7 +12,7 @@ import com.hub.synhub_backend.groups.domain.services.InvitationCommandService;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupProfileRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.GroupRepository;
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
-import com.hub.synhub_backend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -26,25 +26,25 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
 
     private final InvitationRepository invitationRepository;
     private final GroupRepository groupRepository;
-    private final UserRepository userRepository;
+    private final IamContextFacade iamContextFacade;
     private final GroupProfileRepository groupProfileRepository;
 
     public InvitationCommandServiceImpl(
             InvitationRepository invitationRepository,
             GroupRepository groupRepository,
-            UserRepository userRepository,
+            IamContextFacade iamContextFacade,
             GroupProfileRepository groupProfileRepository
     ) {
         this.invitationRepository = invitationRepository;
         this.groupRepository = groupRepository;
-        this.userRepository = userRepository;
+        this.iamContextFacade = iamContextFacade;
         this.groupProfileRepository = groupProfileRepository;
     }
 
     @Override
     @Transactional
     public Invitation handle(CreateInvitationCommand command) {
-        var user = this.userRepository.findById(command.userId())
+        var user = this.iamContextFacade.fetchUserById(command.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("Member with id " + command.userId() + " does not exist"));
         var group = this.groupRepository.findById(command.groupId())
                 .orElseThrow(() -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
@@ -70,7 +70,7 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
     public void handle(CancelInvitationCommand command) {
         var invitation = this.invitationRepository.findById(command.invitationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Invitation with id " + command.invitationId() + " does not exist"));
-        var requester = this.userRepository.findById(command.requesterId())
+        var requester = this.iamContextFacade.fetchUserById(command.requesterId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + command.requesterId() + " does not exist"));
 
         if (!(invitation.getUser().getId().equals(requester.getId()) || requester.getId().equals(invitation.getGroup().getLeader().getId()))) {

@@ -37,12 +37,12 @@ El servicio devuelve value objects de dominio (`domain/model/valueobjects`: `Tas
 
 | Query | Fuente | Consumidores |
 |---|---|---|
-| `GetTaskOverviewInGroupQuery(groupId)` | `findByProfile_Group_Id` | `MetricsController`, informe de IA |
-| `GetRescheduledTasksInGroupQuery(groupId)` | `findByProfile_Group_Id` | `MetricsController`, informe de IA |
-| `GetTaskDistributionInGroupQuery(groupId)` | `findByProfile_Group_Id` (el nombre sale del perfil de la tarea) | `MetricsController` |
-| `GetAvgCompletionTimeInGroupQuery(groupId)` | `GroupQueryService` + `findByProfile_Group_Id` | `MetricsController` |
-| `GetTaskOverviewForUserInGroupQuery(memberId, groupId)`, `GetTaskDistributionForUserInGroupQuery`, `GetRescheduledTasksForUserInGroupQuery`, `GetAvgCompletionTimeForUserInGroupQuery`, `GetTaskTimePassedForUserInGroupQuery(userId, groupId)` | `findByProfile_Group_IdAndProfile_User_Id`: **solo el grupo pedido** (AUDIT BUG-08) | `MetricsController` |
-| `GetTaskTimePassedByIdQuery(taskId)`, `GetTaskDurationByIdQuery(taskId)` | `findById` | `MetricsController` |
+| `GetTaskOverviewInGroupQuery(groupId)` | `fetchTasksByGroupId` | `MetricsController`, informe de IA |
+| `GetRescheduledTasksInGroupQuery(groupId)` | `fetchTasksByGroupId` | `MetricsController`, informe de IA |
+| `GetTaskDistributionInGroupQuery(groupId)` | `fetchTasksByGroupId` (el nombre sale del perfil de la tarea) | `MetricsController` |
+| `GetAvgCompletionTimeInGroupQuery(groupId)` | `GroupQueryService` + `fetchTasksByGroupId` | `MetricsController` |
+| `GetTaskOverviewForUserInGroupQuery(memberId, groupId)`, `GetTaskDistributionForUserInGroupQuery`, `GetRescheduledTasksForUserInGroupQuery`, `GetAvgCompletionTimeForUserInGroupQuery`, `GetTaskTimePassedForUserInGroupQuery(userId, groupId)` | `fetchTasksByGroupIdAndUserId`: **solo el grupo pedido** (AUDIT BUG-08) | `MetricsController` |
+| `GetTaskTimePassedByIdQuery(taskId)`, `GetTaskDurationByIdQuery(taskId)` | `getTaskById` | `MetricsController` |
 
 Las tareas borradas (soft delete, HUM-03) no cuentan en ninguna métrica: el repositorio las excluye.
 
@@ -52,5 +52,5 @@ Metrics no tiene modelo propio ni persistencia: calcula sobre las tareas de task
 
 ## Estructura y observaciones
 
-- Lee `TaskRepository` de tasks directamente (ARC-01).
+- Lee las tareas por `TasksContextFacade` (`fetchTasksByGroupId`, `fetchTasksByGroupIdAndUserId`, `getTaskById`; AUDIT ARC-01).
 - Pruebas: `metrics/TaskMetricsQueryServiceImplTest` (cálculos) y `api/MetricsApiTests` (endpoints y permisos).

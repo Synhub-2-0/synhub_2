@@ -26,24 +26,22 @@ flowchart TB
     requests((requests))
     ai((ai))
     metrics((metrics))
-    groups -- "JPA: GroupProfile.user, Invitation.user<br/>repo: UserRepository" --> iam
-    tasks -- "JPA: Task.profile → GroupProfile<br/>repos: Group*, UserRepository" --> groups
+    groups -- "JPA: GroupProfile.user, Invitation.user<br/>ACL: IamContextFacade" --> iam
+    tasks -- "JPA: Task.profile → GroupProfile<br/>ACL: GroupsContextFacade" --> groups
+    tasks -- "ACL: IamContextFacade" --> iam
     requests -- "ACL: TasksContextFacade" --> tasks
     requests -- "ACL: GroupsContextFacade" --> groups
-    tasks -- "ACL: GroupsContextFacade (lecturas)" --> groups
     tasks -- "scheduler → RequestCommandService" --> requests
     tasks -- "ACL: RequestsContextFacade (borrado)" --> requests
     groups -- "ACL: TasksContextFacade (borrar grupo)" --> tasks
     ai -- "TaskQueryService" --> tasks
     ai -- "TaskMetricsQueryService" --> metrics
     ai -- "GroupQueryService" --> groups
-    metrics -- "TaskRepository" --> tasks
-    metrics -- "UserRepository" --> iam
+    metrics -- "ACL: TasksContextFacade" --> tasks
     metrics -- "GroupQueryService" --> groups
-    iam -. "repo: GroupProfileRepository" .-> groups
 ```
 
-Las flechas con "ACL" usan una fachada formal; las demás son dependencias directas. Ver [cross-feature-ownership.md](cross-feature-ownership.md).
+Las flechas con "ACL" usan una fachada formal; las demás son dependencias directas a servicios de dominio. Ningún contexto usa los repositorios de otro (AUDIT ARC-01, lo verifica `architecture/BoundedContextIsolationTest`). Ver [cross-feature-ownership.md](cross-feature-ownership.md).
 
 ## 2. Capas dentro de un contexto (Clean Architecture / hexagonal)
 
@@ -203,7 +201,6 @@ Están documentadas para no copiarlas en código nuevo:
 
 | Desviación | Ubicación |
 |---|---|
-| Repositorios de otro contexto usados directamente | `TaskCommandServiceImpl`, `UserQueryServiceImpl`, `TaskMetricsQueryServiceImpl`, `GroupCommandServiceImpl`, `InvitationCommandServiceImpl` |
 
 ## 11. Cómo agregar un caso de uso
 

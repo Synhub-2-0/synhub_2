@@ -49,7 +49,6 @@ sequenceDiagram
 ## Propiedad compartida
 
 - **`User` es referenciado por otros contextos**: `GroupProfile.user` e `Invitation.user` (groups) apuntan directamente a la entidad JPA de IAM. El dueño del agregado sigue siendo IAM.
-- **`GetUsersByGroupIdQuery`** vive en IAM (`UserQueryServiceImpl`), pero lee `GroupProfileRepository` de **groups**. Conceptualmente es una consulta de *membresía*, así que le pertenece a [groups](../groups/README.md); hoy solo se expone mediante `IamContextFacade.fetchUsersByGroupId`.
 - **Usuario actual en los controladores**: todos los controladores (groups, tasks, requests, ai) resuelven el usuario autenticado con `UserQueryService` + `GetUserByUsernameQuery`. Es una dependencia directa hacia IAM, no mediante la ACL.
 - **Frontend**: `InvitationsStore` usa `IamApi` (de IAM) para buscar usuarios por nombre; `GroupsStore`, `TasksStore` y `RequestsStore` inyectan `IamStore` para conocer al usuario actual.
 

@@ -55,13 +55,16 @@ Comportamiento del agregado:
 
 Hacia requests: `RequestsContextFacade.deleteAllRequestsByTaskId`, que `DeleteTaskCommand` y `DeleteTasksByUserIdAndGroupIdCommand` llaman antes de borrar cada tarea. El borrado es lógico (HUM-03): `Task` y `Request` se marcan con `deleted_at`, dejan de ser visibles y la tarea conserva su perfil (responsable y grupo).
 
+Hacia groups e IAM: `GroupsContextFacade` (`fetchLeaderIdByGroupId`, `isLeader`, `fetchMembership`) e `IamContextFacade.fetchUserById`; no usa sus repositorios (AUDIT ARC-01).
+
 Hacia otros contextos:
 
 `TasksContextFacade` (`interfaces/acl`) / `TaskContextFacadeImpl` (`application/internal/acl`):
 
 | Método | Lo usa |
 |---|---|
-| `getTaskById` | requests (crear y eliminar solicitudes) |
+| `getTaskById` | requests (crear y eliminar solicitudes), metrics (métricas de una tarea) |
+| `fetchTasksByGroupId`, `fetchTasksByGroupIdAndUserId` | metrics |
 | `applySubmissionReview` | requests (revisar entregas) |
 | `deleteTasksByUserIdAndGroupId` | groups, al quitar a un integrante o cuando sale del grupo |
 | `deleteAllTasksByGroupId` | groups, al borrar un grupo (`DeleteTasksByGroupIdCommand`: requests y luego tareas) |
