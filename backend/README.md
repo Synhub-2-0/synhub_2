@@ -6,7 +6,8 @@ API REST en Spring Boot 4 y Java 21, con PostgreSQL. Está organizada en bounded
 
 ```bash
 SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run   # http://localhost:8080, Swagger en /swagger-ui.html
-./mvnw -B verify                                    # pruebas; las de integración usan Testcontainers (requiere Docker)
+./mvnw -B verify                                    # pruebas (Testcontainers, requiere Docker) y chequeo de formato
+./mvnw spotless:apply                               # aplica el formato (palantir-java-format)
 ```
 
 El esquema de la base lo crean las migraciones de Flyway (`src/main/resources/db/migration`); un cambio de entidad necesita su migración nueva. Sin el perfil `dev`, la aplicación necesita `DATABASE_PASSWORD` y `JWT_SECRET`. Ver [docs/architecture/deployment.md](../docs/architecture/deployment.md).

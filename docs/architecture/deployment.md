@@ -59,8 +59,8 @@ Los workflows están en [`.github/workflows`](../../.github/workflows) y cada un
 
 | Workflow | Disparador | Qué hace |
 |---|---|---|
-| `frontend-deploy.yml` | PR y push a `main` sobre `frontend/**` | `npm ci`, `npm audit --audit-level=high`, `ng test` y `ng build`. En `main`, y solo si el build pasó (`needs: build`): `aws s3 sync` al bucket `synhub-front-<cuenta>` e invalidación de CloudFront si está encendido. |
-| `backend.yml` | PR y push a `main` sobre `backend/**` | Job `test`: `./mvnw -B verify` (PostgreSQL con Testcontainers; el runner trae Docker) y guarda el jar. Job `deploy` (`needs: test`, solo push a `main`): construye la imagen `linux/arm64` con ese mismo jar y el `backend/Dockerfile`, la sube a ECR (`synhub-backend:latest` y `:<sha>`) y fuerza un redeploy en ECS si el servicio está activo. Un test en rojo detiene el deploy. |
+| `frontend-deploy.yml` | PR y push a `main` sobre `frontend/**` | `npm ci`, `npm audit --audit-level=high`, `ng lint`, `ng test` y `ng build`. En `main`, y solo si el build pasó (`needs: build`): `aws s3 sync` al bucket `synhub-front-<cuenta>` e invalidación de CloudFront si está encendido. |
+| `backend.yml` | PR y push a `main` sobre `backend/**` | Job `test`: `./mvnw -B verify` (pruebas con PostgreSQL en Testcontainers y chequeo de formato con Spotless) y guarda el jar. Job `deploy` (`needs: test`, solo push a `main`): construye la imagen `linux/arm64` con ese mismo jar y el `backend/Dockerfile`, la sube a ECR (`synhub-backend:latest` y `:<sha>`) y fuerza un redeploy en ECS si el servicio está activo. Un test en rojo detiene el deploy. |
 
 [`.github/dependabot.yml`](../../.github/dependabot.yml) revisa cada semana las dependencias de npm, Maven, GitHub Actions y las imágenes Docker.
 

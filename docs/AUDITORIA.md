@@ -104,7 +104,7 @@ Los riesgos principales son tres:
 | [FE-02](#fe-02) | Baja | Frontend | Mensajes de error mezclados en inglés y español | Código | Resuelto (traducción centralizada en `ToastStore`) |
 | [FE-03](#fe-03) | Baja | Frontend · iam | El registro no exige una contraseña mínima | Código | Resuelto |
 | [FE-04](#fe-04) | Baja | Repositorio | Archivos sobrantes (README genérico, `.vscode`, `package-lock` en el backend) | Código | Resuelto |
-| [OPS-03](#ops-03) | Baja | CI/CD | Sin lint ni formato en CI | Código | Pendiente |
+| [OPS-03](#ops-03) | Baja | CI/CD | Sin lint ni formato en CI | Código | Resuelto |
 | [TEST-02](#test-02) | Baja | Pruebas | El test de contexto depende de un PostgreSQL local | Código | Resuelto |
 
 Rutas abreviadas: `B/` = `backend/src/main/java/com/hub/synhub_backend/` y `F/` = `frontend/src/app/`.
@@ -817,6 +817,10 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 - Aplicar el formato en un commit aparte, solo de formato.
 
 **Criterios de aceptación.** CI ejecuta lint y formato y falla si hay errores.
+
+**Resolución.**
+- Frontend: `angular-eslint` 22 (reglas recomendadas de TypeScript, plantillas y accesibilidad); `ng lint` corre en `frontend-deploy.yml`. Corregir los 89 errores implicó la migración oficial a `inject()`, tarjetas de grupo y de tarea usables con teclado (foco y Enter), etiquetas asociadas a sus campos en el formulario de tareas y tipos en lugar de `any`. Se desactivó `adjacent-overload-signatures`, que contradice la convención de las entidades (getters agrupados y luego setters).
+- Backend: Spotless con palantir-java-format en `verify` (por lo tanto en `backend.yml`). El formato se aplicó en un commit propio, sin cambios de comportamiento.
 
 ---
 

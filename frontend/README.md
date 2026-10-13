@@ -8,6 +8,7 @@ Aplicación web en Angular 22 (signals, Tailwind y Angular Material). Es parte d
 npm ci
 npx ng serve                 # http://localhost:4200, contra el backend en http://localhost:8080 (perfil dev)
 npx ng test --watch=false    # Vitest
+npx ng lint                  # ESLint (angular-eslint, con reglas de accesibilidad)
 npx ng build                 # dist/Synhub-website/browser
 ```
 
