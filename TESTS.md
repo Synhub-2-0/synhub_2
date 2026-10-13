@@ -38,8 +38,8 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 |---|---|---|---|---|
 | Backend: pruebas unitarias | 26 | 19 | 7 | 0 |
 | Backend: API (integración) | 6 | 2 | 4 | 0 |
-| Frontend | 37 | 8 | 4 | 25 |
-| **Total** | **69** | **29** | **15** | **25** |
+| Frontend | 37 | 15 | 4 | 18 |
+| **Total** | **69** | **36** | **15** | **18** |
 
 ---
 
@@ -107,13 +107,13 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 | F-SHR-03 | `shared/presentation/components/base-form/base-form.spec.ts` | `BaseForm` | control inválido y tocado · mensajes `required` y genérico | — | LISTO |
 | F-SHR-04 | `shared/presentation/components/toast-container/toast-container.spec.ts` | `ToastContainer` | renderiza los toasts del store y los cierra | — | LISTO |
 | F-SHR-05 | `shared/presentation/*` previos | `Layout`, `Home`, `PageNotFound`, `App` | (previos) se crean | — | PREVIO |
-| F-GRP-01 | `groups/application/groups.store.spec.ts` | `GroupsStore` | loadGroups separa líder y miembro y los une sin duplicar · error → toast + error · loadGroupMembers por grupo · addGroup agrega a líderes · updateGroup reemplaza · getGroupById | — | PENDIENTE |
-| F-GRP-02 | `groups/infrastructure/groups.assembler.spec.ts` | `GroupsAssembler` | resource ↔ entidad · `memberCount` por defecto 0 · miembros con `Profile` · comando → request | — | PENDIENTE |
-| F-GRP-03 | `groups/infrastructure/groups.api.spec.ts` | `GroupsApi` (HTTP) | `/groups/user/role?groupRole=` · POST `/groups` · PUT `/groups/{id}` · GET members | — | PENDIENTE |
-| F-GRP-04 | `groups/presentation/**` previos | Vistas y componentes de groups | (7 previos) se crean | — | PENDIENTE |
-| F-INV-01 | `invitations/application/invitations.store.spec.ts` | `InvitationsStore` | inviteByUsername busca el perfil y crea la invitación · username vacío no llama · usuario inexistente → error amable · accept quita de la lista y llama a onSuccess · decline quita de las dos listas · loadInvitations y loadGroupInvitations | — | PENDIENTE |
-| F-INV-02 | `invitations/infrastructure/invitations.api.spec.ts` | `InvitationsApi` (HTTP) | URLs: POST, accept, DELETE, `/user`, `/group?groupId=` · mensajes en español para 403, 404 y 409 (ya miembro / pendiente) | — | PENDIENTE |
-| F-INV-03 | `invitations/infrastructure/invitations.assembler.spec.ts` | `InvitationsAssembler` | resource → entidad (`user` → `profile`) · comando → request | — | PENDIENTE |
+| F-GRP-01 | `groups/application/groups.store.spec.ts` | `GroupsStore` | loadGroups separa líder y miembro y los une sin duplicar · error → toast + error · loadGroupMembers por grupo · addGroup agrega a líderes · updateGroup reemplaza · getGroupById | — | LISTO |
+| F-GRP-02 | `groups/infrastructure/groups.assembler.spec.ts` | `GroupsAssembler` | resource ↔ entidad · `memberCount` por defecto 0 · miembros con `Profile` · comando → request | — | LISTO |
+| F-GRP-03 | `groups/infrastructure/groups.api.spec.ts` | `GroupsApi` (HTTP) | `/groups/user/role?groupRole=` · POST `/groups` · PUT `/groups/{id}` · GET members | — | LISTO |
+| F-GRP-04 | `groups/presentation/**` previos | Vistas y componentes de groups | (7 previos) se crean | — | PREVIO |
+| F-INV-01 | `invitations/application/invitations.store.spec.ts` | `InvitationsStore` | inviteByUsername busca el perfil y crea la invitación · username vacío no llama · usuario inexistente → error amable · accept quita de la lista y llama a onSuccess · decline quita de las dos listas · loadInvitations y loadGroupInvitations | — | LISTO |
+| F-INV-02 | `invitations/infrastructure/invitations.api.spec.ts` | `InvitationsApi` (HTTP) | URLs: POST, accept, DELETE, `/user`, `/group?groupId=` · mensajes en español para 403, 404 y 409 (ya miembro / pendiente) | — | LISTO |
+| F-INV-03 | `invitations/infrastructure/invitations.assembler.spec.ts` | `InvitationsAssembler` | resource → entidad (`user` → `profile`) · comando → request | — | LISTO |
 | F-TSK-01 | `tasks/application/tasks.store.spec.ts` | `TasksStore` | load por grupo, por usuario y multigrupo · `filteredTasks` por estado · addTask, updateTask, updateTaskStatus y deleteTask actualizan la lista · una tarea `DONE` no se edita ni se borra (error) · error → toast | — | PENDIENTE |
 | F-TSK-02 | `tasks/infrastructure/tasks.api.spec.ts` | `TasksApi` (HTTP) | `status` como query param · `/tasks/group/{g}` con y sin estado · `/tasks/group/{g}/user/{u}` · PUT y DELETE | — | PENDIENTE |
 | F-TSK-03 | `tasks/infrastructure/tasks.assembler.spec.ts` | `TasksAssembler` | (previo: campos de IA) | — | PENDIENTE |
