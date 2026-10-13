@@ -28,7 +28,7 @@
     </scm>
     <properties>
         <!-- AUDIT DEP-02: los tres artefactos de JJWT deben ir alineados -->
-        <jjwt.version>0.12.7</jjwt.version>
+        <jjwt.version>0.13.0</jjwt.version>
         <java.version>21</java.version>
     </properties>
     <dependencies>
