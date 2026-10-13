@@ -63,7 +63,7 @@ Los riesgos principales son tres:
 | [SEC-04](#sec-04) | Alta | Config · seguridad | Secretos por defecto versionados (JWT y BD) | Código | Resuelto (falta HUM-01) |
 | [DEP-01](#dep-01) | Alta | Frontend · dependencias | 5 vulnerabilidades npm (2 críticas, 3 altas) | `npm audit` | Resuelto |
 | [BUG-01](#bug-01) | Alta | Backend · tasks/requests | Borrar una tarea con requests → 500 | Reproducido | Resuelto |
-| [BUG-02](#bug-02) | Alta | Backend · groups | Borrar un grupo con tareas → 500 | Reproducido | Resuelto (borrado físico; ver HUM-03) |
+| [BUG-02](#bug-02) | Alta | Backend · groups | Borrar un grupo con tareas → 500 | Reproducido | Resuelto (pasa a soft delete por HUM-03) |
 | [BUG-03](#bug-03) | Alta | Backend · tasks | Se crean tareas sin título (null persistido) | Reproducido | Resuelto |
 | [OPS-01](#ops-01) | Alta | CI/CD | El deploy del backend no espera a los tests | Código | Pendiente |
 | [SEC-05](#sec-05) | Media | Backend · iam | El registro permite autoasignarse `ROLE_ADMIN` | Código | Resuelto |
@@ -802,14 +802,14 @@ Actualizar `application.properties` (FQCN de la estrategia de nombres) y la docu
 
 ## Decisiones humanas (no automatizar)
 
-| ID | Decisión / acción | Relacionado | Recomendación |
-|---|---|---|---|
-| HUM-01 | **Rotar** `JWT_SECRET` y las credenciales de BD en todos los entornos que hayan usado los valores por defecto. Cargar el secreto en SSM. | SEC-04 | Hacerlo antes de desplegar la fase 1. |
-| HUM-02 | Configurar AWS: `SPRING_PROFILES_ACTIVE=prod` en la task definition de ECS, la *trust policy* OIDC de `synhub_2`, las variables `AWS_DEPLOY_ROLE_ARN`/`AWS_ACCOUNT_ID` del repo y WAF o rate limit en CloudFront/ALB. | SEC-09, SEC-11, OPS-01 | — |
-| HUM-03 | Semántica del borrado de grupos y tareas: borrado físico o *soft delete* (archivar). | BUG-01, BUG-02 | Borrado físico ordenado ahora; evaluar *soft delete* si se necesita historial. |
-| HUM-04 | Estrategia de sesión: token corto + refresh token, o cookie `HttpOnly`. | SEC-10 | Token de 1 día + logout ante un 401 ahora; cookie `HttpOnly` en una iteración posterior. |
-| HUM-05 | Funciones a medio hacer: unión a un grupo por código, expulsar miembros (`RemoveMemberUserFromGroupCommand`) y endpoints de metrics. | BUG-17, ARC-03 | Eliminar lo que no esté en el roadmap. |
-| HUM-06 | Privacidad: qué datos de un usuario pueden ver los demás (por ejemplo, el email dentro del grupo). | SEC-06 | Ocultar el email fuera de `/users/me`. |
+| ID | Decisión / acción | Relacionado | Recomendación | Decisión tomada (2026-10-13) |
+|---|---|---|---|---|
+| HUM-01 | **Rotar** `JWT_SECRET` y las credenciales de BD en todos los entornos que hayan usado los valores por defecto. Cargar el secreto en SSM. | SEC-04 | Hacerlo antes de desplegar la fase 1. | Pendiente (requiere acceso a AWS). |
+| HUM-02 | Configurar AWS: `SPRING_PROFILES_ACTIVE=prod` en la task definition de ECS, la *trust policy* OIDC de `synhub_2`, las variables `AWS_DEPLOY_ROLE_ARN`/`AWS_ACCOUNT_ID` del repo y WAF o rate limit en CloudFront/ALB. | SEC-09, SEC-11, OPS-01 | — | Pendiente (requiere acceso a AWS y GitHub). |
+| HUM-03 | Semántica del borrado de grupos y tareas: borrado físico o *soft delete* (archivar). | BUG-01, BUG-02 | Borrado físico ordenado ahora; evaluar *soft delete* si se necesita historial. | **Soft delete.** Grupos, tareas, requests y membresías borrados se marcan y dejan de ser visibles en toda la API; los datos quedan en la base. |
+| HUM-04 | Estrategia de sesión: token corto + refresh token, o cookie `HttpOnly`. | SEC-10 | Token de 1 día + logout ante un 401 ahora; cookie `HttpOnly` en una iteración posterior. | **Cookie `HttpOnly` válida por 1 día.** El JWT deja de guardarse en `localStorage`; un 401 cierra la sesión. |
+| HUM-05 | Funciones a medio hacer: unión a un grupo por código, expulsar miembros (`RemoveMemberUserFromGroupCommand`) y endpoints de metrics. | BUG-17, ARC-03 | Eliminar lo que no esté en el roadmap. | **Terminarlas.** Unirse por código y expulsar miembros quedan completos (API y web); metrics recibe una implementación base de sus endpoints. |
+| HUM-06 | Privacidad: qué datos de un usuario pueden ver los demás (por ejemplo, el email dentro del grupo). | SEC-06 | Ocultar el email fuera de `/users/me`. | **Los demás ven nombre, correo y foto** (además de `id` y `username`). Roles y grupos ajenos no se exponen; `GET /users` queda solo para administradores. |
 
 ## Plan de ejecución
 
