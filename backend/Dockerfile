@@ -1,5 +1,5 @@
 # El jar se compila fuera (./mvnw package); la imagen solo lo empaqueta, así el build arm64 es rápido.
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:24-jre
 RUN useradd --system --uid 10001 app
 USER app
 WORKDIR /app
