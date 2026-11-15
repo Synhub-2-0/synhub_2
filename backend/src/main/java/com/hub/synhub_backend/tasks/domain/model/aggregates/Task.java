@@ -1,6 +1,7 @@
 package com.hub.synhub_backend.tasks.domain.model.aggregates;
 
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import com.hub.synhub_backend.tasks.domain.exceptions.TaskFinishedException;
 import com.hub.synhub_backend.tasks.domain.model.commands.CreateTaskCommand;
@@ -10,6 +11,8 @@ import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SoftDelete;
@@ -40,6 +43,9 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     @ManyToOne
     @JoinColumn(name = "profile_id")
     private GroupProfile profile;
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
+    private List<Request> requests;
 
     // Clasificación sugerida por IA (nullable: tareas previas o sin sugerencia). labels = CSV.
     private Integer difficulty;
