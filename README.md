@@ -49,12 +49,93 @@ Los agentes de código (Claude Code, Gemini CLI, Codex) tienen sus instrucciones
 
 ## Desarrollo
 
-```bash
-# Backend (requiere PostgreSQL en localhost:5432)
-cd backend && SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run   # el perfil dev trae credenciales locales
+Orden: PostgreSQL corriendo → backend (terminal 1) → frontend (terminal 2).
 
-# Frontend → http://localhost:4200 (llama a http://localhost:8080/api/v1)
-cd frontend && npm ci && npx ng serve
+### Backend: variables de entorno
+
+Solo el backend usa variables de entorno. Spring **no lee `.env` por sí solo**: hay que cargarlo en la terminal (o en el IDE) antes de arrancar.
+
+1. Crea **un solo** `.env` en la **raíz del repo**, junto a `.env.example` y `docker-compose.yml`. No va dentro de `backend/` ni de `frontend/`. Está en `.gitignore`, así que no se sube:
+
+   ```text
+   synhub_2/
+   ├── .env            ← aquí
+   ├── .env.example
+   ├── docker-compose.yml
+   ├── backend/
+   └── frontend/
+   ```
+
+   ```powershell
+   # desde la raíz del repo
+   Copy-Item .env.example .env      # bash: cp .env.example .env
+   ```
+
+2. Complétalo, por ejemplo:
+
+   ```properties
+   DATABASE_URL=jdbc:postgresql://localhost:5432/postgres
+   DATABASE_USERNAME=postgres
+   DATABASE_PASSWORD=tu_password_de_postgres
+   JWT_SECRET=al_menos_32_caracteres_aleatorios_xxxxxxxxxx
+   AUTH_COOKIE_SECURE=false
+   CORS_ALLOWED_ORIGINS=http://localhost:4200
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=
+   AWS_SECRET_ACCESS_KEY=
+   ```
+
+   Para generar un `JWT_SECRET`: `openssl rand -base64 48`, o en PowerShell
+   `[Convert]::ToBase64String((1..48 | ForEach-Object { Get-Random -Max 256 }))`.
+
+| Variable | Obligatoria | Por defecto |
+|---|---|---|
+| `DATABASE_URL` | no | `jdbc:postgresql://localhost:5432/postgres` |
+| `DATABASE_USERNAME` | no | `postgres` |
+| `DATABASE_PASSWORD` | **sí**, salvo con el perfil `dev` | `dev`: `admin` |
+| `JWT_SECRET` | **sí**, salvo con el perfil `dev` | `dev`: valor local |
+| `AUTH_COOKIE_SECURE` | no | `true` (`dev`: `false`) |
+| `CORS_ALLOWED_ORIGINS` | no | vacío (`dev`: `http://localhost:4200`) |
+| `AWS_REGION` / `BEDROCK_MODEL_ID` | no | `us-east-1` / Claude Haiku |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | solo para las funciones de IA | — |
+| `TASKS_EXPIRATION_CHECK_MS` | no | `60000` |
+
+3. Carga el `.env` y arranca con el perfil `dev` ([`application-dev.properties`](backend/src/main/resources/application-dev.properties)). Ejecuta estos comandos **desde la raíz del repo**, porque leen `.env` desde ahí y luego entran a `backend/`:
+
+   **PowerShell**
+
+   ```powershell
+   Get-Content .env | Where-Object { $_ -match '^\s*[^#].*=' } | ForEach-Object {
+     $k, $v = $_ -split '=', 2
+     Set-Item "env:$($k.Trim())" $v.Trim()
+   }
+   $env:SPRING_PROFILES_ACTIVE = "dev"
+   cd backend
+   .\mvnw spring-boot:run
+   ```
+
+   **Git Bash**
+
+   ```bash
+   set -a; source .env; set +a
+   cd backend && SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
+   ```
+
+   Las variables solo viven en esa terminal: en una nueva hay que volver a cargarlas. En IntelliJ, ponlas en *Run → Edit Configurations → Environment variables* (o con el plugin EnvFile apuntando a `.env`) y escribe `dev` en *Active profiles*.
+
+   El log debe mostrar `The following 1 profile is active: "dev"`. La API queda en http://localhost:8080 y Swagger en http://localhost:8080/swagger-ui.html.
+
+### Frontend
+
+Angular no usa `.env`: la URL del backend se fija al compilar en [`frontend/src/environments/`](frontend/src/environments).
+
+- `environment.development.ts` (`ng serve`): `http://localhost:8080/api/v1`. Cámbialo si el backend corre en otro host o puerto.
+- `environment.ts` (`ng build`, producción): `/api/v1`, mismo origen detrás de nginx o CloudFront.
+
+```powershell
+cd frontend
+npm ci
+npx ng serve      # http://localhost:4200
 ```
 
 Pruebas:
