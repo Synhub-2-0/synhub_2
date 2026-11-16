@@ -9,7 +9,6 @@ import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
-import com.hub.synhub_backend.shared.interfaces.rest.exceptions.BusinessRuleViolationException;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
@@ -55,11 +54,13 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 throw new AccessDeniedException("Only the member assigned to the task can create requests for it");
             if (requestType == RequestType.SUBMISSION) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
-                    throw new TaskNotCompletedException(
+                    throw new TaskWithIncorrectStatusException(
                             "A submission can only be created for a COMPLETED task, the task is " + task.getStatus());
             }
             if (requestType == RequestType.MODIFICATION){
-                this.tasksContextFacade.updateTaskStatus(task.getId(), TaskStatus.ON_HOLD, command.requesterId());
+                if (task.getStatus() != TaskStatus.IN_PROGRESS)
+                    throw new TaskWithIncorrectStatusException(
+                            "A modification request can only be created for a IN_PROGRESS task, the task is " + task.getStatus());
             }
         }
 
@@ -90,20 +91,13 @@ public class RequestCommandServiceImpl implements RequestCommandService {
         if (RequestType.SUBMISSION.name().equals(request.getRequestType())) {
             if (newStatus == RequestStatus.APPROVED) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
-                    throw new TaskNotCompletedException(
+                    throw new TaskWithIncorrectStatusException(
                             "Only a COMPLETED task can be approved, the task is " + task.getStatus());
                 this.tasksContextFacade.applySubmissionReview(task.getId(), true);
             } else if (task.getStatus() == TaskStatus.COMPLETED) {
                 // Si el miembro ya la sacó de COMPLETED, rechazar solo cierra la request.
                 this.tasksContextFacade.applySubmissionReview(task.getId(), false);
             }
-        }
-
-        if (RequestType.MODIFICATION.name().equals(request.getRequestType())) {
-            if (task.getStatus() != TaskStatus.ON_HOLD) {
-                throw new ChangesDuringHoldException("Task status was modified during ON HOLD state");
-            }
-            this.tasksContextFacade.updateTaskStatus(task.getId(), TaskStatus.IN_PROGRESS, command.requesterId());
         }
 
         request.updateRequestStatus(newStatus.name());

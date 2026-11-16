@@ -9,7 +9,7 @@ import static org.mockito.Mockito.*;
 import com.hub.synhub_backend.requests.application.internal.commandservices.RequestCommandServiceImpl;
 import com.hub.synhub_backend.requests.domain.exceptions.PendingRequestAlreadyExistsException;
 import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedException;
-import com.hub.synhub_backend.requests.domain.exceptions.TaskNotCompletedException;
+import com.hub.synhub_backend.requests.domain.exceptions.TaskWithIncorrectStatusException;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
@@ -82,7 +82,7 @@ class RequestCommandServiceImplTest {
     @Test
     void submissionNeedsCompletedTask() {
         when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
-        var e = assertThrows(TaskNotCompletedException.class, () -> service.handle(submission(MEMBER)));
+        var e = assertThrows(TaskWithIncorrectStatusException.class, () -> service.handle(submission(MEMBER)));
         assertEquals("A submission can only be created for a COMPLETED task, the task is IN_PROGRESS", e.getMessage());
     }
 
@@ -159,7 +159,7 @@ class RequestCommandServiceImplTest {
     void approveWhenTaskNoLongerCompletedIs409() {
         pending("SUBMISSION");
         when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
-        var e = assertThrows(TaskNotCompletedException.class, () -> service.handle(review("APPROVED", LEADER)));
+        var e = assertThrows(TaskWithIncorrectStatusException.class, () -> service.handle(review("APPROVED", LEADER)));
         assertEquals("Only a COMPLETED task can be approved, the task is IN_PROGRESS", e.getMessage());
     }
 
