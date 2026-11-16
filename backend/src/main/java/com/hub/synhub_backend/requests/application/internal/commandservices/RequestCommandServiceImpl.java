@@ -1,8 +1,6 @@
 package com.hub.synhub_backend.requests.application.internal.commandservices;
 
-import com.hub.synhub_backend.requests.domain.exceptions.PendingSubmissionAlreadyExistsException;
-import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedException;
-import com.hub.synhub_backend.requests.domain.exceptions.TaskNotCompletedException;
+import com.hub.synhub_backend.requests.domain.exceptions.*;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
@@ -11,6 +9,7 @@ import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
+import com.hub.synhub_backend.shared.interfaces.rest.exceptions.BusinessRuleViolationException;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
@@ -59,6 +58,12 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                         task.getId(), RequestType.SUBMISSION, RequestStatus.PENDING))
                     throw new PendingSubmissionAlreadyExistsException(task.getId());
             }
+            if (requestType == RequestType.MODIFICATION){
+                if (requestRepository.existsByTask_IdAndRequestTypeAndRequestStatus(task.getId(), RequestType.MODIFICATION, RequestStatus.PENDING)) {
+                    throw new PendingModificationAlreadyExistsException(task.getId());
+                }
+                this.tasksContextFacade.updateTaskStatus(task.getId(), TaskStatus.ON_HOLD, command.requesterId());
+            }
         }
 
         var request = new Request(command);
@@ -95,6 +100,13 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 // Si el miembro ya la sacó de COMPLETED, rechazar solo cierra la request.
                 this.tasksContextFacade.applySubmissionReview(task.getId(), false);
             }
+        }
+
+        if (RequestType.MODIFICATION.name().equals(request.getRequestType())) {
+            if (task.getStatus() != TaskStatus.ON_HOLD) {
+                throw new ChangesDuringHoldException("Task status was modified during ON HOLD state");
+            }
+            this.tasksContextFacade.updateTaskStatus(task.getId(), TaskStatus.IN_PROGRESS, command.requesterId());
         }
 
         request.updateRequestStatus(newStatus.name());

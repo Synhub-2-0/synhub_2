@@ -4,7 +4,11 @@ import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFound
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByGroupIdCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAndGroupIdCommand;
+import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
+import com.hub.synhub_backend.tasks.domain.model.queries.GetTaskByIdQuery;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
+import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import java.util.List;
@@ -14,10 +18,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskContextFacadeImpl implements TasksContextFacade {
     private final TaskCommandService taskCommandService;
+    private final TaskQueryService taskQueryService;
     private final TaskRepository taskRepository;
 
-    public TaskContextFacadeImpl(TaskCommandService taskCommandService, TaskRepository taskRepository) {
+    public TaskContextFacadeImpl(TaskCommandService taskCommandService, TaskQueryService taskQueryService, TaskRepository taskRepository) {
         this.taskCommandService = taskCommandService;
+        this.taskQueryService = taskQueryService;
         this.taskRepository = taskRepository;
     }
 
@@ -41,6 +47,13 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
         task.applySubmissionReview(approved);
         return taskRepository.save(task);
+    }
+
+    @Override
+    public Task updateTaskStatus(Long taskId, TaskStatus status, Long requesterId) {
+        var updateStatusCommand = new UpdateTaskStatusCommand(requesterId, taskId, status);
+        var newTask = taskCommandService.handle(updateStatusCommand);
+        return newTask;
     }
 
     @Override

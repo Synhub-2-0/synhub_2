@@ -43,9 +43,6 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     @JoinColumn(name = "profile_id")
     private GroupProfile profile;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
-    private List<Request> requests;
-
     // Clasificación sugerida por IA (nullable: tareas previas o sin sugerencia). labels = CSV.
     private Integer difficulty;
     private String context;

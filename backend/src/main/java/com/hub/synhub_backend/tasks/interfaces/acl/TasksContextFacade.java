@@ -1,6 +1,8 @@
 package com.hub.synhub_backend.tasks.interfaces.acl;
 
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +21,6 @@ public interface TasksContextFacade {
     void deleteAllTasksByGroupId(Long groupId);
     /** Aplica a la tarea el resultado de revisar su entrega (SUBMISSION). */
     Task applySubmissionReview(Long taskId, boolean approved);
+
+    Task updateTaskStatus(Long taskId, TaskStatus status, Long requesterId);
 }
