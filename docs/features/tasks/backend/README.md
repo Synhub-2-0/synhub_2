@@ -13,27 +13,32 @@ Todos requieren token.
 | `GET` | `/api/v1/tasks/{taskId}` | — | `200 TaskResource` · `403` · `404` | Solo integrantes del grupo de la tarea. |
 | `GET` | `/api/v1/tasks/group/{groupId}` | `?status=` (opcional, `TaskStatus`); `?page=&size=` (opcionales) | `200 TaskResource[]`, o `PageResource<TaskResource>` ordenado por fecha límite si se pide página · `403` | Solo integrantes del grupo. |
 | `GET` | `/api/v1/tasks/group/{groupId}/user/{userId}` | — | `200 TaskResource[]` · `403` | Solo integrantes del grupo. |
-| `PUT` | `/api/v1/tasks/{taskId}` | `UpdateTaskResource` | `200 TaskResource` | Solo el líder. Puede reasignar a otro integrante. |
+| `PUT` | `/api/v1/tasks/{taskId}` | `UpdateTaskResource` | `200 TaskResource` | Solo el líder. Puede reasignar a otro integrante y cambiar o quitar la clasificación. |
 | `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | Líder o asignado. `DONE` → 409. Una tarea que ya está `DONE` no cambia de estado (409). |
 | `DELETE` | `/api/v1/tasks/{taskId}` | — | `204` | Solo el líder. |
 
 ```text
 CreateTaskResource = { title, description, dueDate (OffsetDateTime), userId, groupId,
-                       difficulty?, context?, urgency?, labels?, aiAccepted? }
-UpdateTaskResource = { title, description, dueDate, userId }
+                       difficulty?, context?, urgency?, labels?, aiAccepted?, aiRationale? }
+UpdateTaskResource = { title, description, dueDate, userId,
+                       classification?: { difficulty, context, urgency, labels, aiAccepted, aiRationale } }
 TaskResource       = { id, title, description, dueDate, createdAt, updatedAt, status,
                        group: GroupResourceReduced, assignedTo: PublicUserResource,
-                       difficulty, context, urgency, labels, aiAccepted }
+                       difficulty, context, urgency, labels, aiAccepted, aiRationale }
 ```
 
 Quien edita se toma siempre de la sesión; el cuerpo no lo incluye (BUG-16).
+
+En `PUT /tasks/{taskId}`, si `classification` no viene, la clasificación de la tarea no cambia. Si viene, reemplaza a la guardada: un campo nulo o vacío se quita, y si no queda ninguno también se borra `aiAccepted`.
+
+`aiRationale` (máx. 500, columna `ai_rationale`, migración `V2__task_ai_rationale.sql`) es la justificación que dio la IA al sugerir la clasificación. Solo se guarda cuando la clasificación viene de la IA (`aiAccepted` no nulo): una clasificación hecha a mano o quitada la deja en nulo.
 
 
 ## Modelo de dominio
 
 | Tipo | Clase | Notas |
 |---|---|---|
-| Agregado | `Task` | `title` (obligatorio), `description` (vacía si no se indica), `status`, `dueDate` (obligatoria), `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`), y métricas (`timesRearranged`, `timePassed` en ms). |
+| Agregado | `Task` | `title` (obligatorio), `description` (vacía si no se indica), `status`, `dueDate` (obligatoria), `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`, `aiRationale`), y métricas (`timesRearranged`, `timePassed` en ms). |
 | Value object | `TaskStatus` | `ON_HOLD`, `IN_PROGRESS`, `COMPLETED`, `DONE`, `EXPIRED`. |
 
 Comportamiento del agregado:

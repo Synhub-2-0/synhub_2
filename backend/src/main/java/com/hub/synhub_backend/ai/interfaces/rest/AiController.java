@@ -60,7 +60,7 @@ public class AiController {
             throw new AccessDeniedException("Only the leader can generate the group report");
         }
 
-        var report = groupReportQueryService.handle(new GenerateGroupReportQuery(groupId));
+        var report = groupReportQueryService.handle(new GenerateGroupReportQuery(groupId, user.getId()));
         if (report.isEmpty()) return ResponseEntity.status(503).build();
         return ResponseEntity.ok(new GroupReportResource(report.get()));
     }

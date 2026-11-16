@@ -13,4 +13,33 @@ public record CreateTaskCommand(
         String context,
         String urgency,
         String labels,
-        Boolean aiAccepted) {}
+        Boolean aiAccepted,
+        String aiRationale) {
+
+    public CreateTaskCommand(
+            Long requesterId,
+            String title,
+            String description,
+            OffsetDateTime dueDate,
+            Long userId,
+            Long groupId,
+            Integer difficulty,
+            String context,
+            String urgency,
+            String labels,
+            Boolean aiAccepted) {
+        this(
+                requesterId,
+                title,
+                description,
+                dueDate,
+                userId,
+                groupId,
+                difficulty,
+                context,
+                urgency,
+                labels,
+                aiAccepted,
+                null);
+    }
+}

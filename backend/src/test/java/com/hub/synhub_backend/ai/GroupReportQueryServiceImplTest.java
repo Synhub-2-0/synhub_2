@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 
 import com.hub.synhub_backend.ai.application.internal.queryservices.GroupReportQueryServiceImpl;
 import com.hub.synhub_backend.ai.domain.model.queries.GenerateGroupReportQuery;
+import com.hub.synhub_backend.groups.domain.model.queries.GetGroupMembersByGroupIdQuery;
+import com.hub.synhub_backend.groups.domain.services.GroupQueryService;
 import com.hub.synhub_backend.metrics.domain.model.queries.GetRescheduledTasksInGroupQuery;
 import com.hub.synhub_backend.metrics.domain.model.queries.GetTaskOverviewInGroupQuery;
 import com.hub.synhub_backend.metrics.domain.model.valueobjects.RescheduledTasks;
@@ -31,6 +33,7 @@ import software.amazon.awssdk.services.bedrockruntime.model.*;
 class GroupReportQueryServiceImplTest {
 
     private static final long GROUP = 10;
+    private static final long LEADER = 1;
 
     private BedrockRuntimeClient client;
     private TaskQueryService taskQueries;
@@ -41,7 +44,8 @@ class GroupReportQueryServiceImplTest {
         client = mock(BedrockRuntimeClient.class);
         var metrics = mock(TaskMetricsQueryService.class);
         taskQueries = mock(TaskQueryService.class);
-        service = new GroupReportQueryServiceImpl(client, metrics, taskQueries, "model-id");
+        var groupQueries = mock(GroupQueryService.class);
+        service = new GroupReportQueryServiceImpl(client, metrics, taskQueries, groupQueries, "model-id");
 
         when(metrics.handle(new GetTaskOverviewInGroupQuery(GROUP)))
                 .thenReturn(new TaskOverview("TASK_OVERVIEW", 3, Map.of("IN_PROGRESS", 2, "EXPIRED", 1)));
@@ -51,10 +55,12 @@ class GroupReportQueryServiceImplTest {
 
         var group = group(GROUP, user(1, "lider"), user(2, "ana"));
         var anaProfile = group.getUserProfiles().get(1);
+        when(groupQueries.handle(new GetGroupMembersByGroupIdQuery(GROUP, LEADER)))
+                .thenReturn(group.getUserProfiles());
         var now = OffsetDateTime.now(ZoneOffset.UTC);
         when(taskQueries.handle(new GetAllTasksByGroupIdQuery(GROUP)))
                 .thenReturn(List.of(
-                        task(anaProfile, TaskStatus.IN_PROGRESS, 5, now.plusHours(10), 2), // vence en < 48 h
+                        urgent(task(anaProfile, TaskStatus.IN_PROGRESS, 5, now.plusHours(10), 2)), // vence en < 48 h
                         task(anaProfile, TaskStatus.IN_PROGRESS, null, now.plusDays(10), 0), // sin dificultad → 3
                         task(anaProfile, TaskStatus.EXPIRED, 2, now.minusDays(1), 0)));
     }
@@ -74,6 +80,11 @@ class GroupReportQueryServiceImplTest {
         return task;
     }
 
+    private static Task urgent(Task task) {
+        ReflectionTestUtils.setField(task, "urgency", "HIGH");
+        return task;
+    }
+
     private static ConverseResponse reply(String text) {
         return ConverseResponse.builder()
                 .output(ConverseOutput.fromMessage(Message.builder()
@@ -87,7 +98,7 @@ class GroupReportQueryServiceImplTest {
     void sendsGroupFactsAndReturnsTheModelText() {
         when(client.converse(any(ConverseRequest.class))).thenReturn(reply("## Resumen\nTodo bien"));
 
-        var report = service.handle(new GenerateGroupReportQuery(GROUP));
+        var report = service.handle(new GenerateGroupReportQuery(GROUP, LEADER));
 
         assertEquals("## Resumen\nTodo bien", report.orElseThrow());
         var request = ArgumentCaptor.forClass(ConverseRequest.class);
@@ -99,8 +110,32 @@ class GroupReportQueryServiceImplTest {
         assertTrue(facts.contains("Reprogramadas (grupo):"), facts);
         // ana: 3 abiertas (EXPIRED cuenta como abierta) | carga 5+3+2=10 | 1 vencida | 2 reprogramaciones | 1 vence en
         // 48h
-        assertTrue(facts.contains("- ana Test: 3 | 10 | 1 | 2 | 1"), facts);
+        // … | 1 abierta de urgencia alta
+        assertTrue(facts.contains("- ana Test: 3 | 10 | 1 | 2 | 1 | 1"), facts);
+        assertTrue(
+                facts.contains("- lider Test: 0 | 0 | 0 | 0 | 0 | 0"),
+                "un integrante sin tareas también se lista: " + facts);
         assertTrue(facts.contains("Total de tareas: 3"), facts);
+    }
+
+    @Test
+    void theModelIsToldNotToAddADateATableOrAskForMoreData() {
+        when(client.converse(any(ConverseRequest.class))).thenReturn(reply("## Resumen"));
+        service.handle(new GenerateGroupReportQuery(GROUP, LEADER));
+        var request = ArgumentCaptor.forClass(ConverseRequest.class);
+        verify(client).converse(request.capture());
+        var system = request.getValue().system().getFirst().text();
+        assertTrue(system.contains("sin fecha"), system);
+        assertTrue(system.contains("No uses tablas"), system);
+        assertTrue(system.contains("No pidas más datos"), system);
+    }
+
+    @Test
+    void aGroupWithoutTasksGetsAFixedReportWithoutCallingTheModel() {
+        when(taskQueries.handle(new GetAllTasksByGroupIdQuery(GROUP))).thenReturn(List.of());
+        var report = service.handle(new GenerateGroupReportQuery(GROUP, LEADER)).orElseThrow();
+        assertTrue(report.contains("todavía no tiene tareas"), report);
+        verifyNoInteractions(client);
     }
 
     @Test
@@ -108,6 +143,6 @@ class GroupReportQueryServiceImplTest {
         when(client.converse(any(ConverseRequest.class)))
                 .thenThrow(
                         BedrockRuntimeException.builder().message("throttled").build());
-        assertTrue(service.handle(new GenerateGroupReportQuery(GROUP)).isEmpty());
+        assertTrue(service.handle(new GenerateGroupReportQuery(GROUP, LEADER)).isEmpty());
     }
 }

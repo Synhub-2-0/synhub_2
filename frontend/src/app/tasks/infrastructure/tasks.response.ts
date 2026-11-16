@@ -35,6 +35,7 @@ export interface TaskResource extends BaseResource {
   urgency?: string | null;
   labels?: string | null;
   aiAccepted?: boolean | null;
+  aiRationale?: string | null;
 }
 
 export interface TasksResponse {
@@ -52,6 +53,7 @@ export interface CreateTaskRequest {
   urgency?: string;
   labels?: string;
   aiAccepted?: boolean;
+  aiRationale?: string;
 }
 
 export interface UpdateTaskRequest {
@@ -59,4 +61,13 @@ export interface UpdateTaskRequest {
   description: string;
   dueDate: string;
   userId: number;
+  /** Ausente: la clasificación no cambia. Presente: reemplaza la guardada (null quita el campo). */
+  classification?: {
+    difficulty: number | null;
+    context: string | null;
+    urgency: string | null;
+    labels: string | null;
+    aiAccepted: boolean | null;
+    aiRationale: string | null;
+  };
 }
