@@ -75,9 +75,6 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
         var task = request.getTask();
-        if (!task.getId().equals(command.taskId()))
-            throw new ResourceNotFoundException(
-                    "Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId()))
             throw new AccessDeniedException("Only the leader of the group can review requests");
 
@@ -112,9 +109,6 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
         var task = request.getTask();
-        if (!task.getId().equals(command.taskId()))
-            throw new ResourceNotFoundException(
-                    "Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
         var isLeader = task.getProfile().getGroup().getLeader().getId().equals(command.requesterId());
         var isOwnPendingRequest = task.getProfile().getUser().getId().equals(command.requesterId())
                 && RequestStatus.PENDING.name().equals(request.getRequestStatus())
