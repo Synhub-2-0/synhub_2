@@ -73,6 +73,31 @@ class TaskClassificationApiTests extends ApiTestSupport {
     }
 
     @Test
+    void theAiRationaleIsSavedWithTheTaskAndRemovedWithTheClassification() {
+        var team = team();
+        var body = taskBody(team.groupId(), team.member().id(), unique("Tarea"));
+        body.putAll(Map.of("difficulty", 4, "context", "BACKEND", "aiAccepted", true, "aiRationale", "Toca el token."));
+        var created = post("/tasks", team.leader().token(), body);
+        assertEquals(200, created.status());
+        var path = "/tasks/" + created.id();
+        assertEquals("Toca el token.", get(path, team.member().token()).text("aiRationale"));
+
+        var redone = classification(2, "QA", null, null, true);
+        redone.put("aiRationale", "Solo pruebas.");
+        assertEquals(
+                "Solo pruebas.",
+                put(path, team.leader().token(), update(team, redone)).text("aiRationale"));
+
+        put(path, team.leader().token(), update(team, classification(null, null, null, null, null)));
+        assertTrue(get(path, team.leader().token()).json().get("aiRationale").isNull());
+
+        var tooLong = classification(2, "QA", null, null, true);
+        tooLong.put("aiRationale", "a".repeat(501));
+        assertEquals(
+                400, put(path, team.leader().token(), update(team, tooLong)).status());
+    }
+
+    @Test
     void anInvalidClassificationIs400AndOnlyTheLeaderEdits() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());

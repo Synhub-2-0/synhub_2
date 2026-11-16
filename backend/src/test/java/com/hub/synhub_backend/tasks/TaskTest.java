@@ -151,6 +151,31 @@ class TaskTest {
     }
 
     @Test
+    void theAiRationaleIsKeptOnlyWhileTheClassificationComesFromTheAi() {
+        var fromAi = new Task(new CreateTaskCommand(
+                1L, "Login", "d", NOW.plusDays(2), 2L, 10L, 3, "BACKEND", "HIGH", "api", true, " Toca el token. "));
+        assertEquals("Toca el token.", fromAi.getAiRationale());
+
+        fromAi.updateTask(new UpdateTaskCommand(
+                1L,
+                5L,
+                null,
+                null,
+                null,
+                2L,
+                new TaskClassificationUpdate(4, "BACKEND", "HIGH", "api", false, "Toca el token.")));
+        assertEquals("Toca el token.", fromAi.getAiRationale(), "editada a mano sigue siendo una sugerencia de la IA");
+
+        fromAi.updateTask(new UpdateTaskCommand(
+                1L, 5L, null, null, null, 2L, new TaskClassificationUpdate(4, "QA", null, null, null, "no aplica")));
+        assertNull(fromAi.getAiRationale(), "clasificada a mano no tiene justificación de la IA");
+
+        var byHand = new Task(new CreateTaskCommand(
+                1L, "Login", "d", NOW.plusDays(2), 2L, 10L, 3, null, null, null, null, "no aplica"));
+        assertNull(byHand.getAiRationale());
+    }
+
+    @Test
     void approvedSubmissionMarksDone() {
         var task = task(TaskStatus.COMPLETED, Duration.ofHours(1));
         task.applySubmissionReview(true);

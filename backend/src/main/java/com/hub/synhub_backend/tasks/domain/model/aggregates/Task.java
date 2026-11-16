@@ -53,6 +53,10 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     private String labels;
     private Boolean aiAccepted;
 
+    // Justificación que dio la IA al sugerir la clasificación; nula si se clasificó a mano.
+    @Column(length = 500)
+    private String aiRationale;
+
     @Column(nullable = false)
     private Integer timesRearranged = 0;
 
@@ -72,11 +76,13 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         this.description = command.description() == null ? "" : command.description();
         this.dueDate = command.dueDate();
         this.status = TaskStatus.IN_PROGRESS;
-        this.difficulty = command.difficulty();
-        this.context = command.context();
-        this.urgency = command.urgency();
-        this.labels = command.labels();
-        this.aiAccepted = command.aiAccepted();
+        this.updateClassification(
+                command.difficulty(),
+                command.context(),
+                command.urgency(),
+                command.labels(),
+                command.aiAccepted(),
+                command.aiRationale());
     }
 
     /** Resultado de revisar la entrega: aprobada -> DONE; rechazada -> IN_PROGRESS (suma un reagendado). */
@@ -125,7 +131,8 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         }
         if (command.classification() != null) {
             var c = command.classification();
-            this.updateClassification(c.difficulty(), c.context(), c.urgency(), c.labels(), c.aiAccepted());
+            this.updateClassification(
+                    c.difficulty(), c.context(), c.urgency(), c.labels(), c.aiAccepted(), c.aiRationale());
         }
         if (command.dueDate() != null) {
             this.dueDate = command.dueDate();
@@ -141,9 +148,12 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         }
     }
 
-    /** Reemplaza la clasificación; sin ningún campo, la tarea queda sin clasificar y sin medición de la IA. */
+    /**
+     * Reemplaza la clasificación; sin ningún campo, la tarea queda sin clasificar y sin medición de la IA.
+     * La justificación solo se guarda si la clasificación viene de la IA (aiAccepted no nulo).
+     */
     public void updateClassification(
-            Integer difficulty, String context, String urgency, String labels, Boolean aiAccepted) {
+            Integer difficulty, String context, String urgency, String labels, Boolean aiAccepted, String aiRationale) {
         this.difficulty = difficulty;
         this.context = blankToNull(context);
         this.urgency = blankToNull(urgency);
@@ -151,6 +161,7 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         boolean classified =
                 this.difficulty != null || this.context != null || this.urgency != null || this.labels != null;
         this.aiAccepted = classified ? aiAccepted : null;
+        this.aiRationale = this.aiAccepted == null ? null : blankToNull(aiRationale);
     }
 
     private static String blankToNull(String value) {

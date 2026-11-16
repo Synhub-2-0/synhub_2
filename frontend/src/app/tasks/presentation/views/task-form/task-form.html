@@ -64,7 +64,7 @@
         <p class="text-xs text-red-600">{{ aiStore.error() }}</p>
       }
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label class="block" [class.cursor-help]="aiStore.classification()" [matTooltip]="aiStore.classification()?.rationale ?? ''" matTooltipPosition="above">
+        <label class="block" [class.cursor-help]="rationale" [matTooltip]="rationale" matTooltipPosition="above">
           <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Dificultad</span>
           <select name="difficulty" [(ngModel)]="difficulty"
             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
@@ -73,7 +73,7 @@
           </select>
           @if (difficulty) { <span class="mt-1 block text-[11px] text-slate-500">{{ difficultyScale[difficulty] }}</span> }
         </label>
-        <label class="block" [class.cursor-help]="aiStore.classification()" [matTooltip]="aiStore.classification()?.rationale ?? ''" matTooltipPosition="above">
+        <label class="block" [class.cursor-help]="rationale" [matTooltip]="rationale" matTooltipPosition="above">
           <span class="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-400">Contexto</span>
           <select name="context" [(ngModel)]="context"
             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
@@ -95,9 +95,9 @@
             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]" />
         </label>
       </div>
-      @if (aiStore.classification(); as suggestion) {
+      @if (rationale) {
         <p class="flex items-start gap-1.5 text-xs text-slate-500">
-          <mat-icon class="-mt-0.5 scale-75 text-indigo-400">info</mat-icon> {{ suggestion.rationale }}
+          <mat-icon class="-mt-0.5 scale-75 text-indigo-400">info</mat-icon> {{ rationale }}
         </p>
       }
     </div>

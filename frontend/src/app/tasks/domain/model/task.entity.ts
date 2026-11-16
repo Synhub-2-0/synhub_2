@@ -36,6 +36,7 @@ export class Task implements BaseEntity {
   private _urgency?: string;
   private _labels?: string;
   private _aiAccepted?: boolean;
+  private _aiRationale?: string;
 
   constructor(props: {
     id: number;
@@ -52,6 +53,7 @@ export class Task implements BaseEntity {
     urgency?: string | null;
     labels?: string | null;
     aiAccepted?: boolean | null;
+    aiRationale?: string | null;
   }) {
     this._id = props.id;
     this._title = props.title;
@@ -67,6 +69,7 @@ export class Task implements BaseEntity {
     this._urgency = props.urgency ?? undefined;
     this._labels = props.labels ?? undefined;
     this._aiAccepted = props.aiAccepted ?? undefined;
+    this._aiRationale = props.aiRationale ?? undefined;
   }
 
   get id(): number {
@@ -112,6 +115,10 @@ export class Task implements BaseEntity {
   }
   get aiAccepted(): boolean | undefined {
     return this._aiAccepted;
+  }
+  /** Justificación de la IA para la clasificación; vacía si se clasificó a mano. */
+  get aiRationale(): string | undefined {
+    return this._aiRationale;
   }
 
   set id(value: number) {

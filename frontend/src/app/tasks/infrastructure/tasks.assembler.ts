@@ -26,6 +26,7 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
       urgency: resource.urgency,
       labels: resource.labels,
       aiAccepted: resource.aiAccepted,
+      aiRationale: resource.aiRationale,
     });
   }
 
@@ -59,6 +60,7 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
       urgency: command.urgency,
       labels: command.labels,
       aiAccepted: command.aiAccepted,
+      aiRationale: command.aiRationale,
     };
   }
 

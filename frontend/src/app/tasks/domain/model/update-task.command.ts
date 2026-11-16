@@ -5,6 +5,7 @@ export interface TaskClassificationUpdate {
   urgency: string | null;
   labels: string | null;
   aiAccepted: boolean | null;
+  aiRationale: string | null;
 }
 
 export class UpdateTaskCommand {

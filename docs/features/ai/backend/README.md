@@ -25,7 +25,7 @@ Requieren token.
 
 - Llama a Bedrock `Converse` con un *system prompt* en español y **fuerza el uso de la herramienta** `classify_task` (`ToolChoice.tool`), cuyo JSON Schema exige `labels`, `urgency`, `difficulty`, `context` y `rationale`.
 - `temperature = 0` y `maxTokens = 400`. El mensaje incluye la fecha actual para que el modelo razone sobre la urgencia.
-- Normaliza la respuesta: como máximo 3 etiquetas, `urgency` ∈ {`LOW`, `MEDIUM`, `HIGH`} (si no, `MEDIUM`), `difficulty` acotada a 1-5, y `context` ∈ {`FRONTEND`, `BACKEND`, `DATABASE`, `CLOUD`, `QA`, `DOCS`, `DESIGN`, `GENERAL`} (si no, `GENERAL`).
+- Normaliza la respuesta: `rationale` de hasta 500 caracteres (lo que cabe en la tarea), como máximo 3 etiquetas, `urgency` ∈ {`LOW`, `MEDIUM`, `HIGH`} (si no, `MEDIUM`), `difficulty` acotada a 1-5, y `context` ∈ {`FRONTEND`, `BACKEND`, `DATABASE`, `CLOUD`, `QA`, `DOCS`, `DESIGN`, `GENERAL`} (si no, `GENERAL`).
 - Ante cualquier `RuntimeException` devuelve `Optional.empty()` y el controlador responde 503.
 
 ### `GroupReportQueryServiceImpl`

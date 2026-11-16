@@ -21,6 +21,7 @@ public class UpdateTaskCommandFromResourceAssembler {
                                 classification.context(),
                                 classification.urgency(),
                                 classification.labels(),
-                                classification.aiAccepted()));
+                                classification.aiAccepted(),
+                                classification.aiRationale()));
     }
 }

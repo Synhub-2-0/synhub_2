@@ -53,7 +53,7 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 
 | Clase | Campos |
 |---|---|
-| `Task` | `id`, `title`, `description`, `dueDate`, `createdAt`, `updatedAt`, `status: TaskStatus`, `group`, `assignedTo`, `difficulty`, `context`, `urgency`, `labels`, `aiAccepted` |
+| `Task` | `id`, `title`, `description`, `dueDate`, `createdAt`, `updatedAt`, `status: TaskStatus`, `group`, `assignedTo`, `difficulty`, `context`, `urgency`, `labels`, `aiAccepted`, `aiRationale` |
 | `TaskStatus` | `'ON_HOLD' \| 'IN_PROGRESS' \| 'COMPLETED' \| 'DONE' \| 'EXPIRED'` |
 | `CreateTaskCommand`, `UpdateTaskCommand` | Datos del formulario. |
 
@@ -65,7 +65,8 @@ La sección "Clasificación (opcional)" aparece al crear y al editar. Sus campos
 2. La sugerencia llena los campos y el líder puede editarlos. "Quitar clasificación" los vacía.
 3. Al editar una tarea, el formulario carga su clasificación guardada y `UpdateTaskCommand.classification` la reemplaza al guardar.
 4. `aiAccepted` vale `true` si se guardó la sugerencia tal cual, `false` si se editó y queda sin valor si no se usó la IA o no hay clasificación. Al editar sin volver a sugerir se conserva el valor guardado, salvo que se cambie a mano una sugerencia aceptada (pasa a `false`). Se persiste en la tarea para medir la aceptación.
-5. La sugerencia pertenece al formulario abierto: se descarta al salir, y la respuesta de una petición anterior no se aplica.
+5. La justificación de la IA (`aiRationale`) se guarda con la tarea mientras la clasificación venga de la IA. Se ve en el formulario al editar, en `TaskDetails` (texto y tooltip de dificultad y contexto) y en el tooltip de `TaskCard`.
+6. La sugerencia pertenece al formulario abierto: se descarta al salir, y la respuesta de una petición anterior no se aplica.
 
 ## Pruebas
 

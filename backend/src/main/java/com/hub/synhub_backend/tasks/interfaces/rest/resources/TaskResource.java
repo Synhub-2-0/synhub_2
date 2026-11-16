@@ -17,4 +17,5 @@ public record TaskResource(
         String context,
         String urgency,
         String labels,
-        Boolean aiAccepted) {}
+        Boolean aiAccepted,
+        String aiRationale) {}

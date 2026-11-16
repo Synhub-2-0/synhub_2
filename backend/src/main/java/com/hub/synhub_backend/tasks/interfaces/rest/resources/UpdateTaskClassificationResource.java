@@ -10,4 +10,5 @@ public record UpdateTaskClassificationResource(
         @Size(max = 32) String context,
         @Size(max = 16) String urgency,
         @Size(max = 255) String labels,
-        Boolean aiAccepted) {}
+        Boolean aiAccepted,
+        @Size(max = 500) String aiRationale) {}

@@ -35,6 +35,7 @@ export interface TaskResource extends BaseResource {
   urgency?: string | null;
   labels?: string | null;
   aiAccepted?: boolean | null;
+  aiRationale?: string | null;
 }
 
 export interface TasksResponse {
@@ -52,6 +53,7 @@ export interface CreateTaskRequest {
   urgency?: string;
   labels?: string;
   aiAccepted?: boolean;
+  aiRationale?: string;
 }
 
 export interface UpdateTaskRequest {
@@ -66,5 +68,6 @@ export interface UpdateTaskRequest {
     urgency: string | null;
     labels: string | null;
     aiAccepted: boolean | null;
+    aiRationale: string | null;
   };
 }

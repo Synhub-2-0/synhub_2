@@ -83,6 +83,7 @@ describe('Vistas de tasks', () => {
       const command = await saveWith(true);
       expect(command.aiAccepted).toBe(true);
       expect([command.difficulty, command.context, command.urgency, command.labels]).toEqual([4, 'BACKEND', 'HIGH', 'login, auth']);
+      expect(command.aiRationale).toBe('r');
     });
 
     it('sugerencia editada: false', async () => {
@@ -91,7 +92,7 @@ describe('Vistas de tasks', () => {
 
     it('clasificación a mano, sin IA: se guarda y aiAccepted es undefined', async () => {
       const command = await saveWith(false, (form) => Object.assign(form, { difficulty: 2, context: 'QA' }));
-      expect([command.difficulty, command.context, command.aiAccepted]).toEqual([2, 'QA', undefined]);
+      expect([command.difficulty, command.context, command.aiAccepted, command.aiRationale]).toEqual([2, 'QA', undefined, undefined]);
     });
 
     it('sugerencia quitada: la tarea se crea sin clasificación', async () => {
@@ -107,6 +108,7 @@ describe('Vistas de tasks', () => {
       id: 7, title: 'Login', description: 'd', dueDate: new Date('2026-12-01T10:00:00Z'), createdAt: new Date(), updatedAt: new Date(),
       status: 'IN_PROGRESS', group: { id: 10 } as Task['group'], assignedTo: { id: 5 } as Task['assignedTo'],
       difficulty: 4, context: 'BACKEND', urgency: 'HIGH', labels: 'login, auth', aiAccepted,
+      aiRationale: aiAccepted == null ? null : 'guardada',
     });
 
     const editWith = async (task: Task, edit?: (form: TaskForm, fixture: { detectChanges(): void; whenStable(): Promise<unknown> }) => Promise<void> | void) => {
@@ -124,16 +126,16 @@ describe('Vistas de tasks', () => {
     };
 
     it('carga la clasificación guardada y, sin cambios, la conserva', async () => {
-      expect(await editWith(saved(true))).toEqual({ difficulty: 4, context: 'BACKEND', urgency: 'HIGH', labels: 'login, auth', aiAccepted: true });
+      expect(await editWith(saved(true))).toEqual({ difficulty: 4, context: 'BACKEND', urgency: 'HIGH', labels: 'login, auth', aiAccepted: true, aiRationale: 'guardada' });
     });
 
     it('editar a mano una sugerencia aceptada la marca como editada', async () => {
       const classification = await editWith(saved(true), (form) => { form.urgency = 'LOW'; });
-      expect(classification).toMatchObject({ urgency: 'LOW', aiAccepted: false });
+      expect(classification).toMatchObject({ urgency: 'LOW', aiAccepted: false, aiRationale: 'guardada' });
     });
 
     it('editar una clasificación hecha a mano no la atribuye a la IA', async () => {
-      expect((await editWith(saved(null), (form) => { form.difficulty = 1; }))?.aiAccepted).toBeNull();
+      expect(await editWith(saved(null), (form) => { form.difficulty = 1; })).toMatchObject({ aiAccepted: null, aiRationale: null });
     });
 
     it('se puede rehacer con la IA: reemplaza los campos y vuelve a medir', async () => {
@@ -143,12 +145,12 @@ describe('Vistas de tasks', () => {
         fixture.detectChanges();
         await fixture.whenStable();
       });
-      expect(classification).toEqual({ difficulty: 5, context: 'CLOUD', urgency: 'LOW', labels: 'infra', aiAccepted: true });
+      expect(classification).toEqual({ difficulty: 5, context: 'CLOUD', urgency: 'LOW', labels: 'infra', aiAccepted: true, aiRationale: 'r' });
     });
 
     it('se puede quitar la clasificación', async () => {
       expect(await editWith(saved(true), (form) => form.removeClassification()))
-        .toEqual({ difficulty: null, context: null, urgency: null, labels: null, aiAccepted: null });
+        .toEqual({ difficulty: null, context: null, urgency: null, labels: null, aiAccepted: null, aiRationale: null });
     });
   });
 });

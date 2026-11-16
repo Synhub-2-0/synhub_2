@@ -19,24 +19,26 @@ Todos requieren token.
 
 ```text
 CreateTaskResource = { title, description, dueDate (OffsetDateTime), userId, groupId,
-                       difficulty?, context?, urgency?, labels?, aiAccepted? }
+                       difficulty?, context?, urgency?, labels?, aiAccepted?, aiRationale? }
 UpdateTaskResource = { title, description, dueDate, userId,
-                       classification?: { difficulty, context, urgency, labels, aiAccepted } }
+                       classification?: { difficulty, context, urgency, labels, aiAccepted, aiRationale } }
 TaskResource       = { id, title, description, dueDate, createdAt, updatedAt, status,
                        group: GroupResourceReduced, assignedTo: PublicUserResource,
-                       difficulty, context, urgency, labels, aiAccepted }
+                       difficulty, context, urgency, labels, aiAccepted, aiRationale }
 ```
 
 Quien edita se toma siempre de la sesión; el cuerpo no lo incluye (BUG-16).
 
 En `PUT /tasks/{taskId}`, si `classification` no viene, la clasificación de la tarea no cambia. Si viene, reemplaza a la guardada: un campo nulo o vacío se quita, y si no queda ninguno también se borra `aiAccepted`.
 
+`aiRationale` (máx. 500, columna `ai_rationale`, migración `V2__task_ai_rationale.sql`) es la justificación que dio la IA al sugerir la clasificación. Solo se guarda cuando la clasificación viene de la IA (`aiAccepted` no nulo): una clasificación hecha a mano o quitada la deja en nulo.
+
 
 ## Modelo de dominio
 
 | Tipo | Clase | Notas |
 |---|---|---|
-| Agregado | `Task` | `title` (obligatorio), `description` (vacía si no se indica), `status`, `dueDate` (obligatoria), `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`), y métricas (`timesRearranged`, `timePassed` en ms). |
+| Agregado | `Task` | `title` (obligatorio), `description` (vacía si no se indica), `status`, `dueDate` (obligatoria), `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`, `aiRationale`), y métricas (`timesRearranged`, `timePassed` en ms). |
 | Value object | `TaskStatus` | `ON_HOLD`, `IN_PROGRESS`, `COMPLETED`, `DONE`, `EXPIRED`. |
 
 Comportamiento del agregado:

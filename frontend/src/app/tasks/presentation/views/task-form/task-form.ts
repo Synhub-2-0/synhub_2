@@ -42,7 +42,7 @@ export class TaskForm implements OnInit, OnDestroy {
   urgency = '';
   labels = '';
   // Clasificación guardada de la tarea que se edita.
-  private savedClassification: { difficulty: number | null; context: string; urgency: string; labels: string; aiAccepted?: boolean } | null = null;
+  private savedClassification: { difficulty: number | null; context: string; urgency: string; labels: string; aiAccepted?: boolean; aiRationale?: string } | null = null;
   readonly contexts = TASK_CONTEXTS;
   readonly urgencies = TASK_URGENCIES;
   readonly difficulties = [1, 2, 3, 4, 5];
@@ -109,7 +109,7 @@ export class TaskForm implements OnInit, OnDestroy {
     this.urgency = task.urgency ?? '';
     this.labels = task.labels ?? '';
     this.savedClassification = {
-      difficulty: this.difficulty, context: this.context, urgency: this.urgency, labels: this.labels, aiAccepted: task.aiAccepted,
+      difficulty: this.difficulty, context: this.context, urgency: this.urgency, labels: this.labels, aiAccepted: task.aiAccepted, aiRationale: task.aiRationale,
     };
     if (this.groupId) this.loadGroupMembers(this.groupId);
   }
@@ -146,8 +146,14 @@ export class TaskForm implements OnInit, OnDestroy {
     return this.difficulty != null || !!this.context || !!this.urgency || !!this.labels.trim();
   }
 
+  /** Justificación de la IA: la de la sugerencia actual o, al editar, la guardada con la tarea. */
+  get rationale(): string {
+    return this.aiStore.classification()?.rationale ?? this.savedClassification?.aiRationale ?? '';
+  }
+
   removeClassification(): void {
     this.aiStore.clearClassification();
+    this.savedClassification = null;
     this.difficulty = null;
     this.context = '';
     this.urgency = '';
@@ -170,6 +176,11 @@ export class TaskForm implements OnInit, OnDestroy {
     return unchanged ? saved.aiAccepted : false;
   }
 
+  /** Solo acompaña a una clasificación que viene de la IA. */
+  private get aiRationale(): string | undefined {
+    return this.aiAccepted === undefined ? undefined : this.rationale || undefined;
+  }
+
   save(): void {
     if (!this.title.trim() || !this.dueDateTime || !this.userId || !this.groupId) return;
     const dueDate = new Date(this.dueDateTime);
@@ -178,14 +189,14 @@ export class TaskForm implements OnInit, OnDestroy {
         this.title.trim(), this.description.trim(), dueDate, this.userId,
         {
           difficulty: this.difficulty, context: this.context || null, urgency: this.urgency || null,
-          labels: this.labels.trim() || null, aiAccepted: this.aiAccepted ?? null,
+          labels: this.labels.trim() || null, aiAccepted: this.aiAccepted ?? null, aiRationale: this.aiRationale ?? null,
         },
       ));
     } else {
       this.tasksStore.addTask(new CreateTaskCommand(
         this.title.trim(), this.description.trim(), dueDate, this.userId, this.groupId,
         this.difficulty ?? undefined, this.context || undefined, this.urgency || undefined,
-        this.labels.trim() || undefined, this.aiAccepted,
+        this.labels.trim() || undefined, this.aiAccepted, this.aiRationale,
       ));
     }
     this.backToGroupTasks();
