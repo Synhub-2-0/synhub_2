@@ -44,6 +44,9 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 .orElseThrow(
                         () -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
 
+        if (requestRepository.existsByTask_IdAndRequestStatus(command.taskId(), RequestStatus.PENDING))
+            throw new PendingRequestAlreadyExistsException(command.taskId());
+
         // requesterId null = la genera el sistema (vencimiento automático): sin reglas de usuario.
         if (command.requesterId() != null) {
             if (requestType == RequestType.EXPIRED)
@@ -54,14 +57,8 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 if (task.getStatus() != TaskStatus.COMPLETED)
                     throw new TaskNotCompletedException(
                             "A submission can only be created for a COMPLETED task, the task is " + task.getStatus());
-                if (this.requestRepository.existsByTask_IdAndRequestTypeAndRequestStatus(
-                        task.getId(), RequestType.SUBMISSION, RequestStatus.PENDING))
-                    throw new PendingSubmissionAlreadyExistsException(task.getId());
             }
             if (requestType == RequestType.MODIFICATION){
-                if (requestRepository.existsByTask_IdAndRequestTypeAndRequestStatus(task.getId(), RequestType.MODIFICATION, RequestStatus.PENDING)) {
-                    throw new PendingModificationAlreadyExistsException(task.getId());
-                }
                 this.tasksContextFacade.updateTaskStatus(task.getId(), TaskStatus.ON_HOLD, command.requesterId());
             }
         }

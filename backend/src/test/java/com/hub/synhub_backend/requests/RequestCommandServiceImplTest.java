@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import com.hub.synhub_backend.requests.application.internal.commandservices.RequestCommandServiceImpl;
-import com.hub.synhub_backend.requests.domain.exceptions.PendingSubmissionAlreadyExistsException;
+import com.hub.synhub_backend.requests.domain.exceptions.PendingRequestAlreadyExistsException;
 import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedException;
 import com.hub.synhub_backend.requests.domain.exceptions.TaskNotCompletedException;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
@@ -91,7 +91,7 @@ class RequestCommandServiceImplTest {
         when(task.getStatus()).thenReturn(TaskStatus.COMPLETED);
         when(repo.existsByTask_IdAndRequestTypeAndRequestStatus(TASK, RequestType.SUBMISSION, RequestStatus.PENDING))
                 .thenReturn(true);
-        var e = assertThrows(PendingSubmissionAlreadyExistsException.class, () -> service.handle(submission(MEMBER)));
+        var e = assertThrows(PendingRequestAlreadyExistsException.class, () -> service.handle(submission(MEMBER)));
         assertEquals("Task with id 10 already has a pending submission", e.getMessage());
     }
 
