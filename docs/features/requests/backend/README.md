@@ -40,7 +40,7 @@ Todos requieren token.
 2. Si `requesterId != null` (lo crea un usuario):
    - `EXPIRED` → 400: solo lo genera el sistema.
    - Solo el integrante asignado a la tarea → si no, 403.
-   - `SUBMISSION`: la tarea debe estar `COMPLETED` (409 `TaskNotCompletedException`) y no puede existir otra `SUBMISSION` en `PENDING` (409 `PendingRequestAlreadyExistsException`).
+   - `SUBMISSION`: la tarea debe estar `COMPLETED` (409 `TaskWithIncorrectStatusException`) y no puede existir otra `SUBMISSION` en `PENDING` (409 `PendingRequestAlreadyExistsException`).
 3. Si `requesterId == null` (lo crea el sistema, desde `TaskStatusScheduler`), se omiten las validaciones de usuario.
 
 **Al revisar** (`UpdateRequestCommand`):
@@ -78,7 +78,7 @@ Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsBy
 | `IllegalArgumentException` | 400 |
 | `AccessDeniedException` | 403 |
 | `ResourceNotFoundException` | 404 |
-| `TaskNotCompletedException`, `PendingRequestAlreadyExistsException`, `RequestAlreadyReviewedException` | 409 |
+| `TaskWithIncorrectStatusException`, `PendingRequestAlreadyExistsException`, `RequestAlreadyReviewedException` | 409 |
 
 ## Pruebas
 
