@@ -59,9 +59,13 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 
 ## Integración con IA en `TaskForm`
 
-1. El líder escribe título, descripción y fecha límite, y pulsa "sugerir": `AiStore.classifyTask` llama a `POST /ai/classify`.
-2. La sugerencia (`difficulty`, `context`, `urgency`, `labels`) llena el formulario y el líder puede editarla.
-3. Al guardar, `aiAccepted` vale `true` si se guardó tal cual, `false` si se editó y `undefined` si no se usó la IA. Se persiste en la tarea para medir la aceptación.
+La sección "Clasificación (opcional)" aparece al crear y al editar. Sus campos (`difficulty`, `context`, `urgency`, `labels`) pueden quedar vacíos, llenarse a mano o con la IA.
+
+1. El líder pulsa "Sugerir con IA" (o "Volver a sugerir con IA" si ya hay clasificación): `AiStore.classifyTask` llama a `POST /ai/classify` con el título, la descripción y la fecha límite actuales.
+2. La sugerencia llena los campos y el líder puede editarlos. "Quitar clasificación" los vacía.
+3. Al editar una tarea, el formulario carga su clasificación guardada y `UpdateTaskCommand.classification` la reemplaza al guardar.
+4. `aiAccepted` vale `true` si se guardó la sugerencia tal cual, `false` si se editó y queda sin valor si no se usó la IA o no hay clasificación. Al editar sin volver a sugerir se conserva el valor guardado, salvo que se cambie a mano una sugerencia aceptada (pasa a `false`). Se persiste en la tarea para medir la aceptación.
+5. La sugerencia pertenece al formulario abierto: se descarta al salir, y la respuesta de una petición anterior no se aplica.
 
 ## Pruebas
 

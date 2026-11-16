@@ -59,4 +59,12 @@ export interface UpdateTaskRequest {
   description: string;
   dueDate: string;
   userId: number;
+  /** Ausente: la clasificación no cambia. Presente: reemplaza la guardada (null quita el campo). */
+  classification?: {
+    difficulty: number | null;
+    context: string | null;
+    urgency: string | null;
+    labels: string | null;
+    aiAccepted: boolean | null;
+  };
 }

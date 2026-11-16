@@ -6,6 +6,7 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.CreateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskClassificationUpdate;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -114,6 +115,39 @@ class TaskTest {
         task.updateTask(new UpdateTaskCommand(1L, 5L, "Nuevo título", "Nueva desc", null, 2L));
         assertEquals("Nuevo título", task.getTitle());
         assertEquals("Nueva desc", task.getDescription());
+    }
+
+    @Test
+    void updateWithoutClassificationKeepsTheSavedOne() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(1));
+        task.updateTask(new UpdateTaskCommand(1L, 5L, "Nuevo título", null, null, 2L));
+        assertEquals(3, task.getDifficulty());
+        assertEquals("BACKEND", task.getContext());
+        assertEquals(true, task.getAiAccepted());
+    }
+
+    @Test
+    void updateReplacesTheClassification() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(1));
+        task.updateTask(new UpdateTaskCommand(
+                1L, 5L, null, null, null, 2L, new TaskClassificationUpdate(5, "CLOUD", "", " infra ", false)));
+        assertEquals(5, task.getDifficulty());
+        assertEquals("CLOUD", task.getContext());
+        assertNull(task.getUrgency(), "un campo vacío se quita");
+        assertEquals("infra", task.getLabels());
+        assertEquals(false, task.getAiAccepted());
+    }
+
+    @Test
+    void removingTheClassificationAlsoClearsTheAiMeasure() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(1));
+        task.updateTask(new UpdateTaskCommand(
+                1L, 5L, null, null, null, 2L, new TaskClassificationUpdate(null, null, "", " ", true)));
+        assertNull(task.getDifficulty());
+        assertNull(task.getContext());
+        assertNull(task.getUrgency());
+        assertNull(task.getLabels());
+        assertNull(task.getAiAccepted());
     }
 
     @Test

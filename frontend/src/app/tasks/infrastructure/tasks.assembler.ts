@@ -68,6 +68,7 @@ export class TasksAssembler implements BaseAssembler<Task, TaskResource, TasksRe
       description: command.description,
       dueDate: command.dueDate.toISOString(),
       userId: command.userId,
+      classification: command.classification,
     };
   }
 }

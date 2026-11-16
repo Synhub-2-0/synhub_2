@@ -12,7 +12,6 @@ import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SoftDelete;
@@ -124,6 +123,10 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         if (command.description() != null && !command.description().isEmpty()) {
             this.description = command.description();
         }
+        if (command.classification() != null) {
+            var c = command.classification();
+            this.updateClassification(c.difficulty(), c.context(), c.urgency(), c.labels(), c.aiAccepted());
+        }
         if (command.dueDate() != null) {
             this.dueDate = command.dueDate();
             if (command.dueDate().isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
@@ -136,5 +139,21 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
                 }
             }
         }
+    }
+
+    /** Reemplaza la clasificación; sin ningún campo, la tarea queda sin clasificar y sin medición de la IA. */
+    public void updateClassification(
+            Integer difficulty, String context, String urgency, String labels, Boolean aiAccepted) {
+        this.difficulty = difficulty;
+        this.context = blankToNull(context);
+        this.urgency = blankToNull(urgency);
+        this.labels = blankToNull(labels);
+        boolean classified =
+                this.difficulty != null || this.context != null || this.urgency != null || this.labels != null;
+        this.aiAccepted = classified ? aiAccepted : null;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }
