@@ -5,7 +5,9 @@ import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Null;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -33,7 +35,7 @@ public class Request extends AuditableAbstractAggregateRoot<Request> {
     private RequestStatus requestStatus;
 
     @Setter
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "task_id")
     private Task task;
 
