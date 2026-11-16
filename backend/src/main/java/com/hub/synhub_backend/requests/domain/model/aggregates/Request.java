@@ -35,7 +35,7 @@ public class Request extends AuditableAbstractAggregateRoot<Request> {
     private RequestStatus requestStatus;
 
     @Setter
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "task_id")
     private Task task;
 
