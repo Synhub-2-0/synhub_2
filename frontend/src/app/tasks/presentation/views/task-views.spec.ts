@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { Type } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Location } from '@angular/common';
+import { Type, signal } from '@angular/core';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { LeaderTasks } from './leader-tasks/leader-tasks';
 import { MemberTasks } from './member-tasks/member-tasks';
@@ -13,10 +14,11 @@ import { IamApi } from '../../../iam/infrastructure/iam.api';
 import { AiApi } from '../../../ai/infrastructure/ai.api';
 import { RequestsApi } from '../../../requests/infrastructure/requests.api';
 import { TasksStore } from '../../application/tasks.store';
+import { GroupsStore } from '../../../groups/application/groups.store';
 import { CreateTaskCommand } from '../../domain/model/create-task.command';
 import { TaskClassification } from '../../../ai/domain/model/task-classification.entity';
 
-/** Doble de una API: cualquier método devuelve un observable vacío. */
+/** Doble de una API: cualquier metodo devuelve un observable vacío. */
 const apiStub = () => new Proxy({} as Record<string, ReturnType<typeof vi.fn>>, {
   get: (target, prop: string) => (target[prop] ??= vi.fn(() => of([]))),
 });
@@ -85,6 +87,110 @@ describe('Vistas de tasks', () => {
 
     it('sugerencia editada: false', async () => {
       expect((await saveWith(true, (form) => (form.difficulty = 2))).aiAccepted).toBe(false);
+    });
+  });
+
+  describe('TaskDetails: helpers de presentación', () => {
+    it('labelsOf separa etiquetas y descarta vacíos', () => {
+      const fixture = TestBed.createComponent(TaskDetails);
+      const component = fixture.componentInstance;
+      expect(component.labelsOf('login, auth, ')).toEqual(['login', 'auth']);
+      expect(component.labelsOf('')).toEqual([]);
+      expect(component.labelsOf(undefined)).toEqual([]);
+    });
+
+    it('labelFor devuelve el texto en español para cada estado', () => {
+      const component = TestBed.createComponent(TaskDetails).componentInstance;
+      expect(component.labelFor('IN_PROGRESS')).toBe('En progreso');
+      expect(component.labelFor('ON_HOLD')).toBe('En espera');
+      expect(component.labelFor('COMPLETED')).toBe('Completada');
+      expect(component.labelFor('DONE')).toBe('Terminada');
+      expect(component.labelFor('EXPIRED')).toBe('Vencida');
+    });
+
+    it('ngOnInit carga la tarea cuando la ruta trae un id', async () => {
+      TestBed.resetTestingModule();
+      const loadTaskById = vi.fn();
+      await TestBed.configureTestingModule({
+        imports: [TaskDetails],
+        providers: [
+          provideRouter([]),
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: '42' }) } } },
+          { provide: TasksApi, useValue: apiStub() },
+          { provide: GroupsApi, useValue: apiStub() },
+          { provide: IamApi, useValue: apiStub() },
+          { provide: RequestsApi, useValue: apiStub() },
+          { provide: AiApi, useValue: apiStub() },
+          { provide: TasksStore, useValue: { loadTaskById, loading: signal(false), selectedTask: signal(null), error: signal(null) } },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(TaskDetails);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(loadTaskById).toHaveBeenCalledWith(42);
+    });
+
+    it('goBack delega a Location.back()', () => {
+      const back = vi.fn();
+      TestBed.overrideProvider(Location, { useValue: { back } });
+      const component = TestBed.createComponent(TaskDetails).componentInstance;
+      component.goBack();
+      expect(back).toHaveBeenCalled();
+    });
+  });
+
+  describe('LeaderTasks: selección de grupo y filtros', () => {
+    const makeGroup = (id: number) => ({ id, name: `G${id}`, imgUrl: '', description: '', code: 'ABC123XYZ', memberCount: 1 });
+
+    it('selecciona el primer grupo al iniciar y pasa el filtro al store', async () => {
+      TestBed.resetTestingModule();
+      const loadTasksByGroup = vi.fn();
+      const setStatusFilter = vi.fn();
+      const leaderGroups = signal([makeGroup(10), makeGroup(20)]);
+      await TestBed.configureTestingModule({
+        imports: [LeaderTasks],
+        providers: [
+          provideRouter([]),
+          { provide: TasksApi, useValue: apiStub() },
+          { provide: GroupsApi, useValue: apiStub() },
+          { provide: IamApi, useValue: apiStub() },
+          { provide: AiApi, useValue: apiStub() },
+          { provide: RequestsApi, useValue: apiStub() },
+          {
+            provide: TasksStore,
+            useValue: { loadTasksByGroup, setStatusFilter, tasks: signal([]), filteredTasks: signal([]), loading: signal(false), error: signal(null), statusFilter: signal('ALL') },
+          },
+          {
+            provide: GroupsStore,
+            useValue: { leaderGroups, memberGroups: signal([]), groups: signal([makeGroup(10), makeGroup(20)]), loading: signal(false), loadGroups: vi.fn() },
+          },
+          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        ],
+      }).compileComponents();
+
+      const fixture = TestBed.createComponent(LeaderTasks);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const component = fixture.componentInstance;
+
+      expect(component.selectedGroupId()).toBe(10);
+      expect(loadTasksByGroup).toHaveBeenCalledWith(10);
+
+      component.selectGroup(20);
+      expect(component.selectedGroupId()).toBe(20);
+      expect(loadTasksByGroup).toHaveBeenCalledWith(20);
+
+      component.setFilter('DONE');
+      expect(setStatusFilter).toHaveBeenCalledWith('DONE');
+    });
+
+    it('labelFor devuelve la etiqueta correcta para cada estado', () => {
+      const fixture = TestBed.createComponent(LeaderTasks);
+      const component = fixture.componentInstance;
+      expect(component.labelFor('ALL')).toBe('Todas');
+      expect(component.labelFor('IN_PROGRESS')).toBe('En progreso');
+      expect(component.labelFor('DONE')).toBe('Terminadas');
+      expect(component.labelFor('EXPIRED')).toBe('Vencidas');
     });
   });
 });
