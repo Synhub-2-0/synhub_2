@@ -288,6 +288,9 @@ class RequestCommandServiceImplTest {
                 () -> service.handle(new DeleteRequestCommand(REQUEST, MEMBER)));
         verify(repo, never()).delete(any(Request.class));
 
+        // Un ajeno recibe 403, sin enterarse de que es una modificación pendiente.
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, 99L)));
+
         // Resuelta al editar la tarea, el líder ya puede borrarla.
         request.updateRequestStatus("APPROVED");
         service.handle(new DeleteRequestCommand(REQUEST, LEADER));

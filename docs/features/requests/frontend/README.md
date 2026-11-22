@@ -21,7 +21,6 @@ La otra cara de la feature está en un componente de tasks: **`TaskCard`** usa `
 
 | Método | Petición |
 |---|---|
-| `loadGroupSubmissions(groupId, status?)` | `GET /requests/group?groupId=…&status=…&type=SUBMISSION` |
 | `loadGroupRequests(groupId, status?, type?)` | `GET /requests/group?groupId=…&status=…&type=…` (por defecto `PENDING` y `SUBMISSION`; recuerda `statusFilter` y `typeFilter`) |
 | `approveRequest(request)` / `rejectRequest(request)` | `PUT /requests/{id}/status/APPROVED\|REJECTED` |
 | `createModification(taskId, description, onSuccess?)` | `POST /requests` con `{ taskId, description, requestType: 'MODIFICATION' }`; el backend deja la tarea `ON_HOLD` y `onSuccess` recibe la request con la tarea ya actualizada |

@@ -9,6 +9,11 @@ import { Task, TaskStatus } from '../domain/model/task.entity';
 import { CreateTaskCommand } from '../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../domain/model/update-task.command';
 
+const assigned = (id: number, status: TaskStatus) => new Task({
+  id, title: `T${id}`, description: '', dueDate: new Date('2026-12-01T10:00:00Z'), createdAt: new Date(), updatedAt: new Date(), status,
+  assignedTo: { id: 5, username: 'ana', name: 'Ana', surname: 'T', imgUrl: '', email: '' },
+});
+
 const task = (id: number, status: TaskStatus = 'IN_PROGRESS', due = '2026-12-01T10:00:00Z') => new Task({
   id, title: `T${id}`, description: '', dueDate: new Date(due), createdAt: new Date(), updatedAt: new Date(), status,
 });
@@ -58,7 +63,7 @@ describe('TasksStore', () => {
   });
 
   it('si reanudar falla tras cambiar la fecha, el mensaje lo dice y no se llama a onResumed', () => {
-    const expired = task(3, 'EXPIRED');
+    const expired = assigned(3, 'EXPIRED');
     api.updateTask.mockReturnValue(of(expired));
     api.updateTaskStatus.mockReturnValue(throwError(() => ({ status: 409, error: { message: 'x' } })));
     const onResumed = vi.fn();
@@ -69,9 +74,15 @@ describe('TasksStore', () => {
     expect(toasts.toasts()[0].message).toContain('La fecha ya se actualizó');
   });
 
+  it('una tarea sin responsable no se reanuda y no se llama al backend', () => {
+    store.resumeExpiredTask(task(3, 'EXPIRED'), new Date(Date.now() + 86_400_000));
+    expect(api.updateTask).not.toHaveBeenCalled();
+    expect(toasts.toasts()[0].message).toContain('no tiene un responsable');
+  });
+
   it('si no se puede cambiar la fecha no se intenta reanudar', () => {
     api.updateTask.mockReturnValue(throwError(() => ({ status: 403, error: { message: 'no' } })));
-    store.resumeExpiredTask(task(3, 'EXPIRED'), new Date(Date.now() + 86_400_000));
+    store.resumeExpiredTask(assigned(3, 'EXPIRED'), new Date(Date.now() + 86_400_000));
     expect(api.updateTaskStatus).not.toHaveBeenCalled();
   });
 

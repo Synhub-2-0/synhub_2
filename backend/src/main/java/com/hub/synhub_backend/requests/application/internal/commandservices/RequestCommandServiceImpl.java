@@ -125,9 +125,6 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
         var task = request.getTask();
-        if (RequestType.MODIFICATION.name().equals(request.getRequestType())
-                && RequestStatus.PENDING.name().equals(request.getRequestStatus()))
-            throw new ModificationResolvedByEditingException(request.getId());
         var isLeader = task.getProfile().getGroup().getLeader().getId().equals(command.requesterId());
         var isOwnPendingRequest = task.getProfile().getUser().getId().equals(command.requesterId())
                 && RequestStatus.PENDING.name().equals(request.getRequestStatus())
@@ -135,6 +132,10 @@ public class RequestCommandServiceImpl implements RequestCommandService {
         if (!isLeader && !isOwnPendingRequest)
             throw new AccessDeniedException(
                     "Only the leader of the group, or the assigned member while the request is pending, can delete it");
+        // Después de los permisos: un ajeno no debe enterarse del tipo ni del estado de la request.
+        if (RequestType.MODIFICATION.name().equals(request.getRequestType())
+                && RequestStatus.PENDING.name().equals(request.getRequestStatus()))
+            throw new ModificationResolvedByEditingException(request.getId());
         this.requestRepository.delete(request);
     }
 }

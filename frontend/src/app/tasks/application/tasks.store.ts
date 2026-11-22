@@ -224,10 +224,15 @@ export class TasksStore {
    * alone does not revive an expired task. If the second call fails the date is already saved, and the message says so.
    */
   resumeExpiredTask(task: Task, newDueDate: Date, onResumed?: () => void): void {
+    const assigneeId = task.assignedTo?.id;
+    if (assigneeId === undefined) {
+      this.setError('La tarea no tiene un responsable asignado: no se puede reanudar.');
+      return;
+    }
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.tasksApi
-      .updateTask(task.id, new UpdateTaskCommand(task.title, task.description, newDueDate, task.assignedTo?.id ?? 0))
+      .updateTask(task.id, new UpdateTaskCommand(task.title, task.description, newDueDate, assigneeId))
       .pipe(
         switchMap(() =>
           this.tasksApi.updateTaskStatus(task.id, 'IN_PROGRESS').pipe(
