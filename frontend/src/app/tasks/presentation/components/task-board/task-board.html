@@ -35,7 +35,7 @@
               } @else {
                 <select
                   [value]="task.status"
-                  (change)="onStatusChange(task.id, $event)"
+                  (change)="onStatusChange(task, $event)"
                   class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-600">
                   @for (option of selectableStatuses; track option.value) {
                     <option [value]="option.value" [selected]="option.value === task.status">{{ option.label }}</option>
@@ -53,3 +53,7 @@
     </div>
   }
 </div>
+
+@if (resolving(); as pending) {
+  <app-task-resolve-dialog [task]="pending.task" (closed)="finishResolving()" (proceed)="proceedResolving()"></app-task-resolve-dialog>
+}

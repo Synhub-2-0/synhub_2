@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -33,9 +33,14 @@ describe('Validations', () => {
   let loadGroupRequests: ReturnType<typeof vi.fn>;
   let resumeExpiredTask: ReturnType<typeof vi.fn>;
   let component: Validations;
+  let fixture: ComponentFixture<Validations>;
+  let groupRequests: ReturnType<typeof signal<TaskRequest[]>>;
+  let leaderGroups: ReturnType<typeof signal<never[]>>;
 
   beforeEach(async () => {
     localStorage.clear();
+    groupRequests = signal<TaskRequest[]>([]);
+    leaderGroups = signal<never[]>([]);
     approveRequest = vi.fn();
     rejectRequest = vi.fn();
     loadGroupRequests = vi.fn();
@@ -52,7 +57,7 @@ describe('Validations', () => {
           provide: RequestsStore,
           useValue: {
             approveRequest, rejectRequest, loadGroupRequests,
-            groupRequests: signal([]), processing: signal(false),
+            groupRequests, loading: signal(false), processing: signal(false),
             statusFilter: signal('PENDING'), typeFilter: signal('SUBMISSION'),
           },
         },
@@ -60,7 +65,7 @@ describe('Validations', () => {
         {
           provide: GroupsStore,
           useValue: {
-            loadGroups: vi.fn(), leaderGroups: signal([]), memberGroups: signal([]),
+            loadGroups: vi.fn(), leaderGroups, memberGroups: signal([]),
             groups: signal([]), loading: signal(false),
           },
         },
@@ -68,16 +73,28 @@ describe('Validations', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(Validations);
+    fixture = TestBed.createComponent(Validations);
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
   });
 
+  it('la tarjeta de una tarea vencida solo ofrece "Reanudar tarea"', async () => {
+    groupRequests.set([request(9, true, 'EXPIRED')]);
+    leaderGroups.set([{ id: 10, name: 'G', imgUrl: '' }] as never[]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Reanudar tarea');
+    expect(text).not.toContain('Descartar');
+    expect(text).not.toContain('Rechazar');
+  });
+
   it('se crea y ofrece los filtros de estado y de tipo', () => {
     expect(component).toBeTruthy();
     expect(component.statusOptions.map((o) => o.value)).toEqual(['PENDING', 'APPROVED', 'REJECTED']);
-    expect(component.typeOptions.map((o) => o.value)).toEqual(['SUBMISSION', 'MODIFICATION', 'EXPIRED']);
+    expect(component.typeOptions.map((o) => o.value)).toEqual(['ALL', 'SUBMISSION', 'MODIFICATION', 'EXPIRED']);
+    expect(component.typeOptions[0].label).toBe('Todas');
   });
 
   it('las solicitudes de un grupo bloqueado no se pueden atender', () => {
@@ -88,7 +105,31 @@ describe('Validations', () => {
     expect(component.isLocked(locked)).toBe(true);
   });
 
+  it('elegir "Todas" recarga la bandeja sin filtrar por tipo', () => {
+    component.selectedGroupId.set(10);
+    component.setType('ALL');
+    expect(loadGroupRequests).toHaveBeenLastCalledWith(10, undefined, 'ALL');
+  });
+
+  it('el líder puede denegar una solicitud de modificación sin confirmar si el plazo sigue abierto', () => {
+    const req = request(7, false, 'MODIFICATION');
+    component.reject(req);
+    expect(rejectRequest).toHaveBeenCalledWith(req);
+  });
+
+  it('denegar una modificación con el plazo vencido avisa que la tarea pasará a Vencida', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const req = request(8, true, 'MODIFICATION');
+
+    component.reject(req);
+
+    expect(confirmSpy.mock.calls[0][0]).toContain('solicitud');
+    expect(confirmSpy.mock.calls[0][0]).toContain('En progreso');
+    expect(rejectRequest).not.toHaveBeenCalled();
+  });
+
   it('cada tipo tiene su color: entregas verde, modificaciones amarillo y vencidas rojo', () => {
+    expect(component.typeChipClass.ALL.on).toContain('slate');
     expect(component.typeChipClass.SUBMISSION.on).toContain('emerald');
     expect(component.typeChipClass.MODIFICATION.on).toContain('amber');
     expect(component.typeChipClass.EXPIRED.on).toContain('red');
@@ -105,18 +146,21 @@ describe('Validations', () => {
 
   it('editar la tarea de una modificación abre su formulario de edición', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    component.selectedGroupId.set(10);
     component.editTask(request(4, false, 'MODIFICATION'));
-    expect(navigate).toHaveBeenCalledWith(['/tasks', 7, 'edit']);
+    expect(navigate).toHaveBeenCalledWith(['/tasks', 7, 'edit'], { queryParams: { returnTo: '/validations?groupId=10' } });
   });
 
-  it('descartar el aviso de una tarea vencida rechaza la solicitud sin tocar la tarea', () => {
+  it('una solicitud de vencimiento solo se puede reanudar: sin descartar ni rechazar', () => {
+    expect('dismissExpired' in component).toBe(false);
     const req = request(5, true, 'EXPIRED');
-    component.dismissExpired(req);
-    expect(rejectRequest).toHaveBeenCalledWith(req);
-    expect(resumeExpiredTask).not.toHaveBeenCalled();
+    component.startResume(req);
+    expect(component.resumingRequestId()).toBe(5);
+    expect(rejectRequest).not.toHaveBeenCalled();
   });
 
-  it('reanudar una tarea vencida exige una fecha futura y aprueba la solicitud al terminar', () => {
+  it('reanudar una tarea vencida exige una fecha futura y recarga la bandeja al terminar', () => {
+    component.selectedGroupId.set(10);
     const req = request(6, true, 'EXPIRED');
     component.startResume(req);
     expect(component.resumingRequestId()).toBe(6);
@@ -134,7 +178,8 @@ describe('Validations', () => {
 
     expect(resumeExpiredTask).toHaveBeenCalledWith(req.task, expect.any(Date), expect.any(Function));
     resumeExpiredTask.mock.calls[0][2]();
-    expect(approveRequest).toHaveBeenCalledWith(req);
+    expect(approveRequest).not.toHaveBeenCalled(); // el backend cierra el aviso al reanudar
+    expect(loadGroupRequests).toHaveBeenLastCalledWith(10);
     expect(component.resumingRequestId()).toBeNull();
   });
 

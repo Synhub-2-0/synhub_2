@@ -77,8 +77,14 @@ export class TaskForm implements OnInit, OnDestroy {
     });
   }
 
+  /** Internal route to go back to after saving or cancelling (e.g. the leader came from Validaciones). */
+  private returnTo: string | null = null;
+
   ngOnInit(): void {
     this.aiStore.clearClassification();
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    // Only internal paths ("/x"): never "//host", a scheme or a relative path.
+    this.returnTo = returnTo && /^\/(?!\/)/.test(returnTo) ? returnTo : null;
     const idParam = this.route.snapshot.paramMap.get('id');
     const queryGroupId = this.route.snapshot.queryParamMap.get('groupId');
     this.groupId = queryGroupId ? Number(queryGroupId) : this.groupsStore.leaderGroups()[0]?.id ?? null;
@@ -209,6 +215,10 @@ export class TaskForm implements OnInit, OnDestroy {
 
   // Vuelve a la lista del grupo de la tarea; sin groupId la lista abre otro grupo y la tarea "desaparece".
   private backToGroupTasks(): void {
+    if (this.returnTo) {
+      this.router.navigateByUrl(this.returnTo).then();
+      return;
+    }
     this.router.navigate(['/tasks/leader'], { queryParams: this.groupId ? { groupId: this.groupId } : {} }).then();
   }
 }

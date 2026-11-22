@@ -19,6 +19,54 @@ describe('TaskBoard', () => {
     await fixture.whenStable();
   });
 
+  const select = (status: TaskStatus) => {
+    const element = document.createElement('select');
+    for (const value of ['IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'EXPIRED']) element.add(new Option(value, value));
+    element.value = status;
+    return { target: element } as unknown as Event;
+  };
+
+  it('cambiar el estado de una tarea en progreso se emite directo', () => {
+    const emitted: { taskId: number; status: TaskStatus }[] = [];
+    board.statusChange.subscribe((e) => emitted.push(e));
+    board.onStatusChange(task(1, 'IN_PROGRESS'), select('COMPLETED'));
+    expect(emitted).toEqual([{ taskId: 1, status: 'COMPLETED' }]);
+    expect(board.resolving()).toBeNull();
+  });
+
+  it('cambiar el estado de una tarea vencida abre el diálogo y no emite nada', () => {
+    const emitted: unknown[] = [];
+    board.statusChange.subscribe((e) => emitted.push(e));
+    const event = select('IN_PROGRESS');
+
+    board.onStatusChange(task(4, 'EXPIRED'), event);
+
+    expect(board.resolving()?.task.id).toBe(4);
+    expect(emitted).toEqual([]);
+    expect((event.target as HTMLSelectElement).value).toBe('EXPIRED'); // el selector vuelve a su valor
+  });
+
+  it('cambiar el estado de una tarea en espera abre el diálogo; si no hay nada que resolver sigue el cambio normal', () => {
+    const emitted: { taskId: number; status: TaskStatus }[] = [];
+    board.statusChange.subscribe((e) => emitted.push(e));
+
+    board.onStatusChange(task(5, 'ON_HOLD'), select('IN_PROGRESS'));
+    expect(board.resolving()?.task.id).toBe(5);
+
+    board.proceedResolving();
+    expect(emitted).toEqual([{ taskId: 5, status: 'IN_PROGRESS' }]);
+    expect(board.resolving()).toBeNull();
+  });
+
+  it('cerrar el diálogo lo quita sin emitir nada', () => {
+    const emitted: unknown[] = [];
+    board.statusChange.subscribe((e) => emitted.push(e));
+    board.onStatusChange(task(4, 'EXPIRED'), select('IN_PROGRESS'));
+    board.finishResolving();
+    expect(board.resolving()).toBeNull();
+    expect(emitted).toEqual([]);
+  });
+
   it('en un grupo bloqueado el líder no cambia estados desde el tablero', () => {
     fixture.componentRef.setInput('canManageAll', true);
     const locked = new Task({
@@ -56,7 +104,7 @@ describe('TaskBoard', () => {
     board.statusChange.subscribe((e) => emitted.push(e));
     const select = document.createElement('select');
     select.innerHTML = '<option value="COMPLETED" selected>Completada</option>';
-    board.onStatusChange(1, { target: select } as unknown as Event);
+    board.onStatusChange(task(1, 'IN_PROGRESS'), { target: select } as unknown as Event);
     expect(emitted).toEqual([{ taskId: 1, status: 'COMPLETED' }]);
   });
 

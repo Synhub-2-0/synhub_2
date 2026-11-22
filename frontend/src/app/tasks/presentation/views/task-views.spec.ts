@@ -57,6 +57,51 @@ describe('Vistas de tasks', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
+  describe('TaskForm: volver a donde se vino', () => {
+    const open = async (queryParams: Record<string, string>) => {
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [TaskForm],
+        providers: [
+          provideRouter([]),
+          { provide: TasksApi, useValue: apiStub() },
+          { provide: GroupsApi, useValue: apiStub() },
+          { provide: IamApi, useValue: apiStub() },
+          { provide: AiApi, useValue: apiStub() },
+          { provide: RequestsApi, useValue: apiStub() },
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({}), queryParamMap: convertToParamMap(queryParams) } } },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(TaskForm);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const router = TestBed.inject(Router);
+      return { form: fixture.componentInstance, byUrl: vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true), navigate: vi.spyOn(router, 'navigate').mockResolvedValue(true) };
+    };
+
+    it('cancelar vuelve a Validaciones cuando se llegó desde allí', async () => {
+      const { form, byUrl, navigate } = await open({ returnTo: '/validations?groupId=10', groupId: '10' });
+      form.cancel();
+      expect(byUrl).toHaveBeenCalledWith('/validations?groupId=10');
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('sin returnTo cancelar vuelve a la lista de tareas del grupo, como antes', async () => {
+      const { form, byUrl, navigate } = await open({ groupId: '10' });
+      form.cancel();
+      expect(byUrl).not.toHaveBeenCalled();
+      expect(navigate).toHaveBeenCalledWith(['/tasks/leader'], { queryParams: { groupId: 10 } });
+    });
+
+    it.each(['https://evil.example/x', '//evil.example/x', 'validations', 'javascript:alert(1)'])(
+      'un returnTo que no es una ruta interna (%s) se ignora', async (returnTo) => {
+        const { form, byUrl, navigate } = await open({ returnTo, groupId: '10' });
+        form.cancel();
+        expect(byUrl).not.toHaveBeenCalled();
+        expect(navigate).toHaveBeenCalled();
+      });
+  });
+
   describe('TaskForm: medición de aiAccepted', () => {
     const suggestion: TaskClassification = { labels: ['login', 'auth'], urgency: 'HIGH', difficulty: 4, context: 'BACKEND', rationale: 'r' };
 
