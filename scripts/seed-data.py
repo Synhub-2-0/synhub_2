@@ -26,6 +26,17 @@ Tareas: cada grupo trae tareas en todos los estados para probar el tablero y las
     expired       Fecha límite pasada: el planificador del backend la vence en <= 60 s y crea su request EXPIRED
 
 "Soporte Técnico" tiene 24 tareas para probar la paginación (20 por página). Además deja invitaciones pendientes.
+
+Planes (suscripciones): primero se suben a PRO/ULTRA para poder cargar todos los grupos y, al final, `alexiel` baja a
+Gratis (2 grupos activos) conservando Diseño UX y Soporte Técnico: **Operaciones queda bloqueado** (solo lectura) con sus
+tareas, para probar el bloqueo, "Activar grupo" y la pantalla "Mi plan".
+
+    usuario          plan final   grupos liderados
+    alexiel          Gratis       3 (Operaciones bloqueado)
+    maria.lopez      Pro          2 activos
+    carlos.ruiz      Gratis       2 activos (en su límite)
+    diego.paredes    Ultra        ninguno (sin límite)
+    lucia.torres, sofia.vega      Gratis, sin grupos liderados
 """
 import http.cookiejar
 import json
@@ -46,6 +57,11 @@ NEW_USERS = [
     ('diego.paredes', 'Diego', 'Paredes'),
     ('sofia.vega', 'Sofía', 'Vega'),
 ]
+
+# Plan con el que se carga cada usuario que lidera grupos (el resto queda en Gratis) y el plan final.
+PLANS_WHILE_SEEDING = {'alexiel': 'PRO', 'maria.lopez': 'PRO', 'carlos.ruiz': 'FREE', 'diego.paredes': 'ULTRA'}
+# Al terminar, `alexiel` baja a Gratis conservando estos grupos: el que sobra queda bloqueado.
+ALEXIEL_KEEPS = ['Diseño UX', 'Soporte Técnico']
 
 # (nombre, descripción, líder, miembros)
 GROUPS = [
@@ -181,6 +197,32 @@ def seed_users(clients):
         c.sign_in()
 
 
+def seed_plans(clients):
+    """Sube de plan a quien lidere más grupos que los del plan Gratis y activa los grupos que hubieran quedado bloqueados
+    (una corrida anterior deja uno bloqueado): así se pueden cargar tareas y miembros en todos."""
+    for username, plan in PLANS_WHILE_SEEDING.items():
+        status, body = clients[username].call('PUT', '/subscriptions/me', {'plan': plan})
+        if not ok(status):
+            sys.exit(f'Cambiar el plan de {username} a {plan} falló: {status} {body}')
+        print(f'plan:              {username} -> {plan}')
+    for username in PLANS_WHILE_SEEDING:
+        c = clients[username]
+        _, led = c.call('GET', '/groups/user/role?groupRole=GROUP_LEADER')
+        for group in led or []:
+            if group.get('locked'):
+                status, body = c.call('POST', f'/groups/{group["id"]}/activate')
+                print(f'  grupo activado:  {group["name"]}' if ok(status) else f'  ! no se pudo activar {group["name"]}: {status} {body}')
+
+
+def finish_plans(clients, groups):
+    """`alexiel` baja a Gratis conservando dos grupos: el tercero (Operaciones) queda bloqueado."""
+    keep = [groups[name]['id'] for name in ALEXIEL_KEEPS]
+    status, body = clients['alexiel'].call('PUT', '/subscriptions/me', {'plan': 'FREE', 'activeGroupIds': keep})
+    if not ok(status):
+        sys.exit(f'Bajar a alexiel al plan Gratis falló: {status} {body}')
+    print(f'plan:              alexiel -> FREE (activos: {", ".join(ALEXIEL_KEEPS)})')
+
+
 def seed_groups(clients):
     groups = {}
     for name, description, leader, members in GROUPS:
@@ -276,7 +318,10 @@ def summary(clients, groups):
     for username, c in clients.items():
         _, led = c.call('GET', '/groups/user/role?groupRole=GROUP_LEADER')
         _, mem = c.call('GET', '/groups/user/role?groupRole=GROUP_MEMBER')
-        print(f'  {username:14} líder de {[g["name"] for g in led or []]}  miembro de {[g["name"] for g in mem or []]}')
+        _, plan = c.call('GET', '/subscriptions/me')
+        locked = [g['name'] for g in led or [] if g.get('locked')]
+        print(f'  {username:14} plan {plan["planName"]:6} líder de {[g["name"] for g in led or []]}'
+              f'  miembro de {[g["name"] for g in mem or []]}' + (f'  BLOQUEADOS: {locked}' if locked else ''))
     print('\nTareas por grupo y estado:')
     for name, group in groups.items():
         leader = clients[next(g[2] for g in GROUPS if g[0] == name)]
@@ -291,9 +336,11 @@ def summary(clients, groups):
 def main():
     clients = {}
     seed_users(clients)
+    seed_plans(clients)
     groups = seed_groups(clients)
     seed_invitations(clients, groups)
     seed_tasks(clients, groups)
+    finish_plans(clients, groups)
     summary(clients, groups)
 
 
