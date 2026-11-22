@@ -87,14 +87,19 @@ public class TaskCommandServiceImpl implements TaskCommandService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User with id " + command.newUserId() + " is not part of group with id " + groupId));
 
-        if (currentProfile != null && !currentProfile.equals(newProfile)) {
+        var reassigned = currentProfile != null && !currentProfile.equals(newProfile);
+        if (reassigned) {
             // Las membresías son entidades gestionadas: los cambios se guardan al cerrar la transacción.
             currentProfile.removeTask(task);
             newProfile.addTask(task);
         } else if (currentUser == null) {
             newProfile.addTask(task);
         }
-        task.updateTask(command);
+        var edited = task.updateTask(command) || reassigned;
+        // Editar la tarea es lo que resuelve su solicitud de modificación y la reanuda (el reloj vuelve a correr).
+        if (edited && this.requestsContextFacade.resolvePendingModification(task.getId())) {
+            task.resumeAfterEditing();
+        }
         return this.taskRepository.save(task);
     }
 
@@ -131,6 +136,11 @@ public class TaskCommandServiceImpl implements TaskCommandService {
             throw new AccessDeniedException("Only the leader of the group can update the task status");
         }
         taskToUpdate.ensureNotFinished();
+        // Con una modificación pendiente la tarea solo se reanuda editándola.
+        if (command.status() == TaskStatus.IN_PROGRESS
+                && this.requestsContextFacade.hasPendingModification(taskToUpdate.getId()))
+            throw new TaskStatusTransitionNotAllowedException(
+                    "The task has a pending modification request: it resumes when the leader edits the task");
         taskToUpdate.updateStatus(command);
         return this.taskRepository.save(taskToUpdate);
     }

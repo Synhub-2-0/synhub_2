@@ -17,7 +17,8 @@
             </p>
           }
           @if (showGroup && task.group) {
-            <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#4A90E2]"><mat-icon class="scale-75">groups</mat-icon>{{ task.group.name }}</span>
+            <button type="button" (click)="openGroup($event)" matTooltip="Ir al grupo"
+              class="inline-flex cursor-pointer items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#4A90E2] hover:underline"><mat-icon class="scale-75">groups</mat-icon>{{ task.group.name }}</button>
           }
           <h3 class="text-lg font-extrabold text-slate-800 truncate">{{ task.title }}</h3>
         </div>
@@ -80,29 +81,8 @@
       </footer>
     }
 
-    @if (!isLeader && task.status === 'IN_PROGRESS') {
-      <footer class="mt-2 flex flex-col gap-2.5 pt-3 border-t border-slate-100">
-        <button type="button" (click)="onComplete($event)" [disabled]="requestsStore.processing()"
-          class="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer">
-          <mat-icon class="scale-75">check_circle</mat-icon> Marcar completada y enviar a validación
-        </button>
-      </footer>
-    }
-
-    @if (!isLeader && task.status === 'COMPLETED' && requestsStore.isUnderReview(task.id)) {
-      <footer class="mt-2 pt-3 border-t border-slate-100">
-        <span class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800">
-          <mat-icon class="scale-75">hourglass_top</mat-icon> En revisión por el líder
-        </span>
-      </footer>
-    }
-
-    @if (!isLeader && (task.status === 'ON_HOLD' || task.status === 'EXPIRED')) {
-      <footer class="mt-2 pt-3 border-t border-slate-100">
-        <span class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-500">
-          <mat-icon class="scale-75">lock_clock</mat-icon> Solo el líder del grupo puede cambiar su estado
-        </span>
-      </footer>
+    @if (!isLeader) {
+      <app-task-member-actions [task]="task" />
     }
   </div>
 </article>

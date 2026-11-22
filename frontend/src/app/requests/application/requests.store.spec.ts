@@ -10,7 +10,7 @@ import { CreateRequestCommand } from '../domain/model/create-request.command';
 import { Task } from '../../tasks/domain/model/task.entity';
 
 const task = new Task({ id: 7, title: 'T', description: '', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date(), status: 'COMPLETED' });
-const request = (id: number, requestStatus: RequestStatus = 'PENDING', requestType: 'SUBMISSION' | 'EXPIRED' = 'SUBMISSION') =>
+const request = (id: number, requestStatus: RequestStatus = 'PENDING', requestType: 'SUBMISSION' | 'MODIFICATION' | 'EXPIRED' = 'SUBMISSION') =>
   new TaskRequest({ id, description: 'Listo', requestType, requestStatus, task });
 
 describe('RequestsStore', () => {
@@ -29,19 +29,32 @@ describe('RequestsStore', () => {
     toasts = TestBed.inject(ToastStore);
   });
 
-  it('la bandeja pide solo entregas con el estado elegido', () => {
+  it('la bandeja pide por defecto las entregas pendientes y recuerda el estado elegido', () => {
     api.getRequestsByGroup.mockReturnValue(of([request(1), request(2)]));
-    store.loadGroupSubmissions(10);
+    store.loadGroupRequests(10);
     expect(api.getRequestsByGroup).toHaveBeenCalledWith(10, 'PENDING', 'SUBMISSION');
-    store.loadGroupSubmissions(10, 'APPROVED');
+    store.loadGroupRequests(10, 'APPROVED');
     expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'APPROVED', 'SUBMISSION');
     expect(store.statusFilter()).toBe('APPROVED');
   });
 
+  it('la bandeja se filtra por tipo: modificaciones y vencidas, y recuerda el tipo', () => {
+    api.getRequestsByGroup.mockReturnValue(of([request(1, 'PENDING', 'MODIFICATION')]));
+    store.loadGroupRequests(10, 'PENDING', 'MODIFICATION');
+    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'PENDING', 'MODIFICATION');
+    expect(store.typeFilter()).toBe('MODIFICATION');
+    expect(store.groupRequests().map((r) => r.requestType)).toEqual(['MODIFICATION']);
+
+    store.loadGroupRequests(10, 'APPROVED');
+    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'APPROVED', 'MODIFICATION');
+    store.loadGroupRequests(10, 'PENDING', 'EXPIRED');
+    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'PENDING', 'EXPIRED');
+  });
+
   it('si la bandeja falla queda vacía y el mensaje llega tal cual', () => {
     api.getRequestsByGroup.mockReturnValue(throwError(() => new Error('Solo el líder del grupo puede ver las validaciones.')));
-    store.loadGroupSubmissions(10);
-    expect(store.submissions()).toEqual([]);
+    store.loadGroupRequests(10);
+    expect(store.groupRequests()).toEqual([]);
     expect(toasts.toasts()[0].message).toBe('Solo el líder del grupo puede ver las validaciones.');
   });
 
@@ -49,22 +62,22 @@ describe('RequestsStore', () => {
     api.getRequestsByGroup.mockReturnValue(of([request(1), request(2)]));
     api.approveRequest.mockReturnValue(of(request(1, 'APPROVED')));
     api.rejectRequest.mockReturnValue(of(request(2, 'REJECTED')));
-    store.loadGroupSubmissions(10);
+    store.loadGroupRequests(10);
 
-    store.approveSubmission(request(1));
+    store.approveRequest(request(1));
     expect(api.approveRequest).toHaveBeenCalledWith(1);
-    store.rejectSubmission(request(2));
+    store.rejectRequest(request(2));
 
-    expect(store.submissions()).toEqual([]);
+    expect(store.groupRequests()).toEqual([]);
     expect(store.processing()).toBe(false);
   });
 
   it('en otra pestaña la entrega revisada solo cambia de estado', () => {
     api.getRequestsByGroup.mockReturnValue(of([request(1, 'REJECTED')]));
     api.approveRequest.mockReturnValue(of(request(1, 'APPROVED')));
-    store.loadGroupSubmissions(10, 'REJECTED');
-    store.approveSubmission(request(1, 'REJECTED'));
-    expect(store.submissions().map((r) => r.requestStatus)).toEqual(['APPROVED']);
+    store.loadGroupRequests(10, 'REJECTED');
+    store.approveRequest(request(1, 'REJECTED'));
+    expect(store.groupRequests().map((r) => r.requestStatus)).toEqual(['APPROVED']);
   });
 
   it('enviar una entrega la deja "en revisión" y llama a onSuccess', () => {
@@ -86,6 +99,33 @@ describe('RequestsStore', () => {
     expect(store.isUnderReview(99)).toBe(false);
   });
 
+  it('pedir una modificación envía el comentario sin espacios y la deja pendiente', () => {
+    api.createRequest.mockReturnValue(of(request(4, 'PENDING', 'MODIFICATION')));
+    const onSuccess = vi.fn();
+
+    store.createModification(7, '  Cambiar el alcance  ', onSuccess);
+
+    const command = api.createRequest.mock.calls[0][0] as CreateRequestCommand;
+    expect([command.taskId, command.description, command.requestType]).toEqual([7, 'Cambiar el alcance', 'MODIFICATION']);
+    expect(store.hasPendingModification(7)).toBe(true);
+    expect(store.isUnderReview(7)).toBe(false);
+    expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({ id: 4 }));
+  });
+
+  it('hasPendingModification ignora las modificaciones resueltas y las entregas', () => {
+    api.getRequestsByTask.mockReturnValue(of([request(1, 'APPROVED', 'MODIFICATION'), request(2, 'PENDING', 'SUBMISSION')]));
+    store.loadTaskRequests(7);
+    expect(store.hasPendingModification(7)).toBe(false);
+    expect(store.hasPendingModification(99)).toBe(false);
+  });
+
+  it('un error al pedir la modificación se muestra y no deja nada pendiente', () => {
+    api.createRequest.mockReturnValue(throwError(() => new Error('La tarea debe estar en progreso para pedir una modificación.')));
+    store.createModification(7, 'x');
+    expect(store.error()).toBe('La tarea debe estar en progreso para pedir una modificación.');
+    expect(store.hasPendingModification(7)).toBe(false);
+  });
+
   it('un error al enviar se muestra y no marca la tarea', () => {
     api.createRequest.mockReturnValue(throwError(() => new Error('Esta tarea ya tiene una entrega en revisión.')));
     store.submitTask(7);
@@ -95,10 +135,11 @@ describe('RequestsStore', () => {
 
   it('al cerrar sesión se vacía todo', () => {
     api.getRequestsByGroup.mockReturnValue(of([request(1)]));
-    store.loadGroupSubmissions(10, 'APPROVED');
+    store.loadGroupRequests(10, 'APPROVED', 'EXPIRED');
     isSignedIn.set(false);
     TestBed.tick();
-    expect(store.submissions()).toEqual([]);
+    expect(store.groupRequests()).toEqual([]);
     expect(store.statusFilter()).toBe('PENDING');
+    expect(store.typeFilter()).toBe('SUBMISSION');
   });
 });

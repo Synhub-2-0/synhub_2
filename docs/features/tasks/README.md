@@ -15,9 +15,9 @@ El líder crea tareas dentro de su grupo y se las asigna a un integrante. El int
 ```mermaid
 stateDiagram-v2
     [*] --> IN_PROGRESS: crear (líder)
-    IN_PROGRESS --> ON_HOLD: PUT /status (líder)
-    ON_HOLD --> IN_PROGRESS: PUT /status (líder, +1 reagendado)
-    IN_PROGRESS --> COMPLETED: el integrante envía su entrega (POST /requests) o PUT /status (líder); calcula timePassed
+    IN_PROGRESS --> ON_HOLD: PUT /status (líder) o el integrante pide una modificación (POST /requests)
+    ON_HOLD --> IN_PROGRESS: PUT /status (líder, +1 reagendado) o el líder edita la tarea con una modificación pendiente
+    IN_PROGRESS --> COMPLETED: el integrante envía su entrega (POST /requests) o PUT /status (líder); suma el tiempo activo a timePassed
     COMPLETED --> IN_PROGRESS: PUT /status (líder) o entrega rechazada (+1 reagendado)
     COMPLETED --> DONE: entrega aprobada (solo vía requests)
     IN_PROGRESS --> EXPIRED: scheduler, fecha límite vencida (crea request EXPIRED)
@@ -26,7 +26,9 @@ stateDiagram-v2
 ```
 
 - `PUT /tasks/{id}/status` acepta cualquier estado **excepto `DONE`** (responde 409 `TaskStatusTransitionNotAllowedException`). **Solo puede hacerlo el líder** del grupo (403 para el integrante asignado); el integrante completa su tarea enviando la entrega (`POST /requests`), que la pasa a `COMPLETED`.
-- `PUT /tasks/{id}` con una `dueDate` pasada mueve la tarea a `EXPIRED`; con una fecha futura la vuelve a `IN_PROGRESS`, salvo que ya esté `EXPIRED`.
+- `PUT /tasks/{id}` con una `dueDate` **distinta** de la actual y pasada mueve la tarea a `EXPIRED`; con una futura la vuelve a `IN_PROGRESS`, salvo que ya esté `EXPIRED`. Una fecha igual a la actual no cambia el estado (la web siempre la envía al editar).
+- **Tiempo activo (`timePassed`)**: solo corre mientras la tarea está `IN_PROGRESS` (`Task.activeSince`, migración `V3`). Al salir de ese estado (espera, completada, vencida) se suma lo transcurrido; al volver, el reloj empieza de nuevo. Una tarea vencida cuenta solo hasta su fecha límite.
+- **Modificación pendiente**: si el integrante pidió una modificación, la tarea queda `ON_HOLD` y `PUT /tasks/{id}/status` a `IN_PROGRESS` responde 409. Se reanuda cuando el líder la edita (cambiar título, descripción, fecha límite, clasificación o responsable): esa edición cierra la solicitud (`APPROVED`).
 - `TaskStatusScheduler` revisa cada 60 s las tareas `IN_PROGRESS` vencidas: las marca `EXPIRED` y crea una solicitud `EXPIRED` en requests.
 - En la web, una tarea `DONE` no se puede editar ni eliminar (`TasksStore` lo bloquea).
 

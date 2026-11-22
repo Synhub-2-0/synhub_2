@@ -12,9 +12,13 @@ import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /** ACL que tasks ofrece a requests y groups. */
 class TaskContextFacadeImplTest {
@@ -49,6 +53,27 @@ class TaskContextFacadeImplTest {
 
         assertEquals(TaskStatus.DONE, facade.applySubmissionReview(1L, true).getStatus());
         verify(repo).save(task);
+    }
+
+    @Test
+    void aModificationRequestPutsTheTaskOnHoldAndStopsItsClock() {
+        var task = new Task();
+        ReflectionTestUtils.setField(
+                task, "dueDate", OffsetDateTime.now(ZoneOffset.UTC).plusDays(1));
+        ReflectionTestUtils.setField(
+                task, "activeSince", OffsetDateTime.now(ZoneOffset.UTC).minusHours(2));
+        when(repo.findById(1L)).thenReturn(Optional.of(task));
+
+        assertEquals(TaskStatus.ON_HOLD, facade.putOnHoldForModification(1L).getStatus());
+        assertNull(task.getActiveSince());
+        assertTrue(task.getTimePassed() >= Duration.ofHours(2).toMillis());
+        verify(repo).save(task);
+    }
+
+    @Test
+    void putOnHoldOfUnknownTaskIs404() {
+        when(repo.findById(9L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> facade.putOnHoldForModification(9L));
     }
 
     @Test

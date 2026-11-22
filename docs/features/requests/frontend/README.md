@@ -6,7 +6,7 @@ Carpeta: [`frontend/src/app/requests`](../../../../frontend/src/app/requests)
 
 | Ruta | Vista | Stores | Qué hace |
 |---|---|---|---|
-| `/validations?groupId=` | `Validations` (`presentation/views/validations`) | `RequestsStore`, `GroupsStore` | Bandeja del líder: elige uno de sus grupos (`leaderGroups`), filtra por estado (por defecto `PENDING`) y aprueba o rechaza entregas. |
+| `/validations?groupId=` | `Validations` (`presentation/views/validations`) | `RequestsStore`, `GroupsStore` | Bandeja del líder: elige uno de sus grupos (`leaderGroups`), filtra por tipo (Entregas en verde, Modificaciones en amarillo, Vencidas en rojo; por defecto entregas; cada tarjeta lleva su etiqueta de tipo del mismo color) y por estado (por defecto `PENDING`). Entrega: aprobar o rechazar. Modificación: muestra el comentario del integrante y "Editar tarea" (`/tasks/:id/edit`; no se aprueba ni rechaza). Vencida: "Descartar aviso" o "Reanudar tarea" con una nueva fecha futura. |
 
 La otra cara de la feature está en un componente de tasks: **`TaskCard`** usa `RequestsStore` para que el miembro marque completada su tarea y la envíe a validación (el backend la pasa a `COMPLETED`), y vea si ya está "en revisión".
 
@@ -21,11 +21,12 @@ La otra cara de la feature está en un componente de tasks: **`TaskCard`** usa `
 
 | Método | Petición |
 |---|---|
-| `loadGroupSubmissions(groupId, status?)` | `GET /requests/group?groupId=…&status=…&type=SUBMISSION` |
-| `approveSubmission(request)` / `rejectSubmission(request)` | `PUT /requests/{id}/status/APPROVED\|REJECTED` |
+| `loadGroupRequests(groupId, status?, type?)` | `GET /requests/group?groupId=…&status=…&type=…` (por defecto `PENDING` y `SUBMISSION`; recuerda `statusFilter` y `typeFilter`) |
+| `approveRequest(request)` / `rejectRequest(request)` | `PUT /requests/{id}/status/APPROVED\|REJECTED` |
+| `createModification(taskId, description, onSuccess?)` | `POST /requests` con `{ taskId, description, requestType: 'MODIFICATION' }`; el backend deja la tarea `ON_HOLD` y `onSuccess` recibe la request con la tarea ya actualizada |
 | `submitTask(taskId, onSuccess?)` | `POST /requests` con `{ taskId, description: 'Tarea completada.', requestType: 'SUBMISSION' }` (el miembro no escribe comentario); `onSuccess` recibe la request creada, con la tarea ya `COMPLETED` |
 | `loadTaskRequests(taskId)` | `GET /requests/task?taskId=` |
-| `isUnderReview(taskId)` | Sin petición: busca en `requestsByTask` una `SUBMISSION` en `PENDING`. |
+| `isUnderReview(taskId)` / `hasPendingModification(taskId)` | Sin petición: buscan en `requestsByTask` una `SUBMISSION` / una `MODIFICATION` en `PENDING`. |
 
 ## Infraestructura
 
@@ -44,7 +45,7 @@ La otra cara de la feature está en un componente de tasks: **`TaskCard`** usa `
 | `RequestStatus` | `'PENDING' \| 'APPROVED' \| 'REJECTED'` |
 | `CreateRequestCommand` | `taskId`, `description`, `requestType` |
 
-La web solo crea entregas (`SUBMISSION`). `MODIFICATION` existe en el backend y en el modelo, pero no hay UI para crearla.
+La web crea entregas (`SUBMISSION`, un botón sin comentario) y solicitudes de modificación (`MODIFICATION`, con comentario obligatorio, desde `TaskCard`). `EXPIRED` solo la genera el sistema; la web la lista y la resuelve (descartar o reanudar).
 
 ## Pruebas
 

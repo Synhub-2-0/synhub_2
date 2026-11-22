@@ -5,8 +5,8 @@ Una **request** es una solicitud ligada a una tarea que el líder del grupo revi
 | Tipo | Quién la crea | Efecto al revisarla |
 |---|---|---|
 | `SUBMISSION` | El integrante asignado, al marcar completada su tarea (la "entrega"): la tarea pasa a `COMPLETED` y queda pendiente de validación | Aprobar → la tarea pasa a `DONE`. Rechazar → vuelve a `IN_PROGRESS`. |
-| `MODIFICATION` | El integrante asignado | Solo cambia el estado de la request; la tarea no se modifica. |
-| `EXPIRED` | El sistema (`TaskStatusScheduler` de tasks) cuando una tarea vence | Solo cambia el estado de la request. |
+| `MODIFICATION` | El integrante asignado, sobre una tarea `IN_PROGRESS`, con un comentario obligatorio. La tarea pasa a `ON_HOLD` y **su reloj se detiene** | No se aprueba, rechaza ni borra mientras está pendiente (409): **se resuelve cuando el líder edita la tarea** (cualquier cambio de título, descripción, fecha o clasificación). Entonces la request queda `APPROVED` y la tarea vuelve a `IN_PROGRESS`. Mientras tanto la tarea tampoco se reanuda a mano (409). |
+| `EXPIRED` | El sistema (`TaskStatusScheduler` de tasks) cuando una tarea vence | Solo cambia el estado de la request; no mueve la tarea. En la web: "Descartar aviso" (`REJECTED`) o "Reanudar tarea" (nueva fecha futura → `IN_PROGRESS`, y la request queda `APPROVED`). |
 
 Estados: `PENDING` → `APPROVED` \| `REJECTED` (una sola revisión).
 
@@ -15,7 +15,7 @@ Estados: `PENDING` → `APPROVED` \| `REJECTED` (una sola revisión).
 | **Recursos REST** | `/api/v1/requests` (recurso raíz: `/requests`, `/requests/task?taskId=`, `/requests/group?groupId=`, `/requests/{id}/status/{status}`) |
 | **Bounded context (backend)** | [`requests`](../../../backend/src/main/java/com/hub/synhub_backend/requests) |
 | **Módulo (frontend)** | [`src/app/requests`](../../../frontend/src/app/requests) |
-| **Rutas de la web** | `/validations?groupId=` (bandeja del líder) y el botón "enviar entrega" de `TaskCard` |
+| **Rutas de la web** | `/validations?groupId=` (bandeja del líder, con filtro por tipo) y, en `TaskCard`, "marcar completada y enviar a validación" y "solicitar modificación" |
 | **Documentación** | [Backend](backend/README.md) · [Frontend](frontend/README.md) |
 
 ## Comunicación frontend ↔ backend
@@ -24,8 +24,9 @@ Estados: `PENDING` → `APPROVED` \| `REJECTED` (una sola revisión).
 |---|---|---|---|
 | Marcar completada y enviar a validación (miembro, solo tareas `IN_PROGRESS`, sin comentario) | `TaskCard` → `RequestsStore.submitTask` | `POST /requests { taskId, description: "Tarea completada.", requestType: "SUBMISSION" }` (la tarea pasa a `COMPLETED`) | `RequestController.createRequest` → `CreateRequestCommand` |
 | Saber si la tarea está "en revisión" | `TaskCard` → `loadTaskRequests` / `isUnderReview` | `GET /requests/task?taskId=` | `getRequestsByTaskId` |
-| Bandeja de validaciones (líder) | `Validations` → `loadGroupSubmissions(groupId, status)` | `GET /requests/group?groupId=&status=PENDING&type=SUBMISSION` | `RequestController.getRequestsByGroupId` → `GetRequestsByGroupIdQuery` |
-| Aprobar / rechazar | `Validations` → `approveSubmission` / `rejectSubmission` | `PUT /requests/{id}/status/APPROVED\|REJECTED` | `updateRequestStatus` → `UpdateRequestCommand` → `TasksContextFacade.applySubmissionReview` |
+| Pedir una modificación (miembro, tarea `IN_PROGRESS`, con comentario) | `TaskCard` → `RequestsStore.createModification` | `POST /requests { taskId, description, requestType: "MODIFICATION" }` (la tarea pasa a `ON_HOLD`) | `RequestController.createRequest` → `TasksContextFacade.putOnHoldForModification` |
+| Bandeja de validaciones (líder) | `Validations` → `loadGroupRequests(groupId, status, type)` | `GET /requests/group?groupId=&status=PENDING&type=SUBMISSION\|MODIFICATION\|EXPIRED` | `RequestController.getRequestsByGroupId` → `GetRequestsByGroupIdQuery` |
+| Aprobar / rechazar | `Validations` → `approveRequest` / `rejectRequest` | `PUT /requests/{id}/status/APPROVED\|REJECTED` | `updateRequestStatus` → `UpdateRequestCommand` → `TasksContextFacade.applySubmissionReview` |
 
 ```mermaid
 sequenceDiagram

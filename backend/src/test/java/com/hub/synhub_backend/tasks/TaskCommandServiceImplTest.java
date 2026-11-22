@@ -3,6 +3,7 @@ package com.hub.synhub_backend.tasks;
 import static com.hub.synhub_backend.groups.GroupFixtures.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
@@ -12,6 +13,7 @@ import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.application.internal.commandservices.TaskCommandServiceImpl;
+import com.hub.synhub_backend.tasks.domain.exceptions.TaskStatusTransitionNotAllowedException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.*;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
@@ -103,6 +105,64 @@ class TaskCommandServiceImplTest {
         var updated = service.handle(new UpdateTaskCommand(LEADER, TASK, "Login v2", "", null, LUIS));
         assertSame(luisProfile, updated.getProfile());
         assertEquals("Login v2", updated.getTitle());
+    }
+
+    @Test
+    void editingTheTaskResolvesItsPendingModificationAndResumesIt() {
+        task.setStatus(TaskStatus.ON_HOLD);
+        when(requests.resolvePendingModification(TASK)).thenReturn(true);
+
+        var updated = service.handle(new UpdateTaskCommand(LEADER, TASK, "Login v2", "", null, ANA));
+
+        assertEquals(TaskStatus.IN_PROGRESS, updated.getStatus());
+        assertNotNull(updated.getActiveSince(), "el tiempo vuelve a correr");
+        verify(requests).resolvePendingModification(TASK);
+    }
+
+    @Test
+    void anyEditedFieldCountsAsEditing() {
+        for (var command : List.of(
+                new UpdateTaskCommand(LEADER, TASK, "", "Otra descripción", null, ANA),
+                new UpdateTaskCommand(LEADER, TASK, "", "", DUE.plusDays(1), ANA),
+                new UpdateTaskCommand(LEADER, TASK, "", "", null, LUIS))) {
+            task.setStatus(TaskStatus.ON_HOLD);
+            clearInvocations(requests);
+            when(requests.resolvePendingModification(TASK)).thenReturn(true);
+            service.handle(command);
+            verify(requests).resolvePendingModification(TASK);
+            if (command.newUserId() == LUIS) service.handle(new UpdateTaskCommand(LEADER, TASK, "", "", null, ANA));
+        }
+    }
+
+    @Test
+    void anEditThatChangesNothingLeavesTheModificationPending() {
+        task.setStatus(TaskStatus.ON_HOLD);
+
+        var updated = service.handle(new UpdateTaskCommand(LEADER, TASK, "Login", "desc", DUE, ANA));
+
+        assertEquals(TaskStatus.ON_HOLD, updated.getStatus());
+        verify(requests, never()).resolvePendingModification(anyLong());
+    }
+
+    @Test
+    void theLeaderCannotResumeATaskWithAPendingModificationByHand() {
+        task.setStatus(TaskStatus.ON_HOLD);
+        when(requests.hasPendingModification(TASK)).thenReturn(true);
+
+        assertThrows(
+                TaskStatusTransitionNotAllowedException.class,
+                () -> service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.IN_PROGRESS)));
+        assertEquals(TaskStatus.ON_HOLD, task.getStatus());
+    }
+
+    @Test
+    void withoutAPendingModificationTheLeaderResumesNormally() {
+        task.setStatus(TaskStatus.ON_HOLD);
+        when(requests.hasPendingModification(TASK)).thenReturn(false);
+        assertEquals(
+                TaskStatus.IN_PROGRESS,
+                service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.IN_PROGRESS))
+                        .getStatus());
     }
 
     @Test

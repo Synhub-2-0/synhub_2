@@ -63,10 +63,14 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                     this.tasksContextFacade.completeForSubmission(command.taskId());
             }
             if (requestType == RequestType.MODIFICATION) {
+                if (command.description() == null || command.description().isBlank())
+                    throw new IllegalArgumentException("A modification request needs a comment");
                 if (task.getStatus() != TaskStatus.IN_PROGRESS)
                     throw new TaskWithIncorrectStatusException(
                             "A modification request can only be created for a IN_PROGRESS task, the task is "
                                     + task.getStatus());
+                // Pedir una modificación detiene la tarea (y su reloj) hasta que el líder la edite.
+                this.tasksContextFacade.putOnHoldForModification(command.taskId());
             }
         }
 
@@ -87,13 +91,16 @@ public class RequestCommandServiceImpl implements RequestCommandService {
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId()))
             throw new AccessDeniedException("Only the leader of the group can review requests");
 
+        if (RequestType.MODIFICATION.name().equals(request.getRequestType()))
+            throw new ModificationResolvedByEditingException(request.getId());
+
         var newStatus = RequestStatus.fromString(command.requestStatus());
         if (newStatus == RequestStatus.PENDING)
             throw new IllegalArgumentException("A request can only be reviewed as APPROVED or REJECTED");
         if (!RequestStatus.PENDING.name().equals(request.getRequestStatus()))
             throw new RequestAlreadyReviewedException(request.getId(), request.getRequestStatus());
 
-        // Solo SUBMISSION mueve la tarea (MODIFICATION todavía no tiene efecto).
+        // Solo SUBMISSION mueve la tarea (EXPIRED solo se cierra; MODIFICATION se resuelve editando la tarea).
         if (RequestType.SUBMISSION.name().equals(request.getRequestType())) {
             if (newStatus == RequestStatus.APPROVED) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
@@ -125,6 +132,10 @@ public class RequestCommandServiceImpl implements RequestCommandService {
         if (!isLeader && !isOwnPendingRequest)
             throw new AccessDeniedException(
                     "Only the leader of the group, or the assigned member while the request is pending, can delete it");
+        // Después de los permisos: un ajeno no debe enterarse del tipo ni del estado de la request.
+        if (RequestType.MODIFICATION.name().equals(request.getRequestType())
+                && RequestStatus.PENDING.name().equals(request.getRequestStatus()))
+            throw new ModificationResolvedByEditingException(request.getId());
         this.requestRepository.delete(request);
     }
 }

@@ -70,20 +70,20 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | GET | `/tasks/group/{groupId}?status=&page=&size=` | `TaskController` | `TasksStore.loadTasksByGroup` |
 | GET | `/tasks/user` | `TaskController` | `TasksStore.loadMyTasks` |
 | GET | `/tasks/group/{groupId}/user/{userId}` | `TaskController` | `TasksStore.loadTasksByGroupAndUser` |
-| PUT | `/tasks/{taskId}` | `TaskController` | `TasksStore.updateTask` |
-| PUT | `/tasks/{taskId}/status?status=` | `TaskController` | `TasksStore.updateTaskStatus` |
+| PUT | `/tasks/{taskId}` (resuelve la `MODIFICATION` pendiente) | `TaskController` | `TasksStore.updateTask`, `resumeExpiredTask` |
+| PUT | `/tasks/{taskId}/status?status=` (409 a `IN_PROGRESS` con una modificación pendiente) | `TaskController` | `TasksStore.updateTaskStatus`, `resumeExpiredTask` |
 | DELETE | `/tasks/{taskId}` | `TaskController` | `TasksStore.deleteTask` |
 
 ### Requests: [docs](../features/requests/README.md)
 
 | Método | Ruta | Controlador | Consumidor (frontend) |
 |---|---|---|---|
-| POST | `/requests` (cuerpo: `taskId`, `description`, `requestType`) | `RequestController` | `RequestsStore.submitTask` |
+| POST | `/requests` (cuerpo: `taskId`, `description`, `requestType`) | `RequestController` | `RequestsStore.submitTask`, `createModification` |
 | GET | `/requests/task?taskId=` | `RequestController` | `RequestsStore.loadTaskRequests` |
 | GET | `/requests/{requestId}` | `RequestController` | — |
-| PUT | `/requests/{requestId}/status/{status}` | `RequestController` | `RequestsStore.approveSubmission`, `rejectSubmission` |
-| DELETE | `/requests/{requestId}` | `RequestController` | — |
-| GET | `/requests/group?groupId=&status=&type=&page=&size=` | `RequestController` | `RequestsStore.loadGroupSubmissions` |
+| PUT | `/requests/{requestId}/status/{status}` (409 para una `MODIFICATION`: se resuelve editando la tarea) | `RequestController` | `RequestsStore.approveRequest`, `rejectRequest` |
+| DELETE | `/requests/{requestId}` (409 con una `MODIFICATION` pendiente) | `RequestController` | — |
+| GET | `/requests/group?groupId=&status=&type=&page=&size=` | `RequestController` | `RequestsStore.loadGroupRequests` |
 
 ### AI: [docs](../features/ai/README.md)
 

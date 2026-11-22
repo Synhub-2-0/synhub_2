@@ -27,6 +27,11 @@ class SchemaMigrationApiTests extends ApiTestSupport {
                 "select version from flyway_schema_history where success order by installed_rank", String.class);
         assertTrue(applied.contains("1"), "V1__init aplicada: " + applied);
         assertTrue(applied.contains("2"), "V2__task_ai_rationale aplicada: " + applied);
+        assertTrue(applied.contains("3"), "V3__task_active_since aplicada: " + applied);
+        var activeSince = jdbc.queryForList(
+                "select column_name from information_schema.columns where table_name = 'tasks' and column_name = 'active_since'",
+                String.class);
+        assertEquals(1, activeSince.size(), "tasks.active_since existe");
         var indexes = jdbc.queryForList("select indexname from pg_indexes where tablename = 'tasks'", String.class);
         assertTrue(indexes.contains("ix_tasks_status_due_date"), "índice del scheduler: " + indexes);
     }

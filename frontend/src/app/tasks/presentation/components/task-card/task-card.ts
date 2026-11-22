@@ -1,25 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
-import { TasksStore } from '../../../application/tasks.store';
-import { RequestsStore } from '../../../../requests/application/requests.store';
+import { TaskMemberActions } from '../task-member-actions/task-member-actions';
 import { CONTEXT_LABELS, DIFFICULTY_LABELS, DIFFICULTY_SCALE, URGENCY_LABELS } from '../../../../ai/domain/model/task-classification.entity';
 
 @Component({
   selector: 'app-task-card',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatTooltipModule],
+  imports: [CommonModule, MatIconModule, MatTooltipModule, TaskMemberActions],
   templateUrl: './task-card.html',
   styleUrl: './task-card.css',
 })
-export class TaskCard implements OnInit {
+export class TaskCard {
   private readonly router = inject(Router);
-
-  readonly requestsStore = inject(RequestsStore);
-  private readonly tasksStore = inject(TasksStore);
 
   @Input({ required: true }) task!: Task;
   @Input() isLeader = false;
@@ -30,13 +26,6 @@ export class TaskCard implements OnInit {
   readonly contextLabels = CONTEXT_LABELS;
   readonly urgencyLabels = URGENCY_LABELS;
   readonly difficultyLabels = DIFFICULTY_LABELS;
-
-  ngOnInit(): void {
-    // A COMPLETED task of the member may already have a submission waiting for the leader.
-    if (!this.isLeader && this.task.status === 'COMPLETED') {
-      this.requestsStore.loadTaskRequests(this.task.id);
-    }
-  }
 
   get initials(): string {
     const name = this.task.assignedTo?.name ?? '';
@@ -112,10 +101,9 @@ export class TaskCard implements OnInit {
       .then();
   }
 
-  // Completing an IN_PROGRESS task sends it to validation; the backend marks it COMPLETED and returns it updated.
-  onComplete(event: Event): void {
+  /** The group name opens the group screen (the same route serves leaders and members). */
+  openGroup(event: Event): void {
     event.stopPropagation();
-    this.requestsStore.clearError();
-    this.requestsStore.submitTask(this.task.id, (created) => this.tasksStore.applyUpdatedTask(created.task));
+    if (this.task.group) this.router.navigate(['/groups', this.task.group.id]).then();
   }
 }

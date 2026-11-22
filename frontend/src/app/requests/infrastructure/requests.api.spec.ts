@@ -55,7 +55,7 @@ describe('RequestsApi (HTTP)', () => {
   it.each([
     [403, 'Solo el líder del grupo puede ver las validaciones.'],
     [404, 'El grupo no existe.'],
-    [500, 'No se pudieron cargar las entregas.'],
+    [500, 'No se pudieron cargar las solicitudes.'],
   ])('al listar, un %i se traduce a un mensaje en español', (status, expected) => {
     let message = '';
     api.getRequestsByGroup(10).subscribe({ error: (e: Error) => (message = e.message) });
@@ -67,6 +67,7 @@ describe('RequestsApi (HTTP)', () => {
     [403, '', 'Solo el líder del grupo puede revisar entregas.'],
     [404, '', 'La entrega ya no existe.'],
     [409, 'Request 3 was already reviewed', 'Esta entrega ya fue revisada.'],
+    [409, 'Modification request 3 is resolved by editing the task: it cannot be reviewed or deleted', 'Las modificaciones se resuelven editando la tarea.'],
     [409, 'Only a COMPLETED task can be approved', 'La tarea ya no está completada, por lo que no se puede aprobar. Recarga la lista.'],
   ])('al revisar, un %i se traduce a un mensaje en español', (status, backendMessage, expected) => {
     let message = '';
