@@ -58,3 +58,7 @@ sequenceDiagram
 - **Frontend**: `RequestsApiEndpoint` llama al recurso `/requests`; `RequestsAssembler` reutiliza `TasksAssembler`; `TaskCard` (tasks) inyecta `RequestsStore`, y `Validations` usa `GroupsStore` para elegir el grupo.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).
+
+## Grupos bloqueados
+
+Crear (`POST /requests`), revisar y borrar solicitudes responden 409 (`GroupLockedException`) si el grupo de la tarea está bloqueado por el plan de su líder (después de los permisos). La solicitud `EXPIRED` que crea el sistema sigue registrándose. En la web, `Validations` muestra "Grupo bloqueado: solo lectura" en lugar de las acciones. Ver [subscriptions](../subscriptions/README.md).

@@ -42,3 +42,7 @@ En el frontend, `AiReportCard` se incrusta en `LeaderTasks` (tasks) y `TaskForm`
 | `AWS_REGION` | `ai.bedrock.region` | `us-east-1` |
 | `BEDROCK_MODEL_ID` | `ai.bedrock.model-id` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | Credenciales de AWS | Cadena por defecto del SDK (variables de entorno, perfil o rol de ECS) | — |
+
+## Grupos bloqueados
+
+`GET /ai/groups/{groupId}/report` responde 409 si el grupo está bloqueado por el plan de su líder (se comprueba después de que sea el líder, y antes de llamar a Bedrock, así que no cuesta). La clasificación de tareas (`POST /ai/classify`) no depende de ningún grupo. Ver [subscriptions](../subscriptions/README.md).

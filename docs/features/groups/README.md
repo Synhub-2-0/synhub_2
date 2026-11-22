@@ -42,3 +42,7 @@ Endpoints que expone el backend y la web no consume: `GET /groups/{id}`, `GET /g
 - **Frontend**: `GroupDetails` es la vista con más acoplamiento: combina `GroupsStore`, `TasksStore` (tablero del grupo), `InvitationsStore` (invitar y cancelar) e `IamStore`.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).
+
+## Grupos bloqueados por el plan
+
+`Group.locked` (migración `V4`): al crear un grupo, si el líder ya tiene tantos grupos liderados **activos** como permite su plan, el grupo nace bloqueado (solo lectura para todos). `GroupResource` y `GroupResourceReduced` incluyen `locked`. El líder lo activa con `POST /groups/{id}/activate` cuando hay cupo; `PUT /groups/{id}`, `POST /groups/join` y quitar integrantes (el líder) responden 409 mientras esté bloqueado; salir del grupo y borrarlo siguen permitidos. Ver [subscriptions](../subscriptions/README.md).

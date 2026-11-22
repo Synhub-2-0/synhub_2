@@ -62,3 +62,7 @@ Los errores se muestran con `ToastStore` (shared).
 ## Pruebas
 
 `group-card`, `group-list`, `no-group-leader`, `no-group-member`, `group-details`, `leader-groups` y `member-groups` (`*.spec.ts`).
+
+## Grupos bloqueados
+
+`Group.locked` viene del backend. `GroupCard` muestra la insignia "Bloqueado" y, al líder, "Activar grupo" (deshabilitado sin cupo; carga `SubscriptionsStore` si hace falta). `GroupDetails` muestra un aviso de solo lectura, con "Activar grupo" y "Ver mi plan" para el líder, y oculta la edición, las invitaciones y quitar integrantes (`canManage = isLeaderView && !isLocked`). `GroupsStore.activateGroup` reemplaza el grupo en las listas; `addGroup` avisa si el grupo nació bloqueado. El líder puede **eliminar el grupo** desde `GroupDetails` ("Eliminar grupo", con confirmación; también si está bloqueado): `GroupsStore.deleteGroup` hace `DELETE /groups/{id}`, lo quita de las listas, refresca los cupos del plan y vuelve a Grupos Liderados. Es la forma de liberar un cupo sin cambiar de plan.

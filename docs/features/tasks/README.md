@@ -57,3 +57,7 @@ stateDiagram-v2
 - **Frontend**: `TaskCard` (tasks) usa `RequestsStore`; `TaskForm` usa `AiStore` y `GroupsStore`; `LeaderTasks` incrusta `AiReportCard` (ai); `Home` (shared) y `GroupDetails` (groups) usan `TasksStore`.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).
+
+## Grupos bloqueados
+
+Crear, editar, borrar y cambiar el estado de una tarea responden 409 (`GroupLockedException`) si su grupo está bloqueado por el plan de su líder (se comprueba después de los permisos). Las lecturas siguen; el **vencimiento automático** (`TaskStatusScheduler`) sigue marcando `EXPIRED` las tareas vencidas del grupo. En la web, `TaskCard`, `TaskBoard`, `LeaderTasks` y `TaskMemberActions` no ofrecen acciones en un grupo bloqueado. Ver [subscriptions](../subscriptions/README.md).

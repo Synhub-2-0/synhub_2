@@ -49,7 +49,8 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | GET | `/groups/user` | `GroupController` | — |
 | GET | `/groups/user/role?groupRole=` | `GroupController` | `GroupsStore.loadGroups` |
 | PUT | `/groups/{groupId}` | `GroupController` | `GroupsStore.updateGroup` |
-| DELETE | `/groups/{groupId}` | `GroupController` | — |
+| DELETE | `/groups/{groupId}` | `GroupController` | `GroupsStore.deleteGroup` |
+| POST | `/groups/{groupId}/activate` (solo el líder; 409 sin cupo o si ya está activo) | `GroupController` | `GroupsStore.activateGroup` |
 
 ### Invitations: [docs](../features/invitations/README.md) (código backend en `groups`)
 
@@ -73,6 +74,15 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | PUT | `/tasks/{taskId}` (resuelve la `MODIFICATION` pendiente) | `TaskController` | `TasksStore.updateTask`, `resumeExpiredTask` |
 | PUT | `/tasks/{taskId}/status?status=` (409 a `IN_PROGRESS` con una modificación pendiente) | `TaskController` | `TasksStore.updateTaskStatus`, `resumeExpiredTask` |
 | DELETE | `/tasks/{taskId}` | `TaskController` | `TasksStore.deleteTask` |
+
+### Subscriptions: [docs](../features/subscriptions/README.md)
+
+| Método | Ruta | Controlador | Consumidor (frontend) |
+|---|---|---|---|
+| GET | `/subscriptions/me` | `SubscriptionController` | `SubscriptionsStore.load` |
+| PUT | `/subscriptions/me` (cuerpo: `plan`, `activeGroupIds?`; pago simulado) | `SubscriptionController` | `SubscriptionsStore.changePlan` |
+
+**Grupo bloqueado**: en un grupo bloqueado (su líder superó el límite de su plan) toda escritura de groups, invitations, tasks y requests, y `GET /ai/groups/{id}/report`, responde **409** (`GroupLockedException`). Las lecturas, salir del grupo, borrarlo y cancelar invitaciones siguen permitidos.
 
 ### Requests: [docs](../features/requests/README.md)
 

@@ -25,6 +25,10 @@ En orden de prioridad:
 | `TaskCommandServiceImpl` (usa `GroupsContextFacade` e `IamContextFacade`) | `tasks` | tasks, groups, iam | **tasks** | Escribe `Task`; la membresía y el usuario llegan por las ACL. |
 | `GroupCommandServiceImpl` / `InvitationCommandServiceImpl` (usan `IamContextFacade`) | `groups` | groups, iam | **groups** | Escriben grupos y membresías. |
 | `TaskMetricsQueryServiceImpl` | `metrics` | tasks, iam, groups | **metrics** | Solo lee; el cálculo es de metrics. |
+| `Group.locked`, `Group.ensureNotLocked()`, `GroupLockedException` | `groups` | groups, tasks, requests, ai | **groups** | El bloqueo es un estado del grupo; tasks, requests y ai solo lo comprueban antes de escribir. |
+| `GroupsContextFacade.applyGroupLimit` / `fetchLedGroups` | `groups` | groups, subscriptions | **groups** (escribe `locked`) | La llama subscriptions al cambiar de plan; usa los repositorios de groups (no `GroupCommandService`) para evitar un ciclo de beans. |
+| `SubscriptionsContextFacade.maxLedGroups` | `subscriptions` | subscriptions, groups | **subscriptions** | Dueño del plan; groups lo consulta al crear y activar grupos. |
+| `POST /groups/{id}/activate` | `groups` | groups, subscriptions | **groups** | Escribe `Group.locked`; consulta el límite en subscriptions. |
 | `GroupReportQueryServiceImpl` | `ai` | metrics, tasks | **ai** | Orquesta datos de otros contextos para el informe. |
 | `AiController.getGroupReport` (valida al líder) | `ai` | groups, iam | **ai** | La regla "solo el líder" se *consulta* en groups, pero el caso de uso es de ai. |
 | Campos de IA en `Task` (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`) | `tasks` | tasks, ai | **tasks** (persistencia) · **ai** (valores y significado) | ai sugiere y tasks guarda. |

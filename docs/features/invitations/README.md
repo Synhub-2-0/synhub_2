@@ -54,3 +54,7 @@ sequenceDiagram
 
 - **Backend**: depende de IAM (`IamContextFacade`, para cargar al invitado) y de las membresías de groups (`GroupProfileRepository`).
 - **Frontend**: `InvitationsStore` depende de `IamApi` (buscar el usuario) y de `IamStore`; `InvitationsAssembler` reutiliza `GroupsAssembler` y `ProfilesAssembler`.
+
+## Grupos bloqueados
+
+Invitar (`POST /invitations`) y aceptar (`POST /invitations/accept`) responden 409 si el grupo está bloqueado por el plan de su líder; cancelar o rechazar una invitación sigue permitido. Ver [subscriptions](../subscriptions/README.md).

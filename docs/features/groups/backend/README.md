@@ -67,3 +67,9 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 
 Sin observaciones abiertas: los hallazgos de esta parte están resueltos (ver [AUDITORIA.md](../../../AUDITORIA.md)).
 
+## Bloqueo por plan
+
+- `Group.locked`, `lock()`, `unlock()` y `ensureNotLocked()` (lanza `GroupLockedException`, 409).
+- `GroupCommandServiceImpl`: `CreateGroupCommand` bloquea el grupo si los grupos activos que el líder ya lidera alcanzan `SubscriptionsContextFacade.maxLedGroups`; `ActivateGroupCommand` (`POST /groups/{id}/activate`) exige ser el líder (403), que esté bloqueado (409 `GroupAlreadyActiveException`) y un cupo libre (409 `NoFreeGroupSlotException`). Editar, unirse por código y quitar a otro integrante comprueban `ensureNotLocked()` **después** de los permisos; salir del grupo y borrarlo no.
+- `GroupsContextFacade` ofrece además `fetchLedGroups` y `applyGroupLimit` (usados por subscriptions; usan los repositorios de groups para no formar un ciclo de beans). `applyGroupLimit` bloquea los grupos activos que no estén en `activeGroupIds` y exige exactamente `límite` grupos activos del propio usuario (409 `InvalidActiveGroupSelectionException`).
+- `InvitationCommandServiceImpl`: crear y aceptar invitaciones comprueban `ensureNotLocked()`; cancelar no.
