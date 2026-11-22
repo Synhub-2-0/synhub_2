@@ -18,7 +18,7 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 | Componente | Uso |
 |---|---|
 | `TaskBoard` | Tablero Kanban por estado. Emite `statusChange` al cambiar el `<select>` de una tarjeta, que **solo ve el líder** (`canManageAll`); para el miembro el tablero es de solo lectura. Se usa en `Home` (shared) y en `GroupDetails` (groups). |
-| `TaskList` → `TaskCard` | Lista de tarjetas. `TaskCard` permite al miembro **marcar completada y enviar a validación** una tarea `IN_PROGRESS` con un solo botón, sin comentario (solo en ese estado), y muestra "en revisión" cuando la `COMPLETED` tiene una entrega pendiente (usa `RequestsStore`; al terminar actualiza la tarea con `TasksStore.applyUpdatedTask`). Para una tarea `ON_HOLD` o `EXPIRED` solo avisa que cambiar su estado es del líder: el miembro ya no tiene botones de estado. |
+| `TaskList` → `TaskCard` | Lista de tarjetas. `TaskCard` permite al miembro **marcar completada y enviar a validación** una tarea `IN_PROGRESS` con un solo botón, sin comentario (solo en ese estado), y muestra "en revisión" cuando la `COMPLETED` tiene una entrega pendiente (usa `RequestsStore`; al terminar actualiza la tarea con `TasksStore.applyUpdatedTask`). En una tarea `IN_PROGRESS` también ofrece "Solicitar modificación": un comentario obligatorio (`RequestsStore.createModification`) que deja la tarea `ON_HOLD`; en ella muestra "Modificación pendiente: el líder debe editar la tarea" mientras la solicitud siga pendiente. Para una tarea `ON_HOLD` sin solicitud o `EXPIRED` solo avisa que cambiar su estado es del líder: el miembro no tiene botones de estado. |
 
 ## Estado: `TasksStore` (`application/tasks.store.ts`)
 
@@ -38,6 +38,7 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 | `addTask(command)` | `POST /tasks` |
 | `updateTask(id, command)` | `PUT /tasks/{id}`: bloqueado en el cliente si la tarea está `DONE`. |
 | `updateTaskStatus(id, status)` | `PUT /tasks/{id}/status?status=` |
+| `resumeExpiredTask(task, newDueDate, onResumed?)` | `PUT /tasks/{id}` con la nueva fecha y luego `PUT /tasks/{id}/status?status=IN_PROGRESS` (cambiar solo la fecha no reanuda una `EXPIRED`); si la segunda falla avisa que la fecha ya se actualizó. |
 | `deleteTask(id)` | `DELETE /tasks/{id}`: bloqueado en el cliente si la tarea está `DONE`. |
 
 ## Infraestructura
