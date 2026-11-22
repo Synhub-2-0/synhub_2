@@ -39,7 +39,7 @@ flowchart LR
 2. **DDD táctico en el backend**: agregados, entidades, value objects, comandos, consultas y excepciones de dominio por contexto.
 3. **Capas al estilo Clean / Hexagonal** dentro de cada contexto, tanto en el backend (`interfaces → application → domain ← infrastructure`) como en el frontend (`presentation → application → infrastructure → domain`).
 4. **CQRS a nivel de servicio**: cada contexto separa `CommandService` (escritura) de `QueryService` (lectura), y cada operación es un `record` *Command* o *Query* con su propio `handle(...)`.
-5. **REST orientado a recursos**: una URL raíz por recurso (`/api/v1/groups`, `/api/v1/tasks`…), sub-recursos para las relaciones (`/tasks/{id}/requests`) y DTOs `*Resource` separados del dominio.
+5. **REST orientado a recursos**: una URL raíz por recurso (`/api/v1/groups`, `/api/v1/tasks`…), sub-recursos para las relaciones (`/groups/{id}/members`) y DTOs `*Resource` separados del dominio.
 6. **Integración entre contextos mediante ACL** (`*ContextFacade`). Es el patrón previsto, aunque todavía hay accesos directos a repositorios de otros contextos; ver [cross-feature-ownership.md](cross-feature-ownership.md).
 
 ## Recorrido de una petición

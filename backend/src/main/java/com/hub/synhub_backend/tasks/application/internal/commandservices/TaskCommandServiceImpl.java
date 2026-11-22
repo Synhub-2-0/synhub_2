@@ -126,9 +126,9 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (command.status() == TaskStatus.DONE)
             throw new TaskStatusTransitionNotAllowedException(
                     "A task can only be marked as DONE by approving its submission request");
-        if (!(taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId())
-                || taskToUpdate.getProfile().getUser().getId().equals(command.requesterId()))) {
-            throw new AccessDeniedException("Only the leader or the assigned member can update the task status");
+        // El integrante no cambia el estado: al enviar su entrega la tarea pasa a COMPLETED por el flujo de requests.
+        if (!taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader of the group can update the task status");
         }
         taskToUpdate.ensureNotFinished();
         taskToUpdate.updateStatus(command);

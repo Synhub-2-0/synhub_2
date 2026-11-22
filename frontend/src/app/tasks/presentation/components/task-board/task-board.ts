@@ -17,8 +17,7 @@ interface KanbanColumn {
 })
 export class TaskBoard {
   readonly tasks = input<Task[]>([]);
-  // Members can only move their own tasks; the leader of the group can move any of them.
-  readonly currentUserId = input<number | null>(null);
+  // Only the leader of the group moves tasks between statuses; members just see the board.
   readonly canManageAll = input(false);
   readonly statusChange = output<{ taskId: number; status: TaskStatus }>();
 
@@ -54,7 +53,7 @@ export class TaskBoard {
 
   canChangeStatus(task: Task): boolean {
     if (task.status === 'DONE') return false;
-    return this.canManageAll() || (this.currentUserId() !== null && task.assignedTo?.id === this.currentUserId());
+    return this.canManageAll();
   }
 
   statusLabel(status: TaskStatus): string {

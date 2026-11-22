@@ -73,36 +73,31 @@ class TaskLifecycleApiTests extends ApiTestSupport {
         assertEquals(
                 409,
                 post(
-                                "/tasks/" + taskId + "/requests",
+                                "/requests",
                                 team.member().token(),
-                                Map.of("description", "otra", "requestType", "SUBMISSION"))
+                                Map.of("taskId", taskId, "description", "otra", "requestType", "SUBMISSION"))
                         .status(),
                 "solo una entrega pendiente");
 
         var inbox = get(
-                "/groups/" + team.groupId() + "/requests?status=PENDING&type=SUBMISSION",
+                "/requests/group?groupId=" + team.groupId() + "&status=PENDING&type=SUBMISSION",
                 team.leader().token());
         assertEquals(200, inbox.status());
         assertTrue(containsId(inbox.json(), requestId));
 
-        var approved = put(
-                "/tasks/" + taskId + "/requests/" + requestId + "/status/APPROVED",
-                team.leader().token(),
-                null);
+        var approved =
+                put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null);
         assertEquals(200, approved.status(), approved.raw());
         assertEquals("APPROVED", approved.text("requestStatus"));
         assertEquals("DONE", get("/tasks/" + taskId, team.leader().token()).text("status"));
         assertEquals(
                 409,
-                put(
-                                "/tasks/" + taskId + "/requests/" + requestId + "/status/REJECTED",
-                                team.leader().token(),
-                                null)
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null)
                         .status(),
                 "una request se revisa una sola vez");
         assertFalse(containsId(
                 get(
-                                "/groups/" + team.groupId() + "/requests?status=PENDING",
+                                "/requests/group?groupId=" + team.groupId() + "&status=PENDING",
                                 team.leader().token())
                         .json(),
                 requestId));
@@ -116,10 +111,7 @@ class TaskLifecycleApiTests extends ApiTestSupport {
         var requestId = submit(team.member(), taskId);
         assertEquals(
                 200,
-                put(
-                                "/tasks/" + taskId + "/requests/" + requestId + "/status/APPROVED",
-                                team.leader().token(),
-                                null)
+                put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null)
                         .status());
 
         assertEquals(
@@ -133,7 +125,7 @@ class TaskLifecycleApiTests extends ApiTestSupport {
                 409,
                 put(
                                 "/tasks/" + taskId + "/status?status=IN_PROGRESS",
-                                team.member().token(),
+                                team.leader().token(),
                                 null)
                         .status());
         assertEquals(409, delete("/tasks/" + taskId, team.leader().token()).status());
@@ -152,10 +144,8 @@ class TaskLifecycleApiTests extends ApiTestSupport {
         var taskId = createTask(team.leader(), team.groupId(), team.member());
         var requestId = submit(team.member(), taskId);
 
-        var rejected = put(
-                "/tasks/" + taskId + "/requests/" + requestId + "/status/REJECTED",
-                team.leader().token(),
-                null);
+        var rejected =
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null);
 
         assertEquals(200, rejected.status());
         assertEquals(
@@ -173,14 +163,26 @@ class TaskLifecycleApiTests extends ApiTestSupport {
     }
 
     @Test
-    void submissionRequiresACompletedTask() {
+    void submissionNeedsAnInProgressOrCompletedTask() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());
+        assertEquals(
+                200,
+                put("/tasks/" + taskId + "/status?status=ON_HOLD", team.leader().token(), null)
+                        .status());
         var res = post(
-                "/tasks/" + taskId + "/requests",
+                "/requests",
                 team.member().token(),
-                Map.of("description", "x", "requestType", "SUBMISSION"));
+                Map.of("taskId", taskId, "description", "x", "requestType", "SUBMISSION"));
         assertEquals(409, res.status());
+    }
+
+    @Test
+    void submittingMarksTheTaskCompleted() {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        submit(team.member(), taskId);
+        assertEquals("COMPLETED", get("/tasks/" + taskId, team.leader().token()).text("status"));
     }
 
     @Test

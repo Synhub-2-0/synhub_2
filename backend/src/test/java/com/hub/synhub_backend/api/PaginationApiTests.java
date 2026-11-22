@@ -48,15 +48,15 @@ class PaginationApiTests extends ApiTestSupport {
         long newest = 0;
         for (int i = 0; i < 3; i++)
             newest = submit(team.member(), createTask(team.leader(), team.groupId(), team.member()));
-        var path = "/groups/" + team.groupId() + "/requests";
+        var path = "/requests/group?groupId=" + team.groupId();
 
         assertTrue(get(path, team.leader().token()).json().isArray());
-        var page = get(path + "?type=SUBMISSION&page=0&size=2", team.leader().token());
+        var page = get(path + "&type=SUBMISSION&page=0&size=2", team.leader().token());
         assertEquals(200, page.status(), page.raw());
         assertEquals(2, page.json().get("content").size());
         assertEquals(newest, page.json().get("content").get(0).get("id").asLong(), "la más nueva primero");
         assertEquals(3, page.json().get("totalElements").asLong());
-        assertEquals(403, get(path + "?size=1", team.member().token()).status(), "sigue siendo solo para el líder");
+        assertEquals(403, get(path + "&size=1", team.member().token()).status(), "sigue siendo solo para el líder");
     }
 
     @Test

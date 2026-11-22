@@ -59,15 +59,18 @@ export class RequestsStore {
   }
 
   approveSubmission(request: TaskRequest): void {
-    this.review(this.requestsApi.approveRequest(request.task.id, request.id));
+    this.review(this.requestsApi.approveRequest(request.id));
   }
 
   rejectSubmission(request: TaskRequest): void {
-    this.review(this.requestsApi.rejectRequest(request.task.id, request.id));
+    this.review(this.requestsApi.rejectRequest(request.id));
   }
 
-  /** The task must already be COMPLETED: the member marks it before sending the submission. */
-  submitTask(taskId: number, description: string, onSuccess?: () => void): void {
+  /**
+   * The member sends the submission of an IN_PROGRESS (or COMPLETED) task. The backend marks the task COMPLETED,
+   * so the created request carries the updated task.
+   */
+  submitTask(taskId: number, description: string, onSuccess?: (created: TaskRequest) => void): void {
     this.processingSignal.set(true);
     this.errorSignal.set(null);
     this.requestsApi
@@ -79,7 +82,7 @@ export class RequestsStore {
             [taskId]: [...(cache[taskId] ?? []), created],
           }));
           this.processingSignal.set(false);
-          onSuccess?.();
+          onSuccess?.(created);
         },
         error: (err) => {
           this.setError(err.message);

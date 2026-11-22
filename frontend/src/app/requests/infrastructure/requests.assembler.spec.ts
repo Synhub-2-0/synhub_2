@@ -21,8 +21,8 @@ describe('RequestsAssembler', () => {
     expect(assembler.toEntitiesFromResponse(undefined as never)).toEqual([]);
   });
 
-  it('comando → request sin el id de la tarea (viaja en la ruta)', () => {
+  it('comando → request con el id de la tarea en el cuerpo', () => {
     expect(assembler.toRequestFromCreateCommand(new CreateRequestCommand({ taskId: 7, description: 'Listo', requestType: 'SUBMISSION' })))
-      .toEqual({ description: 'Listo', requestType: 'SUBMISSION' });
+      .toEqual({ taskId: 7, description: 'Listo', requestType: 'SUBMISSION' });
   });
 });

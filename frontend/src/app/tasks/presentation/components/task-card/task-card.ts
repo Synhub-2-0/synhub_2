@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
+import { TasksStore } from '../../../application/tasks.store';
 import { RequestsStore } from '../../../../requests/application/requests.store';
 import { CONTEXT_LABELS, DIFFICULTY_LABELS, DIFFICULTY_SCALE, URGENCY_LABELS } from '../../../../ai/domain/model/task-classification.entity';
 
@@ -18,6 +19,7 @@ export class TaskCard implements OnInit {
   private readonly router = inject(Router);
 
   readonly requestsStore = inject(RequestsStore);
+  private readonly tasksStore = inject(TasksStore);
   readonly showSubmitForm = signal(false);
   readonly submissionMessage = signal('');
 
@@ -25,7 +27,6 @@ export class TaskCard implements OnInit {
   @Input() isLeader = false;
   @Input() showGroup = false;
   @Output() deleteRequested = new EventEmitter<number>();
-  @Output() statusChangeRequested = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 
   readonly difficultyScale = DIFFICULTY_SCALE;
   readonly contextLabels = CONTEXT_LABELS;
@@ -125,14 +126,11 @@ export class TaskCard implements OnInit {
 
   onSubmit(event: Event): void {
     event.stopPropagation();
-    this.requestsStore.submitTask(this.task.id, this.submissionMessage().trim(), () => {
+    // Sending the submission is what marks the task COMPLETED: the backend returns the updated task.
+    this.requestsStore.submitTask(this.task.id, this.submissionMessage().trim(), (created) => {
+      this.tasksStore.applyUpdatedTask(created.task);
       this.showSubmitForm.set(false);
       this.submissionMessage.set('');
     });
-  }
-
-  onChangeStatus(event: Event, status: TaskStatus): void {
-    event.stopPropagation();
-    this.statusChangeRequested.emit({ taskId: this.task.id, status });
   }
 }

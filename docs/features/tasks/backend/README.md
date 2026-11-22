@@ -14,7 +14,7 @@ Todos requieren token.
 | `GET` | `/api/v1/tasks/group/{groupId}` | `?status=` (opcional, `TaskStatus`); `?page=&size=` (opcionales) | `200 TaskResource[]`, o `PageResource<TaskResource>` ordenado por fecha límite si se pide página · `403` | Solo integrantes del grupo. |
 | `GET` | `/api/v1/tasks/group/{groupId}/user/{userId}` | — | `200 TaskResource[]` · `403` | Solo integrantes del grupo. |
 | `PUT` | `/api/v1/tasks/{taskId}` | `UpdateTaskResource` | `200 TaskResource` | Solo el líder. Puede reasignar a otro integrante y cambiar o quitar la clasificación. |
-| `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | Líder o asignado. `DONE` → 409. Una tarea que ya está `DONE` no cambia de estado (409). |
+| `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | **Solo el líder** (403 para el integrante asignado). `DONE` → 409. Una tarea que ya está `DONE` no cambia de estado (409). El integrante no cambia estados: al enviar su entrega la tarea pasa a `COMPLETED` por `POST /requests`. |
 | `DELETE` | `/api/v1/tasks/{taskId}` | — | `204` | Solo el líder. |
 
 ```text

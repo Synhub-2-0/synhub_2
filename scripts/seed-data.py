@@ -20,7 +20,7 @@ Usuarios (L = líder, M = miembro). `alexiel` ya debe existir:
 Tareas: cada grupo trae tareas en todos los estados para probar el tablero y las validaciones:
 
     progress      En progreso (sin más)             hold        En espera
-    completed     Completada, sin entrega enviada   submitted   Completada + entrega PENDING (para validar)
+    completed     Completada por el líder, sin entrega   submitted   Completada por la entrega PENDING (para validar)
     approved      Entrega aprobada -> DONE          rejected    Entrega rechazada -> vuelve a En progreso
     modification  En progreso + solicitud de modificación PENDING
     expired       Fecha límite pasada: el planificador del backend la vence en <= 60 s y crea su request EXPIRED
@@ -218,12 +218,12 @@ def apply_state(clients, leader, assignee, task, state):
     """Lleva la tarea (recién creada, EN PROGRESO) al estado pedido usando solo la API."""
     tid = task['id']
     member = clients[assignee]
+    # Solo el líder cambia estados. El integrante entrega con POST /requests y el backend completa la tarea.
     if state == 'hold':
-        member.call('PUT', f'/tasks/{tid}/status?status=ON_HOLD')
-    elif state in ('completed', 'submitted', 'approved', 'rejected'):
-        member.call('PUT', f'/tasks/{tid}/status?status=COMPLETED')
-        if state == 'completed':
-            return
+        leader.call('PUT', f'/tasks/{tid}/status?status=ON_HOLD')
+    elif state == 'completed':
+        leader.call('PUT', f'/tasks/{tid}/status?status=COMPLETED')
+    elif state in ('submitted', 'approved', 'rejected'):
         status, req = member.call('POST', '/requests',
                                   {'taskId': tid, 'description': 'Entrega lista para revisión.', 'requestType': 'SUBMISSION'})
         if not ok(status):

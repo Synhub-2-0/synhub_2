@@ -132,10 +132,13 @@ class TaskCommandServiceImplTest {
 
     // ---- Estado
     @Test
-    void assignedMemberAndLeaderCanChangeStatus() {
+    void onlyTheLeaderCanChangeStatus() {
+        assertThrows(
+                AccessDeniedException.class,
+                () -> service.handle(new UpdateTaskStatusCommand(ANA, TASK, TaskStatus.COMPLETED)));
         assertEquals(
                 TaskStatus.COMPLETED,
-                service.handle(new UpdateTaskStatusCommand(ANA, TASK, TaskStatus.COMPLETED))
+                service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.COMPLETED))
                         .getStatus());
         assertEquals(
                 TaskStatus.IN_PROGRESS,

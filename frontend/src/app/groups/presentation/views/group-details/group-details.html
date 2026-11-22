@@ -111,11 +111,11 @@
     <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
       <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Flujo de Trabajo</span>
       <h2 class="text-xl font-extrabold text-slate-900">Tablero Kanban de Tareas</h2>
-      <app-task-board [tasks]="tasksStore.tasks()" [currentUserId]="iamStore.currentUserId()" [canManageAll]="isLeaderView()" (statusChange)="onChangeTaskStatus($event)"></app-task-board>
+      <app-task-board [tasks]="tasksStore.tasks()" [canManageAll]="isLeaderView()" (statusChange)="onChangeTaskStatus($event)"></app-task-board>
     </section>
     <section>
       <h2 class="mb-4 text-lg font-extrabold">Tareas del Grupo</h2>
-      <app-task-list [tasks]="tasksStore.tasks()" [isLeader]="isLeaderView()" (changeStatus)="onChangeTaskStatus($event)" (deleteTask)="onDeleteTask($event)"></app-task-list>
+      <app-task-list [tasks]="tasksStore.tasks()" [isLeader]="isLeaderView()" (deleteTask)="onDeleteTask($event)"></app-task-list>
     </section>
   }
 </div>

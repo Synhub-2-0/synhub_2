@@ -219,6 +219,12 @@ export class TasksStore {
       });
   }
 
+  /** Replaces a task in the list with a fresher copy returned by another endpoint (e.g. a submission completes it). */
+  applyUpdatedTask(updatedTask: Task): void {
+    this.tasksSignal.update((tasks) => tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+    if (this.selectedTaskSignal()?.id === updatedTask.id) this.selectedTaskSignal.set(updatedTask);
+  }
+
   /** DELETE /api/v1/tasks/{taskId} */
   deleteTask(id: number): void {
     if (this.isDone(id)) {

@@ -14,8 +14,8 @@ export interface RequestsResponse extends BaseResponse {
   requests: RequestResource[];
 }
 
-// The task id travels in the path, so it is not part of the body.
 export interface CreateRequestRequest {
+  taskId: number;
   description: string;
   requestType: RequestType;
 }

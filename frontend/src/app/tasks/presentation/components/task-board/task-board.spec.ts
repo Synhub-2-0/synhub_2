@@ -16,7 +16,6 @@ describe('TaskBoard', () => {
     fixture = TestBed.createComponent(TaskBoard);
     board = fixture.componentInstance;
     fixture.componentRef.setInput('tasks', [task(1, 'IN_PROGRESS'), task(2, 'DONE'), task(3, 'IN_PROGRESS', 6), task(4, 'EXPIRED')]);
-    fixture.componentRef.setInput('currentUserId', 5);
     await fixture.whenStable();
   });
 
@@ -32,12 +31,13 @@ describe('TaskBoard', () => {
     expect(board.selectableStatuses.map((s) => s.value)).not.toContain('DONE');
   });
 
-  it('el miembro solo mueve sus tareas; el líder todas; nadie mueve una DONE', () => {
-    expect(board.canChangeStatus(task(1, 'IN_PROGRESS', 5))).toBe(true);
-    expect(board.canChangeStatus(task(3, 'IN_PROGRESS', 6))).toBe(false);
-    expect(board.canChangeStatus(task(2, 'DONE', 5))).toBe(false);
+  it('solo el líder mueve tareas, ni siquiera las propias del miembro; nadie mueve una DONE', () => {
+    expect(board.canChangeStatus(task(1, 'IN_PROGRESS', 5))).toBe(false);
+    expect(board.canChangeStatus(task(3, 'ON_HOLD', 6))).toBe(false);
+    expect(board.canChangeStatus(task(5, 'COMPLETED', 5))).toBe(false);
     fixture.componentRef.setInput('canManageAll', true);
     expect(board.canChangeStatus(task(3, 'IN_PROGRESS', 6))).toBe(true);
+    expect(board.canChangeStatus(task(5, 'COMPLETED', 5))).toBe(true);
     expect(board.canChangeStatus(task(2, 'DONE', 6))).toBe(false);
   });
 

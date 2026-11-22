@@ -84,8 +84,4 @@ export class LeaderTasks implements OnInit {
       this.tasksStore.deleteTask(taskId);
     }
   }
-
-  onChangeStatus(event: { taskId: number; status: TaskStatus }): void {
-    this.tasksStore.updateTaskStatus(event.taskId, event.status);
-  }
 }

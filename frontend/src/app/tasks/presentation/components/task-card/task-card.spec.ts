@@ -6,6 +6,7 @@ import { TaskCard } from './task-card';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
 import { RequestsApi } from '../../../../requests/infrastructure/requests.api';
 import { RequestsStore } from '../../../../requests/application/requests.store';
+import { TasksStore } from '../../../application/tasks.store';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { TaskRequest } from '../../../../requests/domain/model/task-request.entity';
 
@@ -18,6 +19,7 @@ describe('TaskCard', () => {
   let fixture: ComponentFixture<TaskCard>;
   let card: TaskCard;
   let api: Record<'getRequestsByTask' | 'createRequest', ReturnType<typeof vi.fn>>;
+  let tasksStore: { applyUpdatedTask: ReturnType<typeof vi.fn> };
 
   const render = async (status: TaskStatus, isLeader = false) => {
     fixture = TestBed.createComponent(TaskCard);
@@ -30,11 +32,13 @@ describe('TaskCard', () => {
 
   beforeEach(async () => {
     api = { getRequestsByTask: vi.fn().mockReturnValue(of([])), createRequest: vi.fn() };
+    tasksStore = { applyUpdatedTask: vi.fn() };
     await TestBed.configureTestingModule({
       imports: [TaskCard],
       providers: [
         provideRouter([]),
         { provide: RequestsApi, useValue: api },
+        { provide: TasksStore, useValue: tasksStore },
         { provide: IamStore, useValue: { isSignedIn: signal(true) } },
       ],
     }).compileComponents();
@@ -63,6 +67,7 @@ describe('TaskCard', () => {
     card.onSubmit(new Event('click'));
 
     expect(api.createRequest.mock.calls[0][0].description).toBe('Listo');
+    expect(tasksStore.applyUpdatedTask).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }));
     expect(card.showSubmitForm()).toBe(false);
     expect(card.submissionMessage()).toBe('');
   });
@@ -78,15 +83,27 @@ describe('TaskCard', () => {
     expect(card.remainingTimeLabel).toBe('Plazo vencido');
   });
 
-  it('borrar y cambiar estado se emiten al padre', async () => {
+  it('borrar se emite al padre', async () => {
     await render('IN_PROGRESS', true);
     const deleted: number[] = [];
-    const changed: unknown[] = [];
     card.deleteRequested.subscribe((id) => deleted.push(id));
-    card.statusChangeRequested.subscribe((e) => changed.push(e));
     card.onDelete(new Event('click'));
-    card.onChangeStatus(new Event('click'), 'ON_HOLD');
     expect(deleted).toEqual([7]);
-    expect(changed).toEqual([{ taskId: 7, status: 'ON_HOLD' }]);
+  });
+
+  it('el miembro completa una tarea en progreso enviándola a validación, sin botones de estado', async () => {
+    await render('IN_PROGRESS');
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Marcar completada y enviar a validación');
+    expect(text).not.toContain('Poner en Espera');
+  });
+
+  it('el miembro no puede cambiar el estado de una tarea en espera ni vencida', async () => {
+    for (const status of ['ON_HOLD', 'EXPIRED'] as TaskStatus[]) {
+      await render(status);
+      const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(text).toContain('Solo el líder del grupo puede cambiar su estado');
+      expect(text).not.toContain('Marcar completada');
+    }
   });
 });

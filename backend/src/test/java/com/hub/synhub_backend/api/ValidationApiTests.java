@@ -26,9 +26,9 @@ class ValidationApiTests extends ApiTestSupport {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());
         var res = post(
-                "/tasks/" + taskId + "/requests",
+                "/requests",
                 team.member().token(),
-                Map.of("description", "x", "requestType", "DELETION"));
+                Map.of("taskId", taskId, "description", "x", "requestType", "DELETION"));
         assertEquals(400, res.status());
     }
 
@@ -37,9 +37,9 @@ class ValidationApiTests extends ApiTestSupport {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());
         var res = post(
-                "/tasks/" + taskId + "/requests",
+                "/requests",
                 team.member().token(),
-                Map.of("description", "x", "requestType", "EXPIRED"));
+                Map.of("taskId", taskId, "description", "x", "requestType", "EXPIRED"));
         assertEquals(400, res.status());
     }
 

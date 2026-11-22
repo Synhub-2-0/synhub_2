@@ -15,7 +15,6 @@ import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestComman
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.UpdateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
-import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
 import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
@@ -80,19 +79,38 @@ class RequestCommandServiceImplTest {
     }
 
     @Test
-    void submissionNeedsCompletedTask() {
+    void submittingAnInProgressTaskCompletesIt() {
         when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
+        service.handle(submission(MEMBER));
+        verify(tasks).completeForSubmission(TASK);
+        verify(repo).save(any(Request.class));
+    }
+
+    @Test
+    void submittingACompletedTaskDoesNotCompleteItAgain() {
+        when(task.getStatus()).thenReturn(TaskStatus.COMPLETED);
+        service.handle(submission(MEMBER));
+        verify(tasks, never()).completeForSubmission(any());
+    }
+
+    @Test
+    void submissionNeedsAnInProgressOrCompletedTask() {
+        when(task.getStatus()).thenReturn(TaskStatus.ON_HOLD);
         var e = assertThrows(TaskWithIncorrectStatusException.class, () -> service.handle(submission(MEMBER)));
-        assertEquals("A submission can only be created for a COMPLETED task, the task is IN_PROGRESS", e.getMessage());
+        assertEquals(
+                "A submission can only be created for an IN_PROGRESS or COMPLETED task, the task is ON_HOLD",
+                e.getMessage());
+        verify(tasks, never()).completeForSubmission(any());
     }
 
     @Test
     void onlyOnePendingSubmission() {
         when(task.getStatus()).thenReturn(TaskStatus.COMPLETED);
-        when(repo.existsByTask_IdAndRequestTypeAndRequestStatus(TASK, RequestType.SUBMISSION, RequestStatus.PENDING))
-                .thenReturn(true);
+        when(repo.existsByTask_IdAndRequestStatus(TASK, RequestStatus.PENDING)).thenReturn(true);
         var e = assertThrows(PendingRequestAlreadyExistsException.class, () -> service.handle(submission(MEMBER)));
-        assertEquals("Task with id 10 already has a pending submission", e.getMessage());
+        assertEquals(
+                "Task with id 10 already has a pending request. Wait for it to be resolved before creating a new one",
+                e.getMessage());
     }
 
     @Test
@@ -185,15 +203,6 @@ class RequestCommandServiceImplTest {
     }
 
     @Test
-    void requestFromAnotherTaskIs404() {
-        pending("SUBMISSION");
-        var e = assertThrows(
-                ResourceNotFoundException.class,
-                () -> service.handle(new UpdateRequestCommand(REQUEST, "APPROVED", LEADER)));
-        assertTrue(e.getMessage().contains("does not belong to task with id 99"));
-    }
-
-    @Test
     void missingRequestIs404() {
         when(repo.findById(REQUEST)).thenReturn(Optional.empty());
         var e = assertThrows(ResourceNotFoundException.class, () -> service.handle(review("APPROVED", LEADER)));
@@ -227,11 +236,9 @@ class RequestCommandServiceImplTest {
     void memberCannotDeleteReviewedOrSystemRequests() {
         var reviewed = pending("SUBMISSION");
         reviewed.updateRequestStatus("APPROVED");
-        assertThrows(
-                AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, MEMBER)));
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, MEMBER)));
         pending("EXPIRED");
-        assertThrows(
-                AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, MEMBER)));
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, MEMBER)));
         verify(repo, never()).delete(any(Request.class));
     }
 
@@ -243,12 +250,8 @@ class RequestCommandServiceImplTest {
     }
 
     @Test
-    void deletingRequestOfAnotherTaskOrUnknownIs404() {
-        pending("SUBMISSION");
-        assertThrows(
-                ResourceNotFoundException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, LEADER)));
+    void deletingAnUnknownRequestIs404() {
         when(repo.findById(REQUEST)).thenReturn(Optional.empty());
-        assertThrows(
-                ResourceNotFoundException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, LEADER)));
+        assertThrows(ResourceNotFoundException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, LEADER)));
     }
 }

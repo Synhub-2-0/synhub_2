@@ -15,17 +15,17 @@ El líder crea tareas dentro de su grupo y se las asigna a un integrante. El int
 ```mermaid
 stateDiagram-v2
     [*] --> IN_PROGRESS: crear (líder)
-    IN_PROGRESS --> ON_HOLD: PUT /status
-    ON_HOLD --> IN_PROGRESS: PUT /status (+1 reagendado)
-    IN_PROGRESS --> COMPLETED: PUT /status (calcula timePassed)
-    COMPLETED --> IN_PROGRESS: PUT /status o entrega rechazada (+1 reagendado)
+    IN_PROGRESS --> ON_HOLD: PUT /status (líder)
+    ON_HOLD --> IN_PROGRESS: PUT /status (líder, +1 reagendado)
+    IN_PROGRESS --> COMPLETED: el integrante envía su entrega (POST /requests) o PUT /status (líder); calcula timePassed
+    COMPLETED --> IN_PROGRESS: PUT /status (líder) o entrega rechazada (+1 reagendado)
     COMPLETED --> DONE: entrega aprobada (solo vía requests)
     IN_PROGRESS --> EXPIRED: scheduler, fecha límite vencida (crea request EXPIRED)
-    EXPIRED --> IN_PROGRESS: PUT /status (+1 reagendado)
+    EXPIRED --> IN_PROGRESS: PUT /status (líder, +1 reagendado)
     DONE --> [*]
 ```
 
-- `PUT /tasks/{id}/status` acepta cualquier estado **excepto `DONE`** (responde 409 `TaskStatusTransitionNotAllowedException`). Pueden hacerlo el líder o el integrante asignado.
+- `PUT /tasks/{id}/status` acepta cualquier estado **excepto `DONE`** (responde 409 `TaskStatusTransitionNotAllowedException`). **Solo puede hacerlo el líder** del grupo (403 para el integrante asignado); el integrante completa su tarea enviando la entrega (`POST /requests`), que la pasa a `COMPLETED`.
 - `PUT /tasks/{id}` con una `dueDate` pasada mueve la tarea a `EXPIRED`; con una fecha futura la vuelve a `IN_PROGRESS`, salvo que ya esté `EXPIRED`.
 - `TaskStatusScheduler` revisa cada 60 s las tareas `IN_PROGRESS` vencidas: las marca `EXPIRED` y crea una solicitud `EXPIRED` en requests.
 - En la web, una tarea `DONE` no se puede editar ni eliminar (`TasksStore` lo bloquea).
@@ -40,9 +40,9 @@ stateDiagram-v2
 | Ver detalle | `TaskDetails`, `TaskForm` (edición) → `loadTaskById` | `GET /tasks/{id}` | `getTaskById` |
 | Tablero del grupo | `Home`, `GroupDetails`, `LeaderTasks` → `loadTasksByGroup` | `GET /tasks/group/{groupId}[?status=]` | `getByGroup` → `GetTasksByGroupIdAndStatus` |
 | Mis tareas | `MemberTasks` → `loadMyTasks` | `GET /tasks/user` (una sola petición) | `getMyTasks` → `GetAllTasksByUserId` |
-| Mover de columna | `TaskBoard` (`statusChange`) → `updateTaskStatus` | `PUT /tasks/{id}/status?status=` | `updateTaskStatus` → `UpdateTaskStatusCommand` |
+| Mover de columna (solo el líder) | `TaskBoard` (`statusChange`) → `updateTaskStatus` | `PUT /tasks/{id}/status?status=` | `updateTaskStatus` → `UpdateTaskStatusCommand` |
 | Eliminar (líder) | `GroupDetails`, `LeaderTasks` → `deleteTask` | `DELETE /tasks/{id}` | `deleteTaskById` → `DeleteTaskCommand` |
-| Enviar entrega (miembro) | `TaskCard` → `RequestsStore.submitTask` | `POST /tasks/{id}/requests` | [requests](../requests/README.md) |
+| Enviar entrega (miembro) | `TaskCard` → `RequestsStore.submitTask` | `POST /requests` | [requests](../requests/README.md) |
 
 ## Propiedad compartida
 

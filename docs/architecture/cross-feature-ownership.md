@@ -8,7 +8,7 @@ En orden de prioridad:
 
 1. **Dueño del invariante.** La pieza le pertenece al contexto cuya regla de negocio protege o cuyo estado modifica. *Aceptar una invitación crea una membresía* → groups.
 2. **Dueño del agregado que se escribe.** Si la pieza escribe, el dueño es el contexto del agregado que persiste. Si solo lee, el dueño es el contexto que **necesita** el dato, no el que lo almacena (`TaskMetricsQueryServiceImpl` lee tareas, pero le pertenece a metrics).
-3. **Dueño del recurso REST.** Para endpoints, se considera la URL **raíz** del recurso, pero cede ante los criterios 1 y 2: `/groups/{id}/requests` le pertenece a requests porque devuelve requests.
+3. **Dueño del recurso REST.** Para endpoints, se considera la URL **raíz** del recurso, pero cede ante los criterios 1 y 2: `/requests/group?groupId=` recibe un grupo pero le pertenece a requests porque devuelve requests.
 4. **En el frontend, dueño del store.** Un componente le pertenece a la feature de la carpeta donde vive; el store o API que usa determina **qué feature documenta la interacción**.
 
 ## Matriz del backend
@@ -16,7 +16,7 @@ En orden de prioridad:
 | Pieza | Ubicación | Toca | **Dueño** | Por qué |
 |---|---|---|---|---|
 | `InvitationController`, `Invitation`, `Invitation*Service` | `groups` | groups, iam | **groups** (recurso REST `/invitations`) | Aceptar crea `GroupProfile`; `Group.invitations` las contiene en cascada. |
-| `GroupRequestController` (`GET /groups/{id}/requests`) | `requests` | requests, groups | **requests** | Devuelve `Request`; de groups solo consulta quién es el líder, mediante ACL. |
+| `RequestController` (`GET /requests/group?groupId=`) | `requests` | requests, groups | **requests** | Devuelve `Request`; de groups solo consulta quién es el líder, mediante ACL. |
 | `RequestRepository.findByTask_Profile_Group_Id` | `requests` | requests → tasks → groups | **requests** | Consulta de requests; navega las relaciones JPA. |
 | `TaskRepository.findByProfile_Group_Id…` / `…_User_Id` | `tasks` | tasks → groups → iam | **tasks** | Consulta de tareas filtrada por membresía. |
 | `GroupProfile.tasks` / `Task.profile` | `groups` / `tasks` | groups ↔ tasks | **tasks** es dueño de la asignación; **groups**, de la membresía | La tarea se asigna a una membresía; la membresía no tiene reglas sobre tareas. |

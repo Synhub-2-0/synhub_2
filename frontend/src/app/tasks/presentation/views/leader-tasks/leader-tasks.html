@@ -56,7 +56,7 @@
       </div>
     } @else {
       <app-task-list [tasks]="tasksStore.filteredTasks()" [isLeader]="true"
-        (deleteTask)="onDeleteTask($event)" (changeStatus)="onChangeStatus($event)">
+        (deleteTask)="onDeleteTask($event)">
       </app-task-list>
     }
     }

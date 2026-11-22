@@ -37,12 +37,12 @@ Desde el commit `727054f` las solicitudes son un recurso raíz: la tarea o el gr
 2. Si `requesterId != null` (lo crea un usuario):
    - `EXPIRED` → 400: solo lo genera el sistema.
    - Solo el integrante asignado a la tarea → si no, 403.
-   - `SUBMISSION`: la tarea debe estar `COMPLETED` (409 `TaskWithIncorrectStatusException`) y no puede existir otra `SUBMISSION` en `PENDING` (409 `PendingRequestAlreadyExistsException`).
+   - `SUBMISSION`: la tarea debe estar `IN_PROGRESS` o `COMPLETED` (409 `TaskWithIncorrectStatusException`; `ON_HOLD` y `EXPIRED` las reanuda el líder). Si estaba `IN_PROGRESS`, la entrega **la pasa a `COMPLETED`** (`TasksContextFacade.completeForSubmission`): el integrante no cambia estados por su cuenta. No puede existir otra request en `PENDING` para la tarea (409 `PendingRequestAlreadyExistsException`).
 3. Si `requesterId == null` (lo crea el sistema, desde `TaskStatusScheduler`), se omiten las validaciones de usuario.
 
 **Al revisar** (`UpdateRequestCommand`):
 
-1. La request debe pertenecer a la tarea de la URL (404).
+1. La request debe existir (404).
 2. Solo el líder del grupo de la tarea (403).
 3. Nuevo estado `PENDING` → 400. Si la request ya fue revisada → 409 `RequestAlreadyReviewedException`.
 4. Si es `SUBMISSION`:

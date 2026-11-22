@@ -7,5 +7,4 @@ import jakarta.validation.constraints.Size;
 public record CreateRequestResource(
         @NotNull Long taskId,
         @NotNull @Size(max = 255) String description,
-        @NotBlank String requestType) {
-}
+        @NotBlank String requestType) {}

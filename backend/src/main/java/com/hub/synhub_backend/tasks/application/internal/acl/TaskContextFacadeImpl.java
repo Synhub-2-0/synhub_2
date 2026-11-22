@@ -5,7 +5,6 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByGroupIdCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAndGroupIdCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
-import com.hub.synhub_backend.tasks.domain.model.queries.GetTaskByIdQuery;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
 import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
@@ -21,7 +20,8 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
     private final TaskQueryService taskQueryService;
     private final TaskRepository taskRepository;
 
-    public TaskContextFacadeImpl(TaskCommandService taskCommandService, TaskQueryService taskQueryService, TaskRepository taskRepository) {
+    public TaskContextFacadeImpl(
+            TaskCommandService taskCommandService, TaskQueryService taskQueryService, TaskRepository taskRepository) {
         this.taskCommandService = taskCommandService;
         this.taskQueryService = taskQueryService;
         this.taskRepository = taskRepository;
@@ -46,6 +46,16 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
                 .findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
         task.applySubmissionReview(approved);
+        return taskRepository.save(task);
+    }
+
+    @Override
+    public Task completeForSubmission(Long taskId) {
+        var task = taskRepository
+                .findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
+        task.ensureNotFinished();
+        task.updateStatus(new UpdateTaskStatusCommand(null, taskId, TaskStatus.COMPLETED));
         return taskRepository.save(task);
     }
 

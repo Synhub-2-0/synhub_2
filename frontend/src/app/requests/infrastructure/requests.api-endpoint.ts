@@ -7,46 +7,45 @@ import {RequestsAssembler} from './requests.assembler';
 import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import {catchError, map, Observable, throwError} from 'rxjs';
 
-const tasksEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderTasksEndpointPath}`;
-const groupsEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderGroupsEndpointPath}`;
-const requestsPath = environment.platformProviderRequestsEndpointPath;
+const requestsEndpointUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderRequestsEndpointPath}`;
 
 export class RequestsApiEndpoint extends BaseApiEndpoint<TaskRequest, RequestResource, RequestsResponse, RequestsAssembler> {
   constructor(http: HttpClient) {
-    super(http, tasksEndpointUrl, new RequestsAssembler());
+    super(http, requestsEndpointUrl, new RequestsAssembler());
   }
 
-  /** POST /api/v1/tasks/{taskId}/requests */
+  /** POST /api/v1/requests (the task travels in the body) */
   createRequest(command: CreateRequestCommand): Observable<TaskRequest> {
     const body = this.assembler.toRequestFromCreateCommand(command);
-    return this.http.post<RequestResource>(`${tasksEndpointUrl}/${command.taskId}${requestsPath}`, body).pipe(
+    return this.http.post<RequestResource>(requestsEndpointUrl, body).pipe(
       map(resource => this.assembler.toEntityFromResource(resource)),
       catchError((error: HttpErrorResponse) => throwError(() => new Error(this.createErrorMessage(error))))
     );
   }
 
-  /** GET /api/v1/tasks/{taskId}/requests */
+  /** GET /api/v1/requests/task?taskId={taskId} */
   getRequestsByTask(taskId: number): Observable<TaskRequest[]> {
-    return this.http.get<RequestsResponse | RequestResource[]>(`${tasksEndpointUrl}/${taskId}${requestsPath}`).pipe(
+    const params = new HttpParams().set('taskId', taskId);
+    return this.http.get<RequestsResponse | RequestResource[]>(`${requestsEndpointUrl}/task`, {params}).pipe(
       map(response => this.toEntities(response)),
       catchError(this.handleError(`Failed to fetch requests for task with ID ${taskId}`))
     );
   }
 
-  /** GET /api/v1/groups/{groupId}/requests?status=...&type=... (leader only) */
+  /** GET /api/v1/requests/group?groupId=...&status=...&type=... (leader only) */
   getRequestsByGroup(groupId: number, status?: RequestStatus, type?: RequestType): Observable<TaskRequest[]> {
-    let params = new HttpParams();
+    let params = new HttpParams().set('groupId', groupId);
     if (status) params = params.set('status', status);
     if (type) params = params.set('type', type);
-    return this.http.get<RequestsResponse | RequestResource[]>(`${groupsEndpointUrl}/${groupId}${requestsPath}`, {params}).pipe(
+    return this.http.get<RequestsResponse | RequestResource[]>(`${requestsEndpointUrl}/group`, {params}).pipe(
       map(response => this.toEntities(response)),
       catchError((error: HttpErrorResponse) => throwError(() => new Error(this.listErrorMessage(error))))
     );
   }
 
-  /** PUT /api/v1/tasks/{taskId}/requests/{requestId}/status/{status} (leader only) */
-  reviewRequest(taskId: number, requestId: number, status: Exclude<RequestStatus, 'PENDING'>): Observable<TaskRequest> {
-    return this.http.put<RequestResource>(`${tasksEndpointUrl}/${taskId}${requestsPath}/${requestId}/status/${status}`, {}).pipe(
+  /** PUT /api/v1/requests/{requestId}/status/{status} (leader only) */
+  reviewRequest(requestId: number, status: Exclude<RequestStatus, 'PENDING'>): Observable<TaskRequest> {
+    return this.http.put<RequestResource>(`${requestsEndpointUrl}/${requestId}/status/${status}`, {}).pipe(
       map(resource => this.assembler.toEntityFromResource(resource)),
       catchError((error: HttpErrorResponse) => throwError(() => new Error(this.reviewErrorMessage(error))))
     );
@@ -64,9 +63,9 @@ export class RequestsApiEndpoint extends BaseApiEndpoint<TaskRequest, RequestRes
     switch (error.status) {
       case 403: return 'Solo el integrante asignado a la tarea puede enviar la entrega.';
       case 404: return 'La tarea no existe.';
-      case 409: return backendMessage.includes('pending submission')
+      case 409: return backendMessage.includes('pending request')
         ? 'Esta tarea ya tiene una entrega en revisión.'
-        : 'La tarea debe estar completada para poder enviar la entrega.';
+        : 'La tarea debe estar en progreso o completada para poder enviar la entrega.';
       default: return 'No se pudo enviar la entrega.';
     }
   }

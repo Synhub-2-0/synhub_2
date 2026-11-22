@@ -40,7 +40,7 @@ class SoftDeleteApiTests extends ApiTestSupport {
                 get("/tasks/group/" + team.groupId(), team.leader().token()), taskId));
         assertEquals(
                 0,
-                get("/groups/" + team.groupId() + "/requests", team.leader().token())
+                get("/requests/group?groupId=" + team.groupId(), team.leader().token())
                         .json()
                         .size());
         assertEquals(Boolean.TRUE, deleted("tasks", taskId));
@@ -92,16 +92,9 @@ class SoftDeleteApiTests extends ApiTestSupport {
         var requestId = submit(team.member(), taskId);
 
         assertEquals(
-                204,
-                delete(
-                                "/tasks/" + taskId + "/requests/" + requestId,
-                                team.leader().token())
-                        .status());
+                204, delete("/requests/" + requestId, team.leader().token()).status());
 
-        assertEquals(
-                404,
-                get("/tasks/" + taskId + "/requests/" + requestId, team.leader().token())
-                        .status());
+        assertEquals(404, get("/requests/" + requestId, team.leader().token()).status());
         assertEquals(Boolean.TRUE, deleted("requests", requestId));
     }
 

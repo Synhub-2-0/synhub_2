@@ -36,7 +36,7 @@ Endpoints que expone el backend y la web no consume: `GET /groups/{id}`, `GET /g
 
 - **Invitations** es un recurso REST propio (`/invitations`), pero su agregado, sus servicios y su controlador viven en el paquete `groups` del backend: aceptar una invitación crea una membresía, que es responsabilidad de groups. En el frontend tiene su propio módulo. Ver [invitations](../invitations/README.md).
 - **`GroupProfile` (membresía) contiene las tareas** (`@OneToMany tasks`) y `Task.profile` apunta a ella. El agregado `Task` es de [tasks](../tasks/README.md), pero la relación persistida pasa por esta entidad de groups.
-- **`GET /groups/{groupId}/requests`** está bajo la URL de groups, pero lo implementa `GroupRequestController` en el contexto **requests**. Ver [requests](../requests/README.md).
+- **`GET /requests/group?groupId=`** recibe un grupo, pero lo implementa `RequestController` en el contexto **requests**. Ver [requests](../requests/README.md).
 - **`GET /ai/groups/{groupId}/report`** consulta un grupo, pero le pertenece a [ai](../ai/README.md).
 - **Otros contextos acceden a groups solo por su ACL** (`GroupsContextFacade`: líder, pertenencia y membresía): tasks, requests y metrics (AUDIT ARC-01).
 - **Frontend**: `GroupDetails` es la vista con más acoplamiento: combina `GroupsStore`, `TasksStore` (tablero del grupo), `InvitationsStore` (invitar y cancelar) e `IamStore`.

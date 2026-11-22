@@ -41,7 +41,7 @@
         <span class="text-sm text-slate-500 font-medium">Cargando tus tareas...</span>
       </div>
     } @else {
-      <app-task-list [tasks]="myTasks()" [isLeader]="false" [showGroup]="selectedGroupId() === ALL_GROUPS" (changeStatus)="onChangeStatus($event)">
+      <app-task-list [tasks]="myTasks()" [isLeader]="false" [showGroup]="selectedGroupId() === ALL_GROUPS">
       </app-task-list>
     }
   </div>

@@ -106,6 +106,12 @@ describe('TasksStore', () => {
     expect(store.tasks().map((t) => [t.id, t.title])).toEqual([[2, 'Editada']]);
   });
 
+  it('applyUpdatedTask reemplaza la tarea en la lista y en la seleccionada', () => {
+    loadGroup(task(1), task(2));
+    store.applyUpdatedTask(task(1, 'COMPLETED'));
+    expect(store.tasks().map((t) => [t.id, t.status])).toEqual([[1, 'COMPLETED'], [2, 'IN_PROGRESS']]);
+  });
+
   it('una tarea DONE no se edita ni se borra', () => {
     loadGroup(task(1, 'DONE'));
     store.updateTask(1, new UpdateTaskCommand('x', '', new Date(), 5));

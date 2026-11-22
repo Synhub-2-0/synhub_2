@@ -52,7 +52,7 @@ describe('RequestsStore', () => {
     store.loadGroupSubmissions(10);
 
     store.approveSubmission(request(1));
-    expect(api.approveRequest).toHaveBeenCalledWith(7, 1);
+    expect(api.approveRequest).toHaveBeenCalledWith(1);
     store.rejectSubmission(request(2));
 
     expect(store.submissions()).toEqual([]);
@@ -76,7 +76,7 @@ describe('RequestsStore', () => {
     const command = api.createRequest.mock.calls[0][0] as CreateRequestCommand;
     expect([command.taskId, command.description, command.requestType]).toEqual([7, 'Listo', 'SUBMISSION']);
     expect(store.isUnderReview(7)).toBe(true);
-    expect(onSuccess).toHaveBeenCalled();
+    expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({ id: 3 }));
   });
 
   it('isUnderReview ignora requests revisadas o de otro tipo', () => {

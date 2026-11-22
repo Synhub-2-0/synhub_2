@@ -17,8 +17,8 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 
 | Componente | Uso |
 |---|---|
-| `TaskBoard` | Tablero Kanban por estado. Emite `statusChange` al cambiar el `<select>` de una tarjeta. Se usa en `Home` (shared) y en `GroupDetails` (groups). |
-| `TaskList` → `TaskCard` | Lista de tarjetas. `TaskCard` permite al miembro **enviar la entrega** de una tarea `COMPLETED` y muestra si ya está "en revisión" (usa `RequestsStore`). |
+| `TaskBoard` | Tablero Kanban por estado. Emite `statusChange` al cambiar el `<select>` de una tarjeta, que **solo ve el líder** (`canManageAll`); para el miembro el tablero es de solo lectura. Se usa en `Home` (shared) y en `GroupDetails` (groups). |
+| `TaskList` → `TaskCard` | Lista de tarjetas. `TaskCard` permite al miembro **marcar completada y enviar a validación** una tarea `IN_PROGRESS` (o enviar la entrega de una `COMPLETED` que dejó el líder) y muestra si ya está "en revisión" (usa `RequestsStore`; al terminar actualiza la tarea con `TasksStore.applyUpdatedTask`). Para una tarea `ON_HOLD` o `EXPIRED` solo avisa que cambiar su estado es del líder: el miembro ya no tiene botones de estado. |
 
 ## Estado: `TasksStore` (`application/tasks.store.ts`)
 

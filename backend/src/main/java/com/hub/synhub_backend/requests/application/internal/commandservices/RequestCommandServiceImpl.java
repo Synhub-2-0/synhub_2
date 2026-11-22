@@ -53,14 +53,20 @@ public class RequestCommandServiceImpl implements RequestCommandService {
             if (!task.getProfile().getUser().getId().equals(command.requesterId()))
                 throw new AccessDeniedException("Only the member assigned to the task can create requests for it");
             if (requestType == RequestType.SUBMISSION) {
-                if (task.getStatus() != TaskStatus.COMPLETED)
+                // Entregar marca la tarea como completada: el integrante no cambia estados por su cuenta.
+                // COMPLETED también vale (la dejó así el líder) para no dejarla sin forma de enviarse.
+                if (task.getStatus() != TaskStatus.IN_PROGRESS && task.getStatus() != TaskStatus.COMPLETED)
                     throw new TaskWithIncorrectStatusException(
-                            "A submission can only be created for a COMPLETED task, the task is " + task.getStatus());
+                            "A submission can only be created for an IN_PROGRESS or COMPLETED task, the task is "
+                                    + task.getStatus());
+                if (task.getStatus() == TaskStatus.IN_PROGRESS)
+                    this.tasksContextFacade.completeForSubmission(command.taskId());
             }
-            if (requestType == RequestType.MODIFICATION){
+            if (requestType == RequestType.MODIFICATION) {
                 if (task.getStatus() != TaskStatus.IN_PROGRESS)
                     throw new TaskWithIncorrectStatusException(
-                            "A modification request can only be created for a IN_PROGRESS task, the task is " + task.getStatus());
+                            "A modification request can only be created for a IN_PROGRESS task, the task is "
+                                    + task.getStatus());
             }
         }
 

@@ -18,7 +18,7 @@
 | Paginación | Opcional en `GET /tasks/group/{id}` y `GET /requests/group?groupId=`: con `?page` (desde 0) o `?size` (por defecto 20, máximo 100) responden `PageResource { content, page, size, totalElements, totalPages }`; sin ellos, el arreglo completo. `page` negativo o `size` < 1 → 400. |
 | Documentación viva | Swagger UI en `/swagger-ui.html`; OpenAPI en `/v3/api-docs`. Solo con el perfil `dev`. |
 
-**Desviaciones**: el frontend (`requests.api-endpoint.ts`) todavía llama a las rutas anteriores de requests (`/tasks/{id}/requests…` y `/groups/{id}/requests`), que el backend ya no expone desde el commit `727054f` (responden 404). `POST /groups`, `POST /tasks` y `POST /invitations` responden `200` en lugar de `201`. La revisión de una request usa un segmento de ruta (`PUT …/status/{status}`), mientras que en tasks el estado va como query param (`PUT /tasks/{id}/status?status=`).
+**Desviaciones**: `POST /groups`, `POST /tasks` y `POST /invitations` responden `200` en lugar de `201`. La revisión de una request usa un segmento de ruta (`PUT …/status/{status}`), mientras que en tasks el estado va como query param (`PUT /tasks/{id}/status?status=`).
 
 ## Catálogo
 

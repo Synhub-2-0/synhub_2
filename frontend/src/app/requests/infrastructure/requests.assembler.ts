@@ -33,6 +33,7 @@ export class RequestsAssembler implements BaseAssembler<TaskRequest, RequestReso
 
   toRequestFromCreateCommand(command: CreateRequestCommand): CreateRequestRequest {
     return {
+      taskId: command.taskId,
       description: command.description,
       requestType: command.requestType
     } as CreateRequestRequest;

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { Task, TaskStatus } from '../../../domain/model/task.entity';
+import { Task } from '../../../domain/model/task.entity';
 import { TaskCard } from '../task-card/task-card';
 
 @Component({
@@ -16,5 +16,4 @@ export class TaskList {
   @Input() isLeader = false;
   @Input() showGroup = false;
   @Output() deleteTask = new EventEmitter<number>();
-  @Output() changeStatus = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 }
