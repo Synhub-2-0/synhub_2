@@ -73,3 +73,13 @@ La sección "Clasificación (opcional)" aparece al crear y al editar. Sus campos
 ## Pruebas
 
 `tasks.assembler.spec.ts`.
+
+## Resolver antes de cambiar el estado: `TaskResolveDialog`
+
+`TaskBoard` no emite el cambio de estado de una tarea `EXPIRED` u `ON_HOLD`: abre `TaskResolveDialog` (`presentation/components/task-resolve-dialog`) y el selector vuelve a su valor.
+
+| Tarea | El diálogo ofrece |
+|---|---|
+| `EXPIRED` | Una **nueva fecha límite** (futura): `TasksStore.resumeExpiredTask` cambia la fecha y la pasa a `IN_PROGRESS`; el backend cierra su aviso de vencimiento. |
+| `ON_HOLD` con una modificación pendiente | El comentario del integrante y **Editar tarea** (`/tasks/:id/edit?returnTo=…`, vuelve a la pantalla actual) o **Rechazar solicitud** (`RequestsStore.rejectRequest`: la tarea vuelve a `IN_PROGRESS`). |
+| `ON_HOLD` sin nada pendiente | Nada que resolver: el diálogo emite `proceed` y el tablero sigue con el cambio de estado normal. |

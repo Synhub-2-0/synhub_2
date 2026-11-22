@@ -91,7 +91,7 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | POST | `/requests` (cuerpo: `taskId`, `description`, `requestType`) | `RequestController` | `RequestsStore.submitTask`, `createModification` |
 | GET | `/requests/task?taskId=` | `RequestController` | `RequestsStore.loadTaskRequests` |
 | GET | `/requests/{requestId}` | `RequestController` | — |
-| PUT | `/requests/{requestId}/status/{status}` (409 para una `MODIFICATION`: se resuelve editando la tarea) | `RequestController` | `RequestsStore.approveRequest`, `rejectRequest` |
+| PUT | `/requests/{requestId}/status/{status}` (`MODIFICATION`: `REJECTED` la deniega y reanuda la tarea; `APPROVED` responde 409, se aprueba editando la tarea) | `RequestController` | `RequestsStore.approveRequest`, `rejectRequest` |
 | DELETE | `/requests/{requestId}` (409 con una `MODIFICATION` pendiente) | `RequestController` | — |
 | GET | `/requests/group?groupId=&status=&type=&page=&size=` | `RequestController` | `RequestsStore.loadGroupRequests` |
 
