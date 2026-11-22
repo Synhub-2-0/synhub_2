@@ -1,8 +1,6 @@
 package com.hub.synhub_backend.requests.application.internal.commandservices;
 
-import com.hub.synhub_backend.requests.domain.exceptions.PendingSubmissionAlreadyExistsException;
-import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedException;
-import com.hub.synhub_backend.requests.domain.exceptions.TaskNotCompletedException;
+import com.hub.synhub_backend.requests.domain.exceptions.*;
 import com.hub.synhub_backend.requests.domain.model.aggregates.Request;
 import com.hub.synhub_backend.requests.domain.model.commands.CreateRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
@@ -45,6 +43,9 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 .orElseThrow(
                         () -> new ResourceNotFoundException("Task with id " + command.taskId() + " does not exist"));
 
+        if (requestRepository.existsByTask_IdAndRequestStatus(command.taskId(), RequestStatus.PENDING))
+            throw new PendingRequestAlreadyExistsException(command.taskId());
+
         // requesterId null = la genera el sistema (vencimiento automático): sin reglas de usuario.
         if (command.requesterId() != null) {
             if (requestType == RequestType.EXPIRED)
@@ -53,11 +54,13 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 throw new AccessDeniedException("Only the member assigned to the task can create requests for it");
             if (requestType == RequestType.SUBMISSION) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
-                    throw new TaskNotCompletedException(
+                    throw new TaskWithIncorrectStatusException(
                             "A submission can only be created for a COMPLETED task, the task is " + task.getStatus());
-                if (this.requestRepository.existsByTask_IdAndRequestTypeAndRequestStatus(
-                        task.getId(), RequestType.SUBMISSION, RequestStatus.PENDING))
-                    throw new PendingSubmissionAlreadyExistsException(task.getId());
+            }
+            if (requestType == RequestType.MODIFICATION){
+                if (task.getStatus() != TaskStatus.IN_PROGRESS)
+                    throw new TaskWithIncorrectStatusException(
+                            "A modification request can only be created for a IN_PROGRESS task, the task is " + task.getStatus());
             }
         }
 
@@ -75,9 +78,6 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
         var task = request.getTask();
-        if (!task.getId().equals(command.taskId()))
-            throw new ResourceNotFoundException(
-                    "Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId()))
             throw new AccessDeniedException("Only the leader of the group can review requests");
 
@@ -91,7 +91,7 @@ public class RequestCommandServiceImpl implements RequestCommandService {
         if (RequestType.SUBMISSION.name().equals(request.getRequestType())) {
             if (newStatus == RequestStatus.APPROVED) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
-                    throw new TaskNotCompletedException(
+                    throw new TaskWithIncorrectStatusException(
                             "Only a COMPLETED task can be approved, the task is " + task.getStatus());
                 this.tasksContextFacade.applySubmissionReview(task.getId(), true);
             } else if (task.getStatus() == TaskStatus.COMPLETED) {
@@ -112,9 +112,6 @@ public class RequestCommandServiceImpl implements RequestCommandService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Request with id " + command.requestId() + " does not exist"));
         var task = request.getTask();
-        if (!task.getId().equals(command.taskId()))
-            throw new ResourceNotFoundException(
-                    "Request with id " + command.requestId() + " does not belong to task with id " + command.taskId());
         var isLeader = task.getProfile().getGroup().getLeader().getId().equals(command.requesterId());
         var isOwnPendingRequest = task.getProfile().getUser().getId().equals(command.requesterId())
                 && RequestStatus.PENDING.name().equals(request.getRequestStatus())
