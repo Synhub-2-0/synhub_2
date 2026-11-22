@@ -20,11 +20,7 @@ export class GroupCard {
   @Input() isLeader = false;
 
   openGroupDetails(): void {
-    this.router
-      .navigate(['/groups'], {
-        queryParams: { id: this.group.id, role: this.isLeader ? 'leader' : 'member' },
-      })
-      .then();
+    this.router.navigate(['/groups', this.group.id]).then();
   }
 
   openGroupTasks(event: Event): void {

@@ -3,10 +3,14 @@
   @if (groupsStore.loading()) {
     <div class="py-20 text-center text-sm text-slate-500">Cargando grupo...</div>
   } @else if (group(); as grp) {
-    <section class="rounded-3xl border bg-white p-6 shadow-sm">
+    <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
       @if (!isEditing()) {
         <div class="flex items-center justify-between gap-4">
-          <div><h1 class="text-2xl font-extrabold">{{ grp.name }} <span class="text-sm text-[#1A4E85]">#{{ grp.code }}</span></h1><p class="mt-2 text-sm text-slate-500">{{ grp.description }}</p></div>
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Grupo</span>
+            <h1 class="mt-1 text-xl font-extrabold text-slate-900">{{ grp.name }} <span class="text-sm text-[#1A4E85]">#{{ grp.code }}</span></h1>
+            <p class="mt-2 text-sm text-slate-500">{{ grp.description }}</p>
+          </div>
           @if (isLeaderView()) { <button type="button" (click)="startEdit()" class="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold">Editar</button> }
         </div>
       } @else {
@@ -18,8 +22,9 @@
         </form>
       }
     </section>
-    <section class="rounded-3xl border bg-white p-6 shadow-sm">
-      <h2 class="font-extrabold">Integrantes ({{ grp.memberCount }})</h2>
+    <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+      <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Equipo</span>
+      <h2 class="mt-1 text-xl font-extrabold text-slate-900">Integrantes ({{ grp.memberCount }})</h2>
       <div class="mt-4 grid gap-3 sm:grid-cols-2">
         @if (leader(); as lead) {
           <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
@@ -78,7 +83,7 @@
     @if (isLeaderView()) {
       <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Invitaciones</span>
-        <h2 class="mt-1 font-extrabold">Invitar integrantes</h2>
+        <h2 class="mt-1 text-xl font-extrabold text-slate-900">Invitar integrantes</h2>
         <p class="mt-1 text-sm text-slate-500">Escribe el nombre de usuario exacto de la persona que quieres sumar al grupo.</p>
         <form (ngSubmit)="inviteUser()" class="mt-4 flex flex-col gap-3 sm:flex-row">
           <input name="inviteUsername" [(ngModel)]="inviteUsername" (ngModelChange)="invitationsStore.clearError()" placeholder="Nombre de usuario" autocomplete="off"
@@ -109,13 +114,26 @@
       </section>
     }
     <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-      <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Flujo de Trabajo</span>
-      <h2 class="text-xl font-extrabold text-slate-900">Tablero Kanban de Tareas</h2>
+      <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Flujo de trabajo</span>
+      <h2 class="mt-1 text-xl font-extrabold text-slate-900">Tablero Kanban de Tareas</h2>
       <app-task-board [tasks]="tasksStore.tasks()" [canManageAll]="isLeaderView()" (statusChange)="onChangeTaskStatus($event)"></app-task-board>
     </section>
-    <section>
-      <h2 class="mb-4 text-lg font-extrabold">Tareas del Grupo</h2>
-      <app-task-list [tasks]="tasksStore.tasks()" [isLeader]="isLeaderView()" (deleteTask)="onDeleteTask($event)"></app-task-list>
+    <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Tareas</span>
+          <h2 class="mt-1 text-xl font-extrabold text-slate-900">Tareas del Grupo</h2>
+        </div>
+        <button type="button" (click)="goToTasks()"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#4A90E2] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-blue-600">
+          <mat-icon class="scale-90">task_alt</mat-icon> {{ isLeaderView() ? 'Gestionar tareas' : 'Ir a mis tareas' }}
+        </button>
+      </div>
+      <div class="mt-4">
+        <app-task-list [tasks]="tasksStore.tasks()" [isLeader]="isLeaderView()" (deleteTask)="onDeleteTask($event)"></app-task-list>
+      </div>
     </section>
+  } @else if (groupsStore.groups().length > 0) {
+    <div class="py-20 text-center text-sm text-slate-500">No se encontró el grupo o no perteneces a él.</div>
   }
 </div>

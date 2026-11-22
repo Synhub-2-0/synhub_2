@@ -90,7 +90,7 @@ flowchart LR
 | Restaurar la sesión | `app.config.ts` → `provideAppInitializer` | `IamStore.restoreSession()` antes del primer render. |
 | HTTP | `app.config.ts` | `provideHttpClient(withFetch(), withInterceptors([iamInterceptor]))` |
 
-Los parámetros de contexto viajan en **query params** (`?groupId=`, `?id=&role=`), y el id de recurso en path params (`/tasks/:id`).
+Los parámetros de contexto viajan en **query params** (`?groupId=`), y el id de recurso en path params (`/tasks/:id`).
 
 ## 6. Presentación y estilos
 

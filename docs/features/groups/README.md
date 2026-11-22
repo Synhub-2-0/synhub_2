@@ -7,7 +7,7 @@ Un **grupo** es el equipo donde se reparten las tareas. Quien lo crea es su **l�
 | **Recurso REST** | `/api/v1/groups` |
 | **Bounded context (backend)** | [`groups`](../../../backend/src/main/java/com/hub/synhub_backend/groups): también es dueño de [invitations](../invitations/README.md) |
 | **Módulo (frontend)** | [`src/app/groups`](../../../frontend/src/app/groups) |
-| **Rutas de la web** | `/groups/leader`, `/groups/member`, `/groups?id=…&role=…` |
+| **Rutas de la web** | `/groups/leader`, `/groups/member`, `/groups/:id` |
 | **Documentación** | [Backend](backend/README.md) · [Frontend](frontend/README.md) |
 
 ## Qué resuelve

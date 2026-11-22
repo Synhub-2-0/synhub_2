@@ -7,7 +7,7 @@ El líder crea tareas dentro de su grupo y se las asigna a un integrante. El int
 | **Recurso REST** | `/api/v1/tasks` |
 | **Bounded context (backend)** | [`tasks`](../../../backend/src/main/java/com/hub/synhub_backend/tasks) |
 | **Módulo (frontend)** | [`src/app/tasks`](../../../frontend/src/app/tasks) |
-| **Rutas de la web** | `/tasks/leader`, `/tasks/member`, `/tasks/create`, `/tasks/:id`, `/tasks/:id/edit`, además del tablero en `/home` y `/groups?id=…` |
+| **Rutas de la web** | `/tasks/leader`, `/tasks/member`, `/tasks/create`, `/tasks/:id`, `/tasks/:id/edit`, además del tablero en `/home` y `/groups/:id` |
 | **Documentación** | [Backend](backend/README.md) · [Frontend](frontend/README.md) |
 
 ## Ciclo de vida de una tarea

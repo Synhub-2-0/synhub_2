@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { GroupCard } from './group-card';
 import { Group } from '../../../domain/model/group.entity';
 
@@ -23,6 +23,12 @@ describe('GroupCard', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('el detalle se abre en /groups/{id} sin datos de rol en la URL', () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    component.openGroupDetails();
+    expect(navigate).toHaveBeenCalledWith(['/groups', 1]);
   });
 
   it('shows the group name', () => {

@@ -42,7 +42,7 @@
         <h2 class="text-xl font-extrabold text-slate-900">Tablero Kanban de Tareas</h2>
       </div>
       @if (groupsStore.groups().length > 0) {
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+        <div class="flex flex-wrap items-center gap-2 sm:justify-end">
           @for (group of groupsStore.groups(); track group.id) {
             <button
               type="button"

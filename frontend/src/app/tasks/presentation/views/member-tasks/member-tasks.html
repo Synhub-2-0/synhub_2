@@ -5,7 +5,7 @@
       <p class="text-sm text-slate-500 mt-1">Consulta tus entregas pendientes y actualiza el estado de tu progreso.</p>
     </div>
     @if (availableGroups().length > 0) {
-      <div class="flex items-center gap-2 overflow-x-auto pb-1">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="text-xs font-bold text-slate-400 uppercase mr-2">Grupo:</span>
         @if (availableGroups().length > 1) {
           <button type="button" (click)="selectAllGroups()"

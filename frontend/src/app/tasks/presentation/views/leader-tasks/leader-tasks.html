@@ -12,7 +12,12 @@
         </a>
       }
     </div>
-    @if (!groupsStore.loading() && groupsStore.leaderGroups().length === 0) {
+    @if (groupsStore.leaderGroups().length === 0 && groupsStore.loading()) {
+      <div class="py-16 flex flex-col items-center justify-center gap-3">
+        <mat-icon fontIcon="cached" class="animate-spin text-4xl text-[#4A90E2]"></mat-icon>
+        <span class="text-sm text-slate-500 font-medium">Cargando tus grupos...</span>
+      </div>
+    } @else if (groupsStore.leaderGroups().length === 0) {
       <section class="flex flex-col items-center rounded-3xl border border-dashed border-slate-300 bg-white px-8 py-14 text-center shadow-sm">
         <div class="grid h-16 w-16 place-items-center rounded-2xl bg-slate-100 text-slate-600"><mat-icon class="text-3xl">assignment_late</mat-icon></div>
         <h2 class="mt-5 text-xl font-extrabold text-slate-900">Necesitas un grupo para crear tareas</h2>
@@ -24,7 +29,7 @@
       </section>
     } @else {
     @if (groupsStore.leaderGroups().length > 1) {
-      <div class="flex items-center gap-2 overflow-x-auto pb-1">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="text-xs font-bold text-slate-400 uppercase mr-2">Grupo:</span>
         @for (group of groupsStore.leaderGroups(); track group.id) {
           <button type="button" (click)="selectGroup(group.id)"
@@ -40,7 +45,9 @@
         }
       </div>
     }
-    <app-ai-report-card [groupId]="selectedGroupId()" />
+    @if (selectedGroupId(); as reportGroupId) {
+      <app-ai-report-card [groupId]="reportGroupId" />
+    }
     <div class="flex items-center gap-2 overflow-x-auto pb-1">
       @for (s of statusOptions; track s) {
         <button type="button" (click)="setFilter(s)"

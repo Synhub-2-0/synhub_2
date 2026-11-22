@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 import { GroupDetails } from './group-details';
 import { GroupsStore } from '../../../application/groups.store';
 
@@ -22,6 +23,23 @@ describe('GroupDetails', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('el rol sale de los grupos que lidera el usuario, no de la URL', () => {
+    const store = TestBed.inject(GroupsStore);
+    const led = signal([{ id: 10 }] as never[]);
+    vi.spyOn(store, 'leaderGroups').mockImplementation(led as never);
+    component.groupId.set(10);
+    expect(component.isLeaderView()).toBe(true);
+    component.groupId.set(11);
+    expect(component.isLeaderView()).toBe(false);
+  });
+
+  it('el botón de tareas lleva a Gestión de tareas del grupo', () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    component.groupId.set(10);
+    component.goToTasks();
+    expect(navigate).toHaveBeenCalledWith(['/tasks/member'], { queryParams: { groupId: 10 } });
   });
 
   it('HUM-05: quitar a un integrante pide confirmación', () => {

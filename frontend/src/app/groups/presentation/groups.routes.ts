@@ -7,5 +7,5 @@ const groupDetails = () => import('./views/group-details/group-details').then(m 
 export const groupsRoutes: Routes = [
   { path: 'leader', loadComponent: leaderGroups },
   { path: 'member', loadComponent: memberGroups },
-  { path: '', loadComponent: groupDetails }
+  { path: ':id', loadComponent: groupDetails }
 ];

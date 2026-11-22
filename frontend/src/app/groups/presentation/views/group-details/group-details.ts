@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,7 +27,6 @@ export class GroupDetails implements OnInit {
   readonly invitationsStore = inject(InvitationsStore);
   readonly iamStore = inject(IamStore);
   readonly groupId = signal(0);
-  readonly isLeaderView = signal(false);
   readonly isEditing = signal(false);
   editName = '';
   editDescription = '';
@@ -36,10 +35,10 @@ export class GroupDetails implements OnInit {
   /** Integrante cuya expulsión espera confirmación (id de usuario), o 'self' para salir del grupo. */
   readonly pendingRemoval = signal<number | 'self' | null>(null);
 
-  readonly group = computed<Group | undefined>(() => {
-    const groups = this.groupsStore.groups();
-    return this.groupId() ? groups.find(group => group.id === this.groupId()) : groups[0];
-  });
+  readonly group = computed<Group | undefined>(() => this.groupsStore.groups().find(group => group.id === this.groupId()));
+
+  // The role is not in the URL: the group is led by the user when it is in the list of groups they lead.
+  readonly isLeaderView = computed(() => this.groupsStore.leaderGroups().some(group => group.id === this.groupId()));
 
   // Members are a separate resource (GET /groups/{id}/members), cached by group in the store.
   private readonly groupMembers = computed(() => this.groupsStore.membersByGroup()[this.groupId()] ?? []);
@@ -48,20 +47,30 @@ export class GroupDetails implements OnInit {
     .filter(user => user.roleInGroup === 'GROUP_MEMBER')
     .map(user => user.user));
 
-  ngOnInit(): void {
-    const id = Number(this.route.snapshot.queryParamMap.get('id'));
-    const role = this.route.snapshot.queryParamMap.get('role');
-    this.isLeaderView.set(role === 'leader');
-    const selectedId = id || this.groupsStore.groups()[0]?.id;
-    if (selectedId) {
-      this.groupId.set(selectedId);
-      this.groupsStore.loadGroupMembers(selectedId);
-      this.tasksStore.loadTasksByGroup(selectedId);
-      if (this.isLeaderView()) {
+  constructor() {
+    // Only the leader sees the invitations: they load once the groups say this user leads the group.
+    effect(() => {
+      const id = this.groupId();
+      if (id && this.isLeaderView()) {
         this.invitationsStore.clearError();
-        this.invitationsStore.loadGroupInvitations(selectedId);
+        this.invitationsStore.loadGroupInvitations(id);
       }
+    });
+  }
+
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (id) {
+      this.groupId.set(id);
+      this.groupsStore.loadGroupMembers(id);
+      this.tasksStore.loadTasksByGroup(id);
     }
+  }
+
+  goToTasks(): void {
+    this.router
+      .navigate([this.isLeaderView() ? '/tasks/leader' : '/tasks/member'], { queryParams: { groupId: this.groupId() } })
+      .then();
   }
 
   inviteUser(): void {
