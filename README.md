@@ -64,7 +64,7 @@ cd backend
 
 #### Variables de entorno
 
-Solo el backend usa variables de entorno. Spring **no lee `.env` por sí solo**: hay que cargarlo en la terminal (o en el IDE) antes de arrancar.
+Solo el backend usa variables de entorno. Spring **no lee `.env` por sí solo**: hay que cargarlo en la terminal (o en el IDE) antes de arrancar. En PowerShell, el atajo es `.\scripts\run-backend.ps1`: carga el `.env` de la raíz y arranca el backend con el perfil `dev`.
 
 1. Crea **un solo** `.env` en la **raíz del repo**, junto a `.env.example` y `docker-compose.yml`. No va dentro de `backend/` ni de `frontend/`. Está en `.gitignore`, así que no se sube:
 
