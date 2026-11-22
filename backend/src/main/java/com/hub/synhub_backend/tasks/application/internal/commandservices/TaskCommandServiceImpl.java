@@ -54,6 +54,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
                 .fetchMembership(command.groupId(), user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User with id " + command.userId() + " is not in group with id " + command.groupId()));
+        profile.getGroup().ensureNotLocked();
 
         var task = new Task(command);
         profile.addTask(task);
@@ -79,6 +80,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (!this.groupsContextFacade.isLeader(groupId, command.requesterId())) {
             throw new AccessDeniedException("Only the leader can edit task details");
         }
+        task.getProfile().getGroup().ensureNotLocked();
         task.ensureNotFinished();
 
         var currentProfile = task.getProfile();
@@ -98,7 +100,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         var edited = task.updateTask(command) || reassigned;
         // Editar la tarea es lo que resuelve su solicitud de modificación y la reanuda (el reloj vuelve a correr).
         if (edited && this.requestsContextFacade.resolvePendingModification(task.getId())) {
-            task.resumeAfterEditing();
+            task.resumeAfterModification();
         }
         return this.taskRepository.save(task);
     }
@@ -113,6 +115,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (!task.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
             throw new AccessDeniedException("Only the leader of the group can delete tasks");
         }
+        task.getProfile().getGroup().ensureNotLocked();
         task.ensureNotFinished();
         // Soft delete (HUM-03): la tarea conserva su perfil; solo sale de la colección en memoria.
         var profile = task.getProfile();
@@ -123,6 +126,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     }
 
     @Override
+    @Transactional
     public Task handle(UpdateTaskStatusCommand command) {
         var taskToUpdate = this.taskRepository
                 .findById(command.taskId())
@@ -135,13 +139,19 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         if (!taskToUpdate.getProfile().getGroup().getLeader().getId().equals(command.requesterId())) {
             throw new AccessDeniedException("Only the leader of the group can update the task status");
         }
+        taskToUpdate.getProfile().getGroup().ensureNotLocked();
         taskToUpdate.ensureNotFinished();
         // Con una modificación pendiente la tarea solo se reanuda editándola.
         if (command.status() == TaskStatus.IN_PROGRESS
                 && this.requestsContextFacade.hasPendingModification(taskToUpdate.getId()))
             throw new TaskStatusTransitionNotAllowedException(
                     "The task has a pending modification request: it resumes when the leader edits the task");
+        var wasExpired = taskToUpdate.getStatus() == TaskStatus.EXPIRED;
         taskToUpdate.updateStatus(command);
+        // Reanudar una tarea vencida (por cualquier vía) cierra su aviso de vencimiento.
+        if (wasExpired && command.status() == TaskStatus.IN_PROGRESS) {
+            this.requestsContextFacade.resolvePendingExpiration(taskToUpdate.getId());
+        }
         return this.taskRepository.save(taskToUpdate);
     }
 

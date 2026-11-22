@@ -46,11 +46,11 @@ Desde el commit `727054f` las solicitudes son un recurso raíz: la tarea o el gr
 1. La request debe existir (404).
 2. Solo el líder del grupo de la tarea (403).
 3. Nuevo estado `PENDING` → 400. Si la request ya fue revisada → 409 `RequestAlreadyReviewedException`.
-4. Una `MODIFICATION` no se revisa: responde 409 `ModificationResolvedByEditingException` (para el líder; el integrante ya recibe 403). Se resuelve cuando el líder edita la tarea: `TaskCommandServiceImpl` llama a `RequestsContextFacade.resolvePendingModification` y la request queda `APPROVED`.
+4. Una `MODIFICATION`: `APPROVED` responde 409 `ModificationResolvedByEditingException` (se aprueba editando la tarea: `TaskCommandServiceImpl` llama a `RequestsContextFacade.resolvePendingModification` y la request queda `APPROVED`). `REJECTED` (denegarla) cierra la request y reanuda la tarea con `TasksContextFacade.resumeAfterModificationDenied` (`ON_HOLD` → `IN_PROGRESS`, el reloj vuelve a correr). Una ya revisada → 409 `RequestAlreadyReviewedException`.
 5. Si es `SUBMISSION`:
    - `APPROVED`: exige la tarea en `COMPLETED` (409 si no lo está) y llama a `applySubmissionReview(taskId, true)` → `DONE`.
    - `REJECTED`: si la tarea sigue `COMPLETED`, llama a `applySubmissionReview(taskId, false)` → `IN_PROGRESS`; si no, solo cierra la request.
-6. `EXPIRED` no modifica la tarea; solo cambia el estado de la request.
+6. `EXPIRED` no modifica la tarea; `REJECTED` responde 409 `ExpiredRequestCannotBeRejectedException` (solo se reanuda la tarea, y la web la deja `APPROVED` al terminar).
 
 `RequestQueryServiceImpl` maneja `GetRequestsByTaskIdQuery` y `GetRequestByIdQuery` (solo integrantes del grupo de la tarea, vía `TasksContextFacade` + `GroupsContextFacade.isMember`), y `GetRequestsByGroupIdQuery` (valida al líder con `GroupsContextFacade`; filtra y ordena en SQL, también paginado).
 
@@ -61,7 +61,7 @@ Desde el commit `727054f` las solicitudes son un recurso raíz: la tarea o el gr
 | tasks | `TasksContextFacade` (ACL) | Cargar la tarea y aplicar el resultado de la revisión. |
 | groups | `GroupsContextFacade` (ACL) | Saber quién es el líder del grupo y si el solicitante es integrante. |
 
-Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsByTaskId` (usada por tasks antes de borrar una tarea), `hasPendingModification` (tasks la usa para rechazar con 409 reanudar a mano una tarea con una modificación pendiente) y `resolvePendingModification` (tasks la llama al editar la tarea: aprueba la modificación pendiente). Su implementación usa `RequestRepository` directamente para no formar un ciclo de beans con `RequestCommandService` → `TasksContextFacade`.
+Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsByTaskId` (usada por tasks antes de borrar una tarea), `hasPendingModification` (tasks la usa para rechazar con 409 reanudar a mano una tarea con una modificación pendiente) `resolvePendingModification` (tasks la llama al editar la tarea: aprueba la modificación pendiente) y `resolvePendingExpiration` (tasks la llama al reanudar una tarea `EXPIRED` por `PUT /tasks/{id}/status`: aprueba su aviso de vencimiento pendiente). Su implementación usa `RequestRepository` directamente para no formar un ciclo de beans con `RequestCommandService` → `TasksContextFacade`.
 | iam | `UserQueryService` (en los controladores) | Resolver el usuario del token. |
 
 ## Persistencia
@@ -81,7 +81,7 @@ Requests también **ofrece** una ACL: `RequestsContextFacade.deleteAllRequestsBy
 
 ## Pruebas
 
-- `RequestCommandServiceImplTest` (30 casos): creación, revisión, permisos y efectos sobre la tarea; `MODIFICATION` (pausa la tarea, comentario obligatorio, no se revisa ni se borra).
+- `RequestCommandServiceImplTest` (38 casos): creación, revisión, permisos y efectos sobre la tarea; `MODIFICATION` (pausa la tarea, comentario obligatorio, no se aprueba ni se borra directamente, se puede denegar y entonces reanuda la tarea).
 - `RequestsContextFacadeImplTest` (3 casos): `hasPendingModification` y `resolvePendingModification`.
 - `RequestQueryServiceImplTest` (5 casos): orden, filtros, permiso de líder y grupo inexistente.
 

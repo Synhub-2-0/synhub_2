@@ -18,7 +18,7 @@ export class RequestsStore {
   private readonly groupRequestsSignal = signal<TaskRequest[]>([]);
   private readonly requestsByTaskSignal = signal<Record<number, TaskRequest[]>>({});
   private readonly statusFilterSignal = signal<RequestStatus>('PENDING');
-  private readonly typeFilterSignal = signal<RequestType>('SUBMISSION');
+  private readonly typeFilterSignal = signal<RequestType | 'ALL'>('ALL');
   private readonly loadingSignal = signal<boolean>(false);
   private readonly processingSignal = signal<boolean>(false);
   private readonly errorSignal = signal<string | null>(null);
@@ -42,21 +42,21 @@ export class RequestsStore {
     this.groupRequestsSignal.set([]);
     this.requestsByTaskSignal.set({});
     this.statusFilterSignal.set('PENDING');
-    this.typeFilterSignal.set('SUBMISSION');
+    this.typeFilterSignal.set('ALL');
     this.errorSignal.set(null);
   }
 
-  /** Leader inbox: the requests of the group of the chosen type (submissions, modifications or expirations) and status. */
+  /** Leader inbox: the requests of the group of the chosen status and type ('ALL' = every type, no filter). */
   loadGroupRequests(
     groupId: number,
     status: RequestStatus = this.statusFilterSignal(),
-    type: RequestType = this.typeFilterSignal(),
+    type: RequestType | 'ALL' = this.typeFilterSignal(),
   ): void {
     this.statusFilterSignal.set(status);
     this.typeFilterSignal.set(type);
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
-    this.requestsApi.getRequestsByGroup(groupId, status, type).subscribe({
+    this.requestsApi.getRequestsByGroup(groupId, status, type === 'ALL' ? undefined : type).subscribe({
       next: (requests) => {
         this.groupRequestsSignal.set(requests);
         this.loadingSignal.set(false);
@@ -69,12 +69,13 @@ export class RequestsStore {
     });
   }
 
-  approveRequest(request: TaskRequest): void {
-    this.review(this.requestsApi.approveRequest(request.id));
+  /** `onSuccess` receives the reviewed request, whose task already carries what the review changed (e.g. it resumed). */
+  approveRequest(request: TaskRequest, onSuccess?: (reviewed: TaskRequest) => void): void {
+    this.review(this.requestsApi.approveRequest(request.id), onSuccess);
   }
 
-  rejectRequest(request: TaskRequest): void {
-    this.review(this.requestsApi.rejectRequest(request.id));
+  rejectRequest(request: TaskRequest, onSuccess?: (reviewed: TaskRequest) => void): void {
+    this.review(this.requestsApi.rejectRequest(request.id), onSuccess);
   }
 
   /**
@@ -93,11 +94,16 @@ export class RequestsStore {
     this.create(taskId, description.trim(), 'MODIFICATION', onSuccess);
   }
 
-  loadTaskRequests(taskId: number): void {
+  loadTaskRequests(taskId: number, onDone?: () => void): void {
     this.requestsApi.getRequestsByTask(taskId).subscribe({
-      next: (requests) =>
-        this.requestsByTaskSignal.update((cache) => ({ ...cache, [taskId]: requests })),
-      error: () => this.requestsByTaskSignal.update((cache) => ({ ...cache, [taskId]: [] })),
+      next: (requests) => {
+        this.requestsByTaskSignal.update((cache) => ({ ...cache, [taskId]: requests }));
+        onDone?.();
+      },
+      error: () => {
+        this.requestsByTaskSignal.update((cache) => ({ ...cache, [taskId]: [] }));
+        onDone?.();
+      },
     });
   }
 
@@ -144,7 +150,7 @@ export class RequestsStore {
     });
   }
 
-  private review(call$: Observable<TaskRequest>): void {
+  private review(call$: Observable<TaskRequest>, onSuccess?: (reviewed: TaskRequest) => void): void {
     this.processingSignal.set(true);
     this.errorSignal.set(null);
     call$.subscribe({
@@ -156,6 +162,7 @@ export class RequestsStore {
             : requests.map((r) => (r.id === reviewed.id ? reviewed : r)),
         );
         this.processingSignal.set(false);
+        onSuccess?.(reviewed);
       },
       error: (err) => {
         this.setError(err.message);

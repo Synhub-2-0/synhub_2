@@ -11,6 +11,7 @@ public class GroupResourceFromEntityAssembler {
                 group.getImgUrl().imgUrl(),
                 group.getDescription(),
                 group.getCode().code(),
-                group.getMemberCount());
+                group.getMemberCount(),
+                group.isLocked());
     }
 }

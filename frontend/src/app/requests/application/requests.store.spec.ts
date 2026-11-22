@@ -32,10 +32,28 @@ describe('RequestsStore', () => {
   it('la bandeja pide por defecto las entregas pendientes y recuerda el estado elegido', () => {
     api.getRequestsByGroup.mockReturnValue(of([request(1), request(2)]));
     store.loadGroupRequests(10);
-    expect(api.getRequestsByGroup).toHaveBeenCalledWith(10, 'PENDING', 'SUBMISSION');
+    expect(api.getRequestsByGroup).toHaveBeenCalledWith(10, 'PENDING', undefined);
     store.loadGroupRequests(10, 'APPROVED');
-    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'APPROVED', 'SUBMISSION');
+    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'APPROVED', undefined);
     expect(store.statusFilter()).toBe('APPROVED');
+  });
+
+  it('"Todas" es el tipo por defecto y no filtra por tipo en el backend', () => {
+    api.getRequestsByGroup.mockReturnValue(of([request(1), request(2, 'PENDING', 'MODIFICATION'), request(3, 'PENDING', 'EXPIRED')]));
+    expect(store.typeFilter()).toBe('ALL');
+
+    store.loadGroupRequests(10, 'PENDING', 'ALL');
+
+    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'PENDING', undefined);
+    expect(store.groupRequests().map((r) => r.requestType)).toEqual(['SUBMISSION', 'MODIFICATION', 'EXPIRED']);
+  });
+
+  it('volver a "Todas" después de filtrar un tipo deja de filtrar', () => {
+    api.getRequestsByGroup.mockReturnValue(of([]));
+    store.loadGroupRequests(10, 'PENDING', 'EXPIRED');
+    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'PENDING', 'EXPIRED');
+    store.loadGroupRequests(10, 'PENDING', 'ALL');
+    expect(api.getRequestsByGroup).toHaveBeenLastCalledWith(10, 'PENDING', undefined);
   });
 
   it('la bandeja se filtra por tipo: modificaciones y vencidas, y recuerda el tipo', () => {
@@ -70,6 +88,35 @@ describe('RequestsStore', () => {
 
     expect(store.groupRequests()).toEqual([]);
     expect(store.processing()).toBe(false);
+  });
+
+  it('rechazar o aprobar avisa con la solicitud revisada (su tarea ya actualizada)', () => {
+    api.rejectRequest.mockReturnValue(of(request(1, 'REJECTED', 'MODIFICATION')));
+    api.approveRequest.mockReturnValue(of(request(2, 'APPROVED')));
+    const onReject = vi.fn();
+    const onApprove = vi.fn();
+
+    store.rejectRequest(request(1, 'PENDING', 'MODIFICATION'), onReject);
+    store.approveRequest(request(2), onApprove);
+
+    expect(onReject).toHaveBeenCalledWith(expect.objectContaining({ id: 1, requestStatus: 'REJECTED' }));
+    expect(onApprove).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }));
+  });
+
+  it('si la revisión falla no llama a onSuccess', () => {
+    api.rejectRequest.mockReturnValue(throwError(() => new Error('x')));
+    const onSuccess = vi.fn();
+    store.rejectRequest(request(1), onSuccess);
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('loadTaskRequests avisa cuando terminó, con o sin error', () => {
+    const done = vi.fn();
+    api.getRequestsByTask.mockReturnValue(of([request(1)]));
+    store.loadTaskRequests(7, done);
+    api.getRequestsByTask.mockReturnValue(throwError(() => new Error('x')));
+    store.loadTaskRequests(8, done);
+    expect(done).toHaveBeenCalledTimes(2);
   });
 
   it('en otra pestaña la entrega revisada solo cambia de estado', () => {
@@ -140,6 +187,6 @@ describe('RequestsStore', () => {
     TestBed.tick();
     expect(store.groupRequests()).toEqual([]);
     expect(store.statusFilter()).toBe('PENDING');
-    expect(store.typeFilter()).toBe('SUBMISSION');
+    expect(store.typeFilter()).toBe('ALL');
   });
 });

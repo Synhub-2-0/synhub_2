@@ -54,6 +54,7 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
             throw new AccessDeniedException(
                     "User with id " + command.requesterId() + " is not the leader of the group");
         }
+        group.ensureNotLocked();
         if (this.invitationRepository.existsByUser_IdAndGroup_Id(command.userId(), command.groupId())) {
             throw new UserAlreadyHasInvitationForGroupException("User with id " + command.userId()
                     + " already has an invitation for group with id " + command.groupId());
@@ -100,6 +101,7 @@ public class InvitationCommandServiceImpl implements InvitationCommandService {
                     "User with id " + command.userId() + " is not the receiver of the invitation.");
         }
         var group = invitation.getGroup();
+        group.ensureNotLocked();
         if (this.groupProfileRepository.existsByGroup_IdAndUser_Id(group.getId(), userToJoin.getId())) {
             throw new UserAlreadyInGroupException(
                     "User with id " + userToJoin.getId() + " is already in group with id " + group.getId());

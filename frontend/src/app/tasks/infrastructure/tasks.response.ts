@@ -18,6 +18,7 @@ export interface TaskGroupReducedResource {
   code: string;
   memberCount: number;
   leader: TaskUserResource;
+  locked?: boolean;
 }
 
 export interface TaskResource extends BaseResource {

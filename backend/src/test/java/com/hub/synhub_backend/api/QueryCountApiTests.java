@@ -84,6 +84,11 @@ class QueryCountApiTests extends ApiTestSupport {
     void groupsOfALeaderUseAConstantNumberOfQueries() {
         var leader = account("lider");
         var other = account("lider2");
+        // Cuatro grupos activos: con el plan Gratis (2) los demás nacerían bloqueados y no admitirían invitaciones.
+        assertEquals(
+                200,
+                put("/subscriptions/me", other.token(), java.util.Map.of("plan", "ULTRA"))
+                        .status());
         join(leader, account("y"), createGroup(leader));
         for (int i = 0; i < 4; i++) {
             var groupId = createGroup(other);

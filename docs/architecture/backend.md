@@ -12,6 +12,7 @@ Cada paquete de primer nivel es un **bounded context** con su propio modelo y su
 | `groups` | Grupos, membresías y liderazgo; invitaciones | `Group` (+ entidad `GroupProfile`), `Invitation` | [groups](../features/groups/README.md), [invitations](../features/invitations/README.md) |
 | `tasks` | Tareas, su ciclo de estados y su vencimiento automático | `Task` | [tasks](../features/tasks/README.md) |
 | `requests` | Solicitudes sobre tareas (entregas, modificaciones, vencimientos) y su revisión | `Request` | [requests](../features/requests/README.md) |
+| `subscriptions` | Plan de cada usuario y límite de grupos liderados activos | `Subscription` | [subscriptions](../features/subscriptions/README.md) |
 | `ai` | Clasificación de tareas e informes con Amazon Bedrock (sin persistencia) | — (value object `TaskClassification`) | [ai](../features/ai/README.md) |
 | `metrics` | Cálculos de productividad sobre tareas (sin persistencia propia) | — (resources de solo lectura) | [metrics](../features/metrics/README.md) |
 | `shared` | Clases base, manejo global de errores, OpenAPI y estrategia de nombres JPA | `AuditableAbstractAggregateRoot`, `AuditableModel` | — |
@@ -26,6 +27,7 @@ flowchart TB
     requests((requests))
     ai((ai))
     metrics((metrics))
+    subscriptions((subscriptions))
     groups -- "JPA: GroupProfile.user, Invitation.user<br/>ACL: IamContextFacade" --> iam
     tasks -- "JPA: Task.profile → GroupProfile<br/>ACL: GroupsContextFacade" --> groups
     tasks -- "ACL: IamContextFacade" --> iam
@@ -34,6 +36,8 @@ flowchart TB
     tasks -- "scheduler → RequestCommandService" --> requests
     tasks -- "ACL: RequestsContextFacade (borrado)" --> requests
     groups -- "ACL: TasksContextFacade (borrar grupo)" --> tasks
+    groups -- "ACL: SubscriptionsContextFacade (límite de grupos)" --> subscriptions
+    subscriptions -- "ACL: GroupsContextFacade (aplicar el límite)" --> groups
     ai -- "TaskQueryService" --> tasks
     ai -- "TaskMetricsQueryService" --> metrics
     ai -- "GroupQueryService" --> groups

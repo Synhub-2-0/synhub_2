@@ -104,7 +104,7 @@
                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Qué pide cambiar el integrante</span>
                 <p class="mt-1 text-sm leading-relaxed text-slate-700">{{ request.description }}</p>
                 @if (request.requestStatus === 'PENDING') {
-                  <p class="mt-2 text-xs text-slate-500">La tarea está en espera y su tiempo detenido: se resuelve al editarla.</p>
+                  <p class="mt-2 text-xs text-slate-500">La tarea está en espera y su tiempo detenido: edítala para aprobar el cambio o recházalo para que siga como estaba.</p>
                 }
               </div>
             } @else if (request.requestType === 'EXPIRED') {
@@ -121,16 +121,24 @@
                 }
               </div>
 
-              @if (request.requestStatus === 'PENDING' && request.requestType === 'MODIFICATION') {
-                <footer class="border-t pt-4">
+              @if (request.requestStatus === 'PENDING' && isLocked(request)) {
+                <p class="flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800"><mat-icon class="scale-75">lock</mat-icon> Grupo bloqueado: solo lectura</p>
+              }
+
+              @if (request.requestStatus === 'PENDING' && !isLocked(request) && request.requestType === 'MODIFICATION') {
+                <footer class="grid grid-cols-2 gap-3 border-t pt-4">
+                  <button type="button" (click)="reject(request)" [disabled]="requestsStore.processing()"
+                    class="rounded-xl bg-red-50 px-4 py-2.5 text-center text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50">
+                    Rechazar
+                  </button>
                   <button type="button" (click)="editTask(request)"
-                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4A90E2] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-blue-600">
+                    class="flex items-center justify-center gap-2 rounded-xl bg-[#4A90E2] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-blue-600">
                     <mat-icon class="scale-75">edit</mat-icon> Editar tarea
                   </button>
                 </footer>
               }
 
-              @if (request.requestStatus === 'PENDING' && request.requestType === 'EXPIRED') {
+              @if (request.requestStatus === 'PENDING' && !isLocked(request) && request.requestType === 'EXPIRED') {
                 <footer class="flex flex-col gap-3 border-t pt-4">
                   @if (resumingRequestId() === request.id) {
                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400" [attr.for]="'resume-' + request.id">Nueva fecha límite</label>
@@ -146,17 +154,13 @@
                         class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-50">Reanudar</button>
                     </div>
                   } @else {
-                    <div class="grid grid-cols-2 gap-3">
-                      <button type="button" (click)="dismissExpired(request)" [disabled]="requestsStore.processing()"
-                        class="rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200 disabled:opacity-50">Descartar aviso</button>
-                      <button type="button" (click)="startResume(request)" [disabled]="requestsStore.processing()"
-                        class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-50">Reanudar tarea</button>
-                    </div>
+                    <button type="button" (click)="startResume(request)" [disabled]="requestsStore.processing()"
+                      class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-50">Reanudar tarea</button>
                   }
                 </footer>
               }
 
-              @if (request.requestStatus === 'PENDING' && request.requestType === 'SUBMISSION') {
+              @if (request.requestStatus === 'PENDING' && !isLocked(request) && request.requestType === 'SUBMISSION') {
                 <footer class="grid grid-cols-2 gap-3 border-t pt-4">
                   <button type="button" (click)="reject(request)" [disabled]="requestsStore.processing()"
                     class="rounded-xl bg-red-50 px-4 py-2.5 text-center text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50">

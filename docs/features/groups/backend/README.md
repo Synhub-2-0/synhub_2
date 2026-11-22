@@ -17,9 +17,12 @@ Todos requieren token. El usuario actual se obtiene del token (`@AuthenticationP
 | `PUT` | `/api/v1/groups/{groupId}` | `UpdateGroupResource { name?, imgUrl?, description? }` | `200 GroupResource` · `403` | Solo el líder. Los campos vacíos o ausentes no cambian. |
 | `DELETE` | `/api/v1/groups/{groupId}` | — | `204` · `403` · `404` | Solo el líder. Borra primero las tareas del grupo y sus requests (`TasksContextFacade.deleteAllTasksByGroupId`); membresías e invitaciones caen en cascada. Todo es borrado lógico (HUM-03). |
 | `POST` | `/api/v1/groups/join` | `JoinGroupResource { code }` | `200 GroupResource` · `400` código mal formado · `404` no existe · `409` ya pertenece | Cualquier usuario con el código entra como `GROUP_MEMBER` (HUM-05). El código se normaliza a mayúsculas. Consume una invitación pendiente al mismo grupo. |
+| `POST` | `/api/v1/groups/{groupId}/activate` | — | `200 GroupResource` · `403` · `404` · `409` sin cupo o ya activo | Solo el líder. Activa un grupo bloqueado por el plan si su plan tiene un cupo libre (`SubscriptionsContextFacade.maxLedGroups`). Ver "Bloqueo por plan". |
 | `DELETE` | `/api/v1/groups/{groupId}/members/{userId}` | — | `204` · `403` · `404` no es integrante · `409` es el líder | El líder quita a un miembro, o un miembro sale (`userId` = él mismo). Borra primero las tareas del integrante en ese grupo y sus requests, después la membresía (HUM-05, borrado lógico). |
 
-`GroupResource = { id, name, imgUrl, description, code, memberCount }`
+`GroupResource = { id, name, imgUrl, description, code, memberCount, locked }` · `GroupResourceReduced` añade `leader` (también lleva `locked`).
+
+`locked`: el grupo está bloqueado (solo lectura) porque su líder superó el límite de su plan. En un grupo bloqueado, `PUT /groups/{id}`, `POST /groups/join` y `DELETE …/members/{u}` del líder responden `409`; salir del grupo y borrarlo siguen permitidos.
 
 ## Modelo de dominio
 
@@ -67,3 +70,9 @@ Las reglas de autorización (por ejemplo, "solo el líder") se validan en los co
 
 Sin observaciones abiertas: los hallazgos de esta parte están resueltos (ver [AUDITORIA.md](../../../AUDITORIA.md)).
 
+## Bloqueo por plan
+
+- `Group.locked`, `lock()`, `unlock()` y `ensureNotLocked()` (lanza `GroupLockedException`, 409).
+- `GroupCommandServiceImpl`: `CreateGroupCommand` bloquea el grupo si los grupos activos que el líder ya lidera alcanzan `SubscriptionsContextFacade.maxLedGroups`; `ActivateGroupCommand` (`POST /groups/{id}/activate`) exige ser el líder (403), que esté bloqueado (409 `GroupAlreadyActiveException`) y un cupo libre (409 `NoFreeGroupSlotException`). Editar, unirse por código y quitar a otro integrante comprueban `ensureNotLocked()` **después** de los permisos; salir del grupo y borrarlo no.
+- `GroupsContextFacade` ofrece además `fetchLedGroups` y `applyGroupLimit` (usados por subscriptions; usan los repositorios de groups para no formar un ciclo de beans). `applyGroupLimit` bloquea los grupos activos que no estén en `activeGroupIds` y exige exactamente `límite` grupos activos del propio usuario (409 `InvalidActiveGroupSelectionException`).
+- `InvitationCommandServiceImpl`: crear y aceptar invitaciones comprueban `ensureNotLocked()`; cancelar no.

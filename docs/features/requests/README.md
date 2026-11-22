@@ -5,8 +5,8 @@ Una **request** es una solicitud ligada a una tarea que el líder del grupo revi
 | Tipo | Quién la crea | Efecto al revisarla |
 |---|---|---|
 | `SUBMISSION` | El integrante asignado, al marcar completada su tarea (la "entrega"): la tarea pasa a `COMPLETED` y queda pendiente de validación | Aprobar → la tarea pasa a `DONE`. Rechazar → vuelve a `IN_PROGRESS`. |
-| `MODIFICATION` | El integrante asignado, sobre una tarea `IN_PROGRESS`, con un comentario obligatorio. La tarea pasa a `ON_HOLD` y **su reloj se detiene** | No se aprueba, rechaza ni borra mientras está pendiente (409): **se resuelve cuando el líder edita la tarea** (cualquier cambio de título, descripción, fecha o clasificación). Entonces la request queda `APPROVED` y la tarea vuelve a `IN_PROGRESS`. Mientras tanto la tarea tampoco se reanuda a mano (409). |
-| `EXPIRED` | El sistema (`TaskStatusScheduler` de tasks) cuando una tarea vence | Solo cambia el estado de la request; no mueve la tarea. En la web: "Descartar aviso" (`REJECTED`) o "Reanudar tarea" (nueva fecha futura → `IN_PROGRESS`, y la request queda `APPROVED`). |
+| `MODIFICATION` | El integrante asignado, sobre una tarea `IN_PROGRESS`, con un comentario obligatorio. La tarea pasa a `ON_HOLD` y **su reloj se detiene** | El líder la **aprueba editando la tarea** (cualquier cambio de título, descripción, fecha o clasificación): la request queda `APPROVED` y la tarea vuelve a `IN_PROGRESS`. O la **deniega** (`REJECTED`): la tarea vuelve a `IN_PROGRESS` tal como estaba y su reloj se reanuda. No se aprueba ni se borra directamente (409) y, mientras está pendiente, la tarea tampoco se reanuda a mano (409). |
+| `EXPIRED` | El sistema (`TaskStatusScheduler` de tasks) cuando una tarea vence | **No se puede rechazar** (409): solo se reanuda la tarea, y **reanudarla por cualquier vía** (Validaciones o el tablero) cierra el aviso (`APPROVED`). En la web: "Reanudar tarea" (nueva fecha futura → `IN_PROGRESS`). |
 
 Estados: `PENDING` → `APPROVED` \| `REJECTED` (una sola revisión).
 
@@ -58,3 +58,7 @@ sequenceDiagram
 - **Frontend**: `RequestsApiEndpoint` llama al recurso `/requests`; `RequestsAssembler` reutiliza `TasksAssembler`; `TaskCard` (tasks) inyecta `RequestsStore`, y `Validations` usa `GroupsStore` para elegir el grupo.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).
+
+## Grupos bloqueados
+
+Crear (`POST /requests`), revisar y borrar solicitudes responden 409 (`GroupLockedException`) si el grupo de la tarea está bloqueado por el plan de su líder (después de los permisos). La solicitud `EXPIRED` que crea el sistema sigue registrándose. En la web, `Validations` muestra "Grupo bloqueado: solo lectura" en lugar de las acciones. Ver [subscriptions](../subscriptions/README.md).

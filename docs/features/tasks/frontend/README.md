@@ -17,7 +17,7 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 
 | Componente | Uso |
 |---|---|
-| `TaskBoard` | Tablero Kanban por estado. Emite `statusChange` al cambiar el `<select>` de una tarjeta, que **solo ve el líder** (`canManageAll`); para el miembro el tablero es de solo lectura. Se usa en `Home` (shared) y en `GroupDetails` (groups). |
+| `TaskBoard` | Tablero Kanban por estado. El `<select>` de una tarjeta **solo lo ve el líder** (`canManageAll`); para el miembro el tablero es de solo lectura. Al elegir un estado emite `statusChange`, salvo en una tarea `EXPIRED` u `ON_HOLD`: ahí abre `TaskResolveDialog` (ver "Resolver antes de cambiar el estado") y el selector vuelve a su valor. Se usa en `Home` (shared) y en `GroupDetails` (groups). |
 | `TaskList` → `TaskCard` | Lista de tarjetas. Con `showGroup`, el nombre del grupo abre `/groups/:id` (la misma ruta sirve al líder y al miembro). Para el miembro asignado incluye `TaskMemberActions`. |
 | `TaskMemberActions` | Acciones del integrante asignado, compartidas por `TaskCard` y `TaskDetails`. En una tarea `IN_PROGRESS`: **marcar completada y enviar a validación** (botón verde, sin comentario; usa `RequestsStore.submitTask` y actualiza la tarea con `TasksStore.applyUpdatedTask`) y **"Solicitar modificación"** (botón amarillo; abre un comentario obligatorio, `RequestsStore.createModification`, que deja la tarea `ON_HOLD`). Muestra "En revisión por el líder" cuando la `COMPLETED` tiene una entrega pendiente y "Modificación pendiente: el líder debe editar la tarea" cuando la `ON_HOLD` tiene una. Para una tarea `ON_HOLD` sin solicitud o `EXPIRED` solo avisa que cambiar su estado es del líder. |
 
@@ -73,3 +73,13 @@ La sección "Clasificación (opcional)" aparece al crear y al editar. Sus campos
 ## Pruebas
 
 `tasks.assembler.spec.ts`.
+
+## Resolver antes de cambiar el estado: `TaskResolveDialog`
+
+`TaskBoard` no emite el cambio de estado de una tarea `EXPIRED` u `ON_HOLD`: abre `TaskResolveDialog` (`presentation/components/task-resolve-dialog`) y el selector vuelve a su valor.
+
+| Tarea | El diálogo ofrece |
+|---|---|
+| `EXPIRED` | Una **nueva fecha límite** (futura): `TasksStore.resumeExpiredTask` cambia la fecha y la pasa a `IN_PROGRESS`; el backend cierra su aviso de vencimiento. |
+| `ON_HOLD` con una modificación pendiente | El comentario del integrante y **Editar tarea** (`/tasks/:id/edit?returnTo=…`, vuelve a la pantalla actual) o **Rechazar solicitud** (`RequestsStore.rejectRequest`: la tarea vuelve a `IN_PROGRESS`). |
+| `ON_HOLD` sin nada pendiente | Nada que resolver: el diálogo emite `proceed` y el tablero sigue con el cambio de estado normal. |

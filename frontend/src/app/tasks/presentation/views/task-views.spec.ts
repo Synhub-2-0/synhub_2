@@ -57,6 +57,51 @@ describe('Vistas de tasks', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
+  describe('TaskForm: volver a donde se vino', () => {
+    const open = async (queryParams: Record<string, string>) => {
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [TaskForm],
+        providers: [
+          provideRouter([]),
+          { provide: TasksApi, useValue: apiStub() },
+          { provide: GroupsApi, useValue: apiStub() },
+          { provide: IamApi, useValue: apiStub() },
+          { provide: AiApi, useValue: apiStub() },
+          { provide: RequestsApi, useValue: apiStub() },
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({}), queryParamMap: convertToParamMap(queryParams) } } },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(TaskForm);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const router = TestBed.inject(Router);
+      return { form: fixture.componentInstance, byUrl: vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true), navigate: vi.spyOn(router, 'navigate').mockResolvedValue(true) };
+    };
+
+    it('cancelar vuelve a Validaciones cuando se llegó desde allí', async () => {
+      const { form, byUrl, navigate } = await open({ returnTo: '/validations?groupId=10', groupId: '10' });
+      form.cancel();
+      expect(byUrl).toHaveBeenCalledWith('/validations?groupId=10');
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('sin returnTo cancelar vuelve a la lista de tareas del grupo, como antes', async () => {
+      const { form, byUrl, navigate } = await open({ groupId: '10' });
+      form.cancel();
+      expect(byUrl).not.toHaveBeenCalled();
+      expect(navigate).toHaveBeenCalledWith(['/tasks/leader'], { queryParams: { groupId: 10 } });
+    });
+
+    it.each(['https://evil.example/x', '//evil.example/x', 'validations', 'javascript:alert(1)'])(
+      'un returnTo que no es una ruta interna (%s) se ignora', async (returnTo) => {
+        const { form, byUrl, navigate } = await open({ returnTo, groupId: '10' });
+        form.cancel();
+        expect(byUrl).not.toHaveBeenCalled();
+        expect(navigate).toHaveBeenCalled();
+      });
+  });
+
   describe('TaskForm: medición de aiAccepted', () => {
     const suggestion: TaskClassification = { labels: ['login', 'auth'], urgency: 'HIGH', difficulty: 4, context: 'BACKEND', rationale: 'r' };
 
@@ -233,6 +278,39 @@ describe('Vistas de tasks', () => {
 
   describe('LeaderTasks: selección de grupo y filtros', () => {
     const makeGroup = (id: number) => ({ id, name: `G${id}`, imgUrl: '', description: '', code: 'ABC123XYZ', memberCount: 1 });
+
+    it('en un grupo bloqueado el líder ve el aviso y no puede crear tareas', async () => {
+      TestBed.resetTestingModule();
+      const leaderGroups = signal([{ ...makeGroup(10), locked: true }, makeGroup(20)]);
+      await TestBed.configureTestingModule({
+        imports: [LeaderTasks],
+        providers: [
+          provideRouter([]),
+          { provide: TasksApi, useValue: apiStub() },
+          { provide: GroupsApi, useValue: apiStub() },
+          { provide: IamApi, useValue: apiStub() },
+          { provide: AiApi, useValue: apiStub() },
+          { provide: RequestsApi, useValue: apiStub() },
+          { provide: TasksStore, useValue: { loadTasksByGroup: vi.fn(), setStatusFilter: vi.fn(), tasks: signal([]), filteredTasks: signal([]), loading: signal(false), error: signal(null), statusFilter: signal('ALL') } },
+          { provide: GroupsStore, useValue: { leaderGroups, memberGroups: signal([]), groups: signal([]), loading: signal(false), loadGroups: vi.fn() } },
+          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(LeaderTasks);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const component = fixture.componentInstance;
+      const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+      expect(component.selectedGroupLocked()).toBe(true);
+      expect(text()).toContain('Grupo bloqueado');
+      expect(text()).not.toContain('Crear Tarea');
+
+      component.selectGroup(20);
+      fixture.detectChanges();
+      expect(component.selectedGroupLocked()).toBe(false);
+      expect(text()).toContain('Crear Tarea');
+    });
 
     it('selecciona el primer grupo al iniciar y pasa el filtro al store', async () => {
       TestBed.resetTestingModule();

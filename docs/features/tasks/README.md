@@ -28,7 +28,7 @@ stateDiagram-v2
 - `PUT /tasks/{id}/status` acepta cualquier estado **excepto `DONE`** (responde 409 `TaskStatusTransitionNotAllowedException`). **Solo puede hacerlo el líder** del grupo (403 para el integrante asignado); el integrante completa su tarea enviando la entrega (`POST /requests`), que la pasa a `COMPLETED`.
 - `PUT /tasks/{id}` con una `dueDate` **distinta** de la actual y pasada mueve la tarea a `EXPIRED`; con una futura la vuelve a `IN_PROGRESS`, salvo que ya esté `EXPIRED`. Una fecha igual a la actual no cambia el estado (la web siempre la envía al editar).
 - **Tiempo activo (`timePassed`)**: solo corre mientras la tarea está `IN_PROGRESS` (`Task.activeSince`, migración `V3`). Al salir de ese estado (espera, completada, vencida) se suma lo transcurrido; al volver, el reloj empieza de nuevo. Una tarea vencida cuenta solo hasta su fecha límite.
-- **Modificación pendiente**: si el integrante pidió una modificación, la tarea queda `ON_HOLD` y `PUT /tasks/{id}/status` a `IN_PROGRESS` responde 409. Se reanuda cuando el líder la edita (cambiar título, descripción, fecha límite, clasificación o responsable): esa edición cierra la solicitud (`APPROVED`).
+- **Modificación pendiente**: si el integrante pidió una modificación, la tarea queda `ON_HOLD` y `PUT /tasks/{id}/status` a `IN_PROGRESS` responde 409. Se reanuda cuando el líder la **deniega** (`PUT /requests/{id}/status/REJECTED`: vuelve a `IN_PROGRESS` como estaba) o la edita (cambiar título, descripción, fecha límite, clasificación o responsable): esa edición cierra la solicitud (`APPROVED`).
 - `TaskStatusScheduler` revisa cada 60 s las tareas `IN_PROGRESS` vencidas: las marca `EXPIRED` y crea una solicitud `EXPIRED` en requests.
 - En la web, una tarea `DONE` no se puede editar ni eliminar (`TasksStore` lo bloquea).
 
@@ -57,3 +57,12 @@ stateDiagram-v2
 - **Frontend**: `TaskCard` (tasks) usa `RequestsStore`; `TaskForm` usa `AiStore` y `GroupsStore`; `LeaderTasks` incrusta `AiReportCard` (ai); `Home` (shared) y `GroupDetails` (groups) usan `TasksStore`.
 
 Más detalle en [Propiedad entre features](../../architecture/cross-feature-ownership.md).
+
+## Grupos bloqueados
+
+Crear, editar, borrar y cambiar el estado de una tarea responden 409 (`GroupLockedException`) si su grupo está bloqueado por el plan de su líder (se comprueba después de los permisos). Las lecturas siguen; el **vencimiento automático** (`TaskStatusScheduler`) sigue marcando `EXPIRED` las tareas vencidas del grupo. En la web, `TaskCard`, `TaskBoard`, `LeaderTasks` y `TaskMemberActions` no ofrecen acciones en un grupo bloqueado. Ver [subscriptions](../subscriptions/README.md).
+
+## Reanudar una tarea vencida o en espera desde el tablero
+
+- **Vencida (`EXPIRED`)**: reanudarla por cualquier vía (`PUT /tasks/{id}/status?status=IN_PROGRESS`) **cierra su aviso de vencimiento** (la solicitud `EXPIRED` pendiente queda `APPROVED`). Cambiar solo la fecha no la reanuda.
+- **En la web**: al cambiar el estado de una tarea `EXPIRED` o `ON_HOLD` en el tablero, un diálogo pide resolver el problema antes: para una vencida, una **nueva fecha límite** (reanuda la tarea); para una en espera con una solicitud de modificación pendiente, **editar la tarea** o **rechazar la solicitud**. Una tarea en espera sin nada pendiente sigue el cambio de estado normal.

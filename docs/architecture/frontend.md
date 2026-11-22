@@ -13,6 +13,7 @@ Cada carpeta de primer nivel replica un bounded context del backend:
 | `invitations/` | [invitations](../features/invitations/README.md) | domain · application · infrastructure (sin presentation: la UI está en groups) |
 | `tasks/` | [tasks](../features/tasks/README.md) | domain · application · infrastructure · presentation |
 | `requests/` | [requests](../features/requests/README.md) | domain · application · infrastructure · presentation |
+| `subscriptions/` | [subscriptions](../features/subscriptions/README.md) | domain · application · infrastructure · presentation |
 | `ai/` | [ai](../features/ai/README.md) | domain · application · infrastructure · presentation (solo un componente) |
 | `tour/` | [tour](../features/tour/README.md) | domain · presentation |
 | `shared/` | Transversal | Clases base, layout, toasts, home y 404 |

@@ -13,4 +13,6 @@ public interface GroupCommandService {
     void handle(RemoveMemberUserFromGroupCommand command);
 
     Group handle(JoinGroupByCodeCommand command);
+
+    Group handle(ActivateGroupCommand command);
 }

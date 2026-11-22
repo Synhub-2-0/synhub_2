@@ -1,6 +1,8 @@
 package com.hub.synhub_backend.groups.application.internal.commandservices;
 
+import com.hub.synhub_backend.groups.domain.exceptions.GroupAlreadyActiveException;
 import com.hub.synhub_backend.groups.domain.exceptions.LeaderCannotBeRemovedException;
+import com.hub.synhub_backend.groups.domain.exceptions.NoFreeGroupSlotException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserNotInGroupException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
@@ -14,6 +16,7 @@ import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories
 import com.hub.synhub_backend.groups.infrastructure.persistence.jpa.repositories.InvitationRepository;
 import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.subscriptions.interfaces.acl.SubscriptionsContextFacade;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -28,18 +31,29 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     private final GroupProfileRepository groupProfileRepository;
     private final TasksContextFacade tasksContextFacade;
     private final InvitationRepository invitationRepository;
+    private final SubscriptionsContextFacade subscriptionsContextFacade;
 
     public GroupCommandServiceImpl(
             GroupRepository groupRepository,
             IamContextFacade iamContextFacade,
             GroupProfileRepository groupProfileRepository,
             TasksContextFacade tasksContextFacade,
-            InvitationRepository invitationRepository) {
+            InvitationRepository invitationRepository,
+            SubscriptionsContextFacade subscriptionsContextFacade) {
         this.groupRepository = groupRepository;
         this.iamContextFacade = iamContextFacade;
         this.groupProfileRepository = groupProfileRepository;
         this.tasksContextFacade = tasksContextFacade;
         this.invitationRepository = invitationRepository;
+        this.subscriptionsContextFacade = subscriptionsContextFacade;
+    }
+
+    /** Grupos que el usuario lidera y están activos (los bloqueados no ocupan cupo). */
+    private long activeLedGroups(Long userId) {
+        return groupProfileRepository.findByUser_IdAndRoleInGroup(userId, GroupRole.GROUP_LEADER).stream()
+                .map(GroupProfile::getGroup)
+                .filter(group -> !group.isLocked())
+                .count();
     }
 
     @Override
@@ -54,11 +68,37 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         while (groupRepository.existsByCode(group.getCode())) {
             group.setCode(GroupCode.random());
         }
+        // Por encima del límite del plan el grupo se crea, pero bloqueado: de solo lectura hasta que haya cupo.
+        if (activeLedGroups(leader.getId()) >= subscriptionsContextFacade.maxLedGroups(leader.getId())) {
+            group.lock();
+        }
         var newGroupProfile = new GroupProfile(leader, group, GroupRole.GROUP_LEADER);
         leader.getGroupProfiles().add(newGroupProfile);
         group.getUserProfiles().add(newGroupProfile);
         this.groupRepository.save(group);
         return group;
+    }
+
+    @Override
+    @Transactional
+    public Group handle(ActivateGroupCommand command) {
+        var group = groupRepository
+                .findById(command.groupId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Group with id " + command.groupId() + " does not exist"));
+        var leader = group.getLeader();
+        if (leader == null || !leader.getId().equals(command.requesterId())) {
+            throw new AccessDeniedException("Only the leader of a group can activate it");
+        }
+        if (!group.isLocked()) {
+            throw new GroupAlreadyActiveException(group.getId());
+        }
+        var limit = subscriptionsContextFacade.maxLedGroups(leader.getId());
+        if (activeLedGroups(leader.getId()) >= limit) {
+            throw new NoFreeGroupSlotException(limit);
+        }
+        group.unlock();
+        return groupRepository.save(group);
     }
 
     @Override
@@ -73,6 +113,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         if (leader == null || !leader.getId().equals(command.requesterId())) {
             throw new AccessDeniedException("Only the leader can update the group");
         }
+        group.ensureNotLocked();
 
         group.updateInformation(command);
         return groupRepository.save(group);
@@ -119,6 +160,10 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         if (!isLeader && !isSelf) {
             throw new AccessDeniedException("Only the leader can remove other members from the group");
         }
+        // Salir del grupo sigue permitido aunque esté bloqueado; que el líder quite a otro, no.
+        if (!isSelf) {
+            group.ensureNotLocked();
+        }
         if (groupProfile.getRoleInGroup() == GroupRole.GROUP_LEADER) {
             throw new LeaderCannotBeRemovedException("The leader cannot be removed from the group");
         }
@@ -137,6 +182,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
                 .findByCode(new GroupCode(command.code()))
                 .orElseThrow(
                         () -> new ResourceNotFoundException("Group with code " + command.code() + " does not exist"));
+        group.ensureNotLocked();
         var user = iamContextFacade
                 .fetchUserById(command.userId())
                 .orElseThrow(

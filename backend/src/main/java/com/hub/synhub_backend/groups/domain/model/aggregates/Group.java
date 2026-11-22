@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.groups.domain.model.aggregates;
 
+import com.hub.synhub_backend.groups.domain.exceptions.GroupLockedException;
 import com.hub.synhub_backend.groups.domain.model.commands.UpdateGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.domain.model.valueobjects.GroupCode;
@@ -42,6 +43,10 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
     @Embedded
     private ImgUrl imgUrl;
 
+    /** Bloqueado: el líder superó el límite de su plan. Es de solo lectura hasta que se active. */
+    @Column(nullable = false)
+    private boolean locked = false;
+
     /**
      * Membresías. Se cargan siempre (EAGER): el líder y la cantidad de integrantes forman parte de cualquier
      * representación del grupo, también fuera de una transacción (sin OSIV, AUDIT ARC-04). La carga por lotes
@@ -74,6 +79,19 @@ public class Group extends AuditableAbstractAggregateRoot<Group> {
         }
 
         return null;
+    }
+
+    public void lock() {
+        this.locked = true;
+    }
+
+    public void unlock() {
+        this.locked = false;
+    }
+
+    /** Todo lo que un usuario hace en el grupo (tareas, solicitudes, invitaciones, edición) exige que esté activo. */
+    public void ensureNotLocked() {
+        if (this.locked) throw new GroupLockedException(this.getId());
     }
 
     public void updateInformation(UpdateGroupCommand command) {

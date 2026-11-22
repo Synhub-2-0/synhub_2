@@ -49,7 +49,8 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | GET | `/groups/user` | `GroupController` | — |
 | GET | `/groups/user/role?groupRole=` | `GroupController` | `GroupsStore.loadGroups` |
 | PUT | `/groups/{groupId}` | `GroupController` | `GroupsStore.updateGroup` |
-| DELETE | `/groups/{groupId}` | `GroupController` | — |
+| DELETE | `/groups/{groupId}` | `GroupController` | `GroupsStore.deleteGroup` |
+| POST | `/groups/{groupId}/activate` (solo el líder; 409 sin cupo o si ya está activo) | `GroupController` | `GroupsStore.activateGroup` |
 
 ### Invitations: [docs](../features/invitations/README.md) (código backend en `groups`)
 
@@ -74,6 +75,15 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | PUT | `/tasks/{taskId}/status?status=` (409 a `IN_PROGRESS` con una modificación pendiente) | `TaskController` | `TasksStore.updateTaskStatus`, `resumeExpiredTask` |
 | DELETE | `/tasks/{taskId}` | `TaskController` | `TasksStore.deleteTask` |
 
+### Subscriptions: [docs](../features/subscriptions/README.md)
+
+| Método | Ruta | Controlador | Consumidor (frontend) |
+|---|---|---|---|
+| GET | `/subscriptions/me` | `SubscriptionController` | `SubscriptionsStore.load` |
+| PUT | `/subscriptions/me` (cuerpo: `plan`, `activeGroupIds?`; pago simulado) | `SubscriptionController` | `SubscriptionsStore.changePlan` |
+
+**Grupo bloqueado**: en un grupo bloqueado (su líder superó el límite de su plan) toda escritura de groups, invitations, tasks y requests, y `GET /ai/groups/{id}/report`, responde **409** (`GroupLockedException`). Las lecturas, salir del grupo, borrarlo y cancelar invitaciones siguen permitidos.
+
 ### Requests: [docs](../features/requests/README.md)
 
 | Método | Ruta | Controlador | Consumidor (frontend) |
@@ -81,7 +91,7 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 | POST | `/requests` (cuerpo: `taskId`, `description`, `requestType`) | `RequestController` | `RequestsStore.submitTask`, `createModification` |
 | GET | `/requests/task?taskId=` | `RequestController` | `RequestsStore.loadTaskRequests` |
 | GET | `/requests/{requestId}` | `RequestController` | — |
-| PUT | `/requests/{requestId}/status/{status}` (409 para una `MODIFICATION`: se resuelve editando la tarea) | `RequestController` | `RequestsStore.approveRequest`, `rejectRequest` |
+| PUT | `/requests/{requestId}/status/{status}` (`MODIFICATION`: `REJECTED` la deniega y reanuda la tarea; `APPROVED` responde 409, se aprueba editando la tarea) | `RequestController` | `RequestsStore.approveRequest`, `rejectRequest` |
 | DELETE | `/requests/{requestId}` (409 con una `MODIFICATION` pendiente) | `RequestController` | — |
 | GET | `/requests/group?groupId=&status=&type=&page=&size=` | `RequestController` | `RequestsStore.loadGroupRequests` |
 

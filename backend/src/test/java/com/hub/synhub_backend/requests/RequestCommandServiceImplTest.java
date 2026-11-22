@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
+import com.hub.synhub_backend.groups.domain.exceptions.GroupLockedException;
 import com.hub.synhub_backend.requests.application.internal.commandservices.RequestCommandServiceImpl;
+import com.hub.synhub_backend.requests.domain.exceptions.ExpiredRequestCannotBeRejectedException;
 import com.hub.synhub_backend.requests.domain.exceptions.ModificationResolvedByEditingException;
 import com.hub.synhub_backend.requests.domain.exceptions.PendingRequestAlreadyExistsException;
 import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedException;
@@ -150,6 +152,52 @@ class RequestCommandServiceImplTest {
         verify(tasks, never()).putOnHoldForModification(anyLong());
     }
 
+    // ---- Un grupo bloqueado es de solo lectura
+    private void lockTheGroup() {
+        var lockedGroup = task.getProfile().getGroup();
+        doThrow(new GroupLockedException(10L)).when(lockedGroup).ensureNotLocked();
+    }
+
+    @Test
+    void nothingIsSentInALockedGroup() {
+        when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
+        lockTheGroup();
+
+        assertThrows(GroupLockedException.class, () -> service.handle(submission(MEMBER)));
+        assertThrows(
+                GroupLockedException.class,
+                () -> service.handle(new CreateRequestCommand("Cambiar", "MODIFICATION", TASK, MEMBER)));
+        verify(tasks, never()).completeForSubmission(anyLong());
+        verify(tasks, never()).putOnHoldForModification(anyLong());
+        verify(repo, never()).save(any(Request.class));
+    }
+
+    @Test
+    void nothingIsReviewedOrDeletedInALockedGroup() {
+        var request = pending("SUBMISSION");
+        lockTheGroup();
+
+        assertThrows(GroupLockedException.class, () -> service.handle(review("APPROVED", LEADER)));
+        assertThrows(GroupLockedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, LEADER)));
+        assertEquals("PENDING", request.getRequestStatus());
+        verify(repo, never()).delete(any(Request.class));
+    }
+
+    @Test
+    void theSystemStillRecordsExpiredTasksInALockedGroup() {
+        lockTheGroup();
+        service.handle(new CreateRequestCommand("La tarea venció automáticamente.", "EXPIRED", TASK));
+        verify(repo).save(any(Request.class));
+    }
+
+    @Test
+    void permissionsAreCheckedBeforeTheLockInRequests() {
+        pending("SUBMISSION");
+        lockTheGroup();
+        assertThrows(AccessDeniedException.class, () -> service.handle(review("APPROVED", MEMBER)));
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, 99L)));
+    }
+
     @Test
     void usersCannotCreateExpired() {
         var e = assertThrows(
@@ -247,13 +295,56 @@ class RequestCommandServiceImplTest {
     }
 
     @Test
-    void aModificationIsResolvedByEditingTheTaskNotByReviewingIt() {
+    void aModificationIsApprovedByEditingTheTaskNotByReviewingIt() {
         var request = pending("MODIFICATION");
         assertThrows(ModificationResolvedByEditingException.class, () -> service.handle(review("APPROVED", LEADER)));
-        assertThrows(ModificationResolvedByEditingException.class, () -> service.handle(review("REJECTED", LEADER)));
         assertEquals("PENDING", request.getRequestStatus());
         verify(repo, never()).save(any(Request.class));
+        verify(tasks, never()).resumeAfterModificationDenied(anyLong());
         verify(tasks, never()).applySubmissionReview(anyLong(), anyBoolean());
+    }
+
+    @Test
+    void anExpiredRequestCannotBeRejectedItIsClosedByResumingTheTask() {
+        var request = pending("EXPIRED");
+
+        assertThrows(ExpiredRequestCannotBeRejectedException.class, () -> service.handle(review("REJECTED", LEADER)));
+        assertEquals("PENDING", request.getRequestStatus());
+        verify(repo, never()).save(any(Request.class));
+
+        // Reanudar la tarea cierra su aviso: la web la aprueba al terminar.
+        assertEquals(
+                "APPROVED",
+                service.handle(review("APPROVED", LEADER)).orElseThrow().getRequestStatus());
+        verify(tasks, never()).applySubmissionReview(anyLong(), anyBoolean());
+    }
+
+    @Test
+    void theLeaderCanDenyAModificationAndTheTaskResumes() {
+        var request = pending("MODIFICATION");
+
+        var reviewed = service.handle(review("REJECTED", LEADER)).orElseThrow();
+
+        assertEquals("REJECTED", reviewed.getRequestStatus());
+        assertEquals("REJECTED", request.getRequestStatus());
+        verify(tasks).resumeAfterModificationDenied(TASK);
+        verify(tasks, never()).applySubmissionReview(anyLong(), anyBoolean());
+        verify(repo).save(request);
+    }
+
+    @Test
+    void aDeniedModificationCannotBeReviewedAgain() {
+        var request = pending("MODIFICATION");
+        request.updateRequestStatus("REJECTED");
+        assertThrows(RequestAlreadyReviewedException.class, () -> service.handle(review("REJECTED", LEADER)));
+        verify(tasks, never()).resumeAfterModificationDenied(anyLong());
+    }
+
+    @Test
+    void onlyTheLeaderDeniesAModification() {
+        pending("MODIFICATION");
+        assertThrows(AccessDeniedException.class, () -> service.handle(review("REJECTED", MEMBER)));
+        verify(tasks, never()).resumeAfterModificationDenied(anyLong());
     }
 
     @Test

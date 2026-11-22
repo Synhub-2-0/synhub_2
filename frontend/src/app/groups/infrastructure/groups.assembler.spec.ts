@@ -4,12 +4,19 @@ import { CreateGroupCommand } from '../domain/model/create-group.command';
 
 describe('GroupsAssembler', () => {
   const assembler = new GroupsAssembler();
-  const resource: GroupResource = { id: 1, name: 'Equipo', imgUrl: 'https://img', description: 'd', code: 'ABC123XYZ', memberCount: 4 };
+  const resource: GroupResource = { id: 1, name: 'Equipo', imgUrl: 'https://img', description: 'd', code: 'ABC123XYZ', memberCount: 4, locked: false };
 
   it('resource ↔ entidad', () => {
     const group = assembler.toEntityFromResource(resource);
     expect([group.id, group.name, group.imgUrl, group.code, group.memberCount]).toEqual([1, 'Equipo', 'https://img', 'ABC123XYZ', 4]);
     expect(assembler.toResourceFromEntity(group)).toEqual(resource);
+  });
+
+  it('locked viaja con el grupo y por defecto es false', () => {
+    expect(assembler.toEntityFromResource({ ...resource, locked: true }).locked).toBe(true);
+    const withoutFlag: Partial<GroupResource> = { ...resource };
+    delete withoutFlag.locked;
+    expect(assembler.toEntityFromResource(withoutFlag as GroupResource).locked).toBe(false);
   });
 
   it('memberCount ausente vale 0', () => {

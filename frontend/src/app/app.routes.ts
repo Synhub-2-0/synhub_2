@@ -7,6 +7,7 @@ const iamRoutes = () => import('./iam/presentation/iam.routes').then(m => m.iamR
 const groupsRoutes = () => import('./groups/presentation/groups.routes').then(m => m.groupsRoutes);
 const tasksRoutes = () => import('./tasks/presentation/tasks.routes').then(m => m.tasksRoutes);
 const requestsRoutes = () => import('./requests/presentation/requests.routes').then(m => m.requestsRoutes);
+const subscriptionsRoutes = () => import('./subscriptions/presentation/subscriptions.routes').then(m => m.subscriptionsRoutes);
 const baseTitle = 'SynHub'
 
 export const routes: Routes = [
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'groups', loadChildren: groupsRoutes, title: `${baseTitle} - My Groups`, canActivate: [iamGuard]},
   { path: 'tasks', loadChildren: tasksRoutes, title: `${baseTitle} - Tasks`, canActivate: [iamGuard]},
   { path: 'validations', loadChildren: requestsRoutes, title: `${baseTitle} - Validations`, canActivate: [iamGuard]},
+  { path: 'subscription', loadChildren: subscriptionsRoutes, title: `${baseTitle} - Mi plan`, canActivate: [iamGuard]},
   { path: 'recorrido', loadComponent: () => import('./tour/presentation/views/tour-page/tour-page').then(m => m.TourPage), title: `${baseTitle} - Recorrido`, canActivate: [iamGuard]},
   { path: '', redirectTo: '/auth/sign-in', pathMatch: 'full' },
   { path: '**', component: PageNotFound, title: `${baseTitle} - Page not found` }
