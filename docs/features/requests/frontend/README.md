@@ -23,7 +23,7 @@ La otra cara de la feature está en un componente de tasks: **`TaskCard`** usa `
 |---|---|
 | `loadGroupSubmissions(groupId, status?)` | `GET /requests/group?groupId=…&status=…&type=SUBMISSION` |
 | `approveSubmission(request)` / `rejectSubmission(request)` | `PUT /requests/{id}/status/APPROVED\|REJECTED` |
-| `submitTask(taskId, description, onSuccess?)` | `POST /requests` con `{ taskId, description, requestType: 'SUBMISSION' }`; `onSuccess` recibe la request creada, con la tarea ya `COMPLETED` |
+| `submitTask(taskId, onSuccess?)` | `POST /requests` con `{ taskId, description: 'Tarea completada.', requestType: 'SUBMISSION' }` (el miembro no escribe comentario); `onSuccess` recibe la request creada, con la tarea ya `COMPLETED` |
 | `loadTaskRequests(taskId)` | `GET /requests/task?taskId=` |
 | `isUnderReview(taskId)` | Sin petición: busca en `requestsByTask` una `SUBMISSION` en `PENDING`. |
 

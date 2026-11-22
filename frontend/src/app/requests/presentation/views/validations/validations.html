@@ -86,15 +86,6 @@
                   {{ request.requestStatus === 'PENDING' ? 'Pendiente' : request.requestStatus === 'APPROVED' ? 'Aprobada' : 'Rechazada' }}
                 </span>
               </header>
-
-              <div class="min-h-[84px] rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Mensaje del integrante</span>
-                @if (request.description) {
-                  <p class="mt-1 text-sm leading-relaxed text-slate-700">{{ request.description }}</p>
-                } @else {
-                  <p class="mt-1 text-sm italic text-slate-400">Sin mensaje.</p>
-                }
-              </div>
             </div>
 
             <div class="flex flex-col gap-3">

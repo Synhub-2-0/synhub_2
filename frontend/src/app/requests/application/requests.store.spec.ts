@@ -71,10 +71,10 @@ describe('RequestsStore', () => {
     api.createRequest.mockReturnValue(of(request(3)));
     const onSuccess = vi.fn();
 
-    store.submitTask(7, 'Listo', onSuccess);
+    store.submitTask(7, onSuccess);
 
     const command = api.createRequest.mock.calls[0][0] as CreateRequestCommand;
-    expect([command.taskId, command.description, command.requestType]).toEqual([7, 'Listo', 'SUBMISSION']);
+    expect([command.taskId, command.description, command.requestType]).toEqual([7, 'Tarea completada.', 'SUBMISSION']);
     expect(store.isUnderReview(7)).toBe(true);
     expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({ id: 3 }));
   });
@@ -88,7 +88,7 @@ describe('RequestsStore', () => {
 
   it('un error al enviar se muestra y no marca la tarea', () => {
     api.createRequest.mockReturnValue(throwError(() => new Error('Esta tarea ya tiene una entrega en revisión.')));
-    store.submitTask(7, 'x');
+    store.submitTask(7);
     expect(store.error()).toBe('Esta tarea ya tiene una entrega en revisión.');
     expect(store.isUnderReview(7)).toBe(false);
   });

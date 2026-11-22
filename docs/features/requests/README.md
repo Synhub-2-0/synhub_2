@@ -22,7 +22,7 @@ Estados: `PENDING` → `APPROVED` \| `REJECTED` (una sola revisión).
 
 | Acción en la web | Frontend | Petición | Backend |
 |---|---|---|---|
-| Marcar completada y enviar a validación (miembro) | `TaskCard` → `RequestsStore.submitTask` | `POST /requests { taskId, description, requestType: "SUBMISSION" }` (la tarea pasa a `COMPLETED`) | `RequestController.createRequest` → `CreateRequestCommand` |
+| Marcar completada y enviar a validación (miembro, solo tareas `IN_PROGRESS`, sin comentario) | `TaskCard` → `RequestsStore.submitTask` | `POST /requests { taskId, description: "Tarea completada.", requestType: "SUBMISSION" }` (la tarea pasa a `COMPLETED`) | `RequestController.createRequest` → `CreateRequestCommand` |
 | Saber si la tarea está "en revisión" | `TaskCard` → `loadTaskRequests` / `isUnderReview` | `GET /requests/task?taskId=` | `getRequestsByTaskId` |
 | Bandeja de validaciones (líder) | `Validations` → `loadGroupSubmissions(groupId, status)` | `GET /requests/group?groupId=&status=PENDING&type=SUBMISSION` | `RequestController.getRequestsByGroupId` → `GetRequestsByGroupIdQuery` |
 | Aprobar / rechazar | `Validations` → `approveSubmission` / `rejectSubmission` | `PUT /requests/{id}/status/APPROVED\|REJECTED` | `updateRequestStatus` → `UpdateRequestCommand` → `TasksContextFacade.applySubmissionReview` |

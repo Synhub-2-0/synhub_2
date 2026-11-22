@@ -58,18 +58,26 @@ describe('TaskCard', () => {
     expect(api.getRequestsByTask).not.toHaveBeenCalled();
   });
 
-  it('enviar la entrega usa el mensaje sin espacios y cierra el formulario', async () => {
+  it('completar una tarea en progreso la envía a validación sin pedir comentario y actualiza la tarea', async () => {
+    await render('IN_PROGRESS');
+    api.createRequest.mockReturnValue(of(new TaskRequest({ id: 2, description: 'Tarea completada.', requestType: 'SUBMISSION', requestStatus: 'PENDING', task: task('COMPLETED') })));
+
+    card.onComplete(new Event('click'));
+
+    expect(api.createRequest.mock.calls[0][0].taskId).toBe(7);
+    expect(tasksStore.applyUpdatedTask).toHaveBeenCalledWith(expect.objectContaining({ id: 7, status: 'COMPLETED' }));
+    expect(TestBed.inject(RequestsStore).isUnderReview(7)).toBe(true);
+  });
+
+  it('no hay formulario ni campo de comentario', async () => {
+    await render('IN_PROGRESS');
+    expect((fixture.nativeElement as HTMLElement).querySelector('textarea')).toBeNull();
+  });
+
+  it('una tarea COMPLETED sin entrega pendiente no ofrece completar de nuevo', async () => {
     await render('COMPLETED');
-    api.createRequest.mockReturnValue(of(new TaskRequest({ id: 2, description: 'Listo', requestType: 'SUBMISSION', requestStatus: 'PENDING', task: task('COMPLETED') })));
-    card.showSubmitForm.set(true);
-    card.submissionMessage.set('  Listo  ');
-
-    card.onSubmit(new Event('click'));
-
-    expect(api.createRequest.mock.calls[0][0].description).toBe('Listo');
-    expect(tasksStore.applyUpdatedTask).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }));
-    expect(card.showSubmitForm()).toBe(false);
-    expect(card.submissionMessage()).toBe('');
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('Marcar completada');
   });
 
   it('una tarea DONE queda bloqueada; etiquetas y tiempo restante', async () => {

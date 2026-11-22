@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
@@ -20,8 +20,6 @@ export class TaskCard implements OnInit {
 
   readonly requestsStore = inject(RequestsStore);
   private readonly tasksStore = inject(TasksStore);
-  readonly showSubmitForm = signal(false);
-  readonly submissionMessage = signal('');
 
   @Input({ required: true }) task!: Task;
   @Input() isLeader = false;
@@ -114,23 +112,10 @@ export class TaskCard implements OnInit {
       .then();
   }
 
-  toggleSubmitForm(event: Event): void {
+  // Completing an IN_PROGRESS task sends it to validation; the backend marks it COMPLETED and returns it updated.
+  onComplete(event: Event): void {
     event.stopPropagation();
     this.requestsStore.clearError();
-    this.showSubmitForm.update((value) => !value);
-  }
-
-  onSubmissionInput(event: Event): void {
-    this.submissionMessage.set((event.target as HTMLTextAreaElement).value);
-  }
-
-  onSubmit(event: Event): void {
-    event.stopPropagation();
-    // Sending the submission is what marks the task COMPLETED: the backend returns the updated task.
-    this.requestsStore.submitTask(this.task.id, this.submissionMessage().trim(), (created) => {
-      this.tasksStore.applyUpdatedTask(created.task);
-      this.showSubmitForm.set(false);
-      this.submissionMessage.set('');
-    });
+    this.requestsStore.submitTask(this.task.id, (created) => this.tasksStore.applyUpdatedTask(created.task));
   }
 }

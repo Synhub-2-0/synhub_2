@@ -6,6 +6,9 @@ import { RequestStatus, TaskRequest } from '../domain/model/task-request.entity'
 import { CreateRequestCommand } from '../domain/model/create-request.command';
 import { RequestsApi } from '../infrastructure/requests.api';
 
+// The backend requires a description, but the member does not write one: a fixed text is sent.
+const SUBMISSION_DESCRIPTION = 'Tarea completada.';
+
 @Injectable({ providedIn: 'root' })
 export class RequestsStore {
   private requestsApi = inject(RequestsApi);
@@ -67,14 +70,14 @@ export class RequestsStore {
   }
 
   /**
-   * The member sends the submission of an IN_PROGRESS (or COMPLETED) task. The backend marks the task COMPLETED,
-   * so the created request carries the updated task.
+   * The member completes an IN_PROGRESS task by sending it to validation (no comment). The backend marks the task
+   * COMPLETED, so the created request carries the updated task.
    */
-  submitTask(taskId: number, description: string, onSuccess?: (created: TaskRequest) => void): void {
+  submitTask(taskId: number, onSuccess?: (created: TaskRequest) => void): void {
     this.processingSignal.set(true);
     this.errorSignal.set(null);
     this.requestsApi
-      .createRequest(new CreateRequestCommand({ taskId, description, requestType: 'SUBMISSION' }))
+      .createRequest(new CreateRequestCommand({ taskId, description: SUBMISSION_DESCRIPTION, requestType: 'SUBMISSION' }))
       .subscribe({
         next: (created) => {
           this.requestsByTaskSignal.update((cache) => ({
