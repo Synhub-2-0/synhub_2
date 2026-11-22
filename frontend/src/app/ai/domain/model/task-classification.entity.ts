@@ -4,6 +4,32 @@ export type TaskUrgency = 'LOW' | 'MEDIUM' | 'HIGH';
 export const TASK_CONTEXTS: TaskContext[] = ['FRONTEND', 'BACKEND', 'DATABASE', 'CLOUD', 'QA', 'DOCS', 'DESIGN', 'GENERAL'];
 export const TASK_URGENCIES: TaskUrgency[] = ['LOW', 'MEDIUM', 'HIGH'];
 
+/** Nombres en lenguaje natural de los valores que guarda la BD (los códigos no cambian). */
+export const CONTEXT_LABELS: Record<string, string> = {
+  FRONTEND: 'Frontend',
+  BACKEND: 'Backend',
+  DATABASE: 'Base de datos',
+  CLOUD: 'Nube',
+  QA: 'Pruebas (QA)',
+  DOCS: 'Documentación',
+  DESIGN: 'Diseño',
+  GENERAL: 'General',
+};
+
+export const URGENCY_LABELS: Record<string, string> = {
+  LOW: 'Baja',
+  MEDIUM: 'Media',
+  HIGH: 'Alta',
+};
+
+export const DIFFICULTY_LABELS: Record<number, string> = {
+  1: 'Trivial',
+  2: 'Fácil',
+  3: 'Media',
+  4: 'Difícil',
+  5: 'Muy compleja',
+};
+
 export const DIFFICULTY_SCALE: Record<number, string> = {
   1: 'Trivial: minutos',
   2: 'Fácil: pocas horas',

@@ -5,7 +5,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
 import { RequestsStore } from '../../../../requests/application/requests.store';
-import { DIFFICULTY_SCALE } from '../../../../ai/domain/model/task-classification.entity';
+import { CONTEXT_LABELS, DIFFICULTY_LABELS, DIFFICULTY_SCALE, URGENCY_LABELS } from '../../../../ai/domain/model/task-classification.entity';
 
 @Component({
   selector: 'app-task-card',
@@ -28,6 +28,9 @@ export class TaskCard implements OnInit {
   @Output() statusChangeRequested = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 
   readonly difficultyScale = DIFFICULTY_SCALE;
+  readonly contextLabels = CONTEXT_LABELS;
+  readonly urgencyLabels = URGENCY_LABELS;
+  readonly difficultyLabels = DIFFICULTY_LABELS;
 
   ngOnInit(): void {
     // A COMPLETED task of the member may already have a submission waiting for the leader.

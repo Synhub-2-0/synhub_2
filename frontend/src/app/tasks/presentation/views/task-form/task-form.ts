@@ -11,7 +11,7 @@ import { CreateTaskCommand } from '../../../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../../../domain/model/update-task.command';
 import { Task } from '../../../domain/model/task.entity';
 import { AiStore } from '../../../../ai/application/ai.store';
-import { DIFFICULTY_SCALE, TASK_CONTEXTS, TASK_URGENCIES } from '../../../../ai/domain/model/task-classification.entity';
+import { CONTEXT_LABELS, DIFFICULTY_LABELS, DIFFICULTY_SCALE, TASK_CONTEXTS, TASK_URGENCIES, URGENCY_LABELS } from '../../../../ai/domain/model/task-classification.entity';
 
 @Component({
   selector: 'app-task-form',
@@ -47,6 +47,9 @@ export class TaskForm implements OnInit, OnDestroy {
   readonly urgencies = TASK_URGENCIES;
   readonly difficulties = [1, 2, 3, 4, 5];
   readonly difficultyScale = DIFFICULTY_SCALE;
+  readonly contextLabels = CONTEXT_LABELS;
+  readonly urgencyLabels = URGENCY_LABELS;
+  readonly difficultyLabels = DIFFICULTY_LABELS;
   private readonly activeGroupId = signal<number | null>(null);
   // Every member of the group can be assigned a task, the leader included (listed first).
   readonly members = computed(() => [...(this.groupsStore.membersByGroup()[this.activeGroupId() ?? 0] ?? [])]

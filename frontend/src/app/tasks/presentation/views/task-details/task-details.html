@@ -36,10 +36,10 @@
             <span [matTooltip]="task.aiRationale || difficultyScale[task.difficulty]" class="cursor-help rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">Dificultad {{ task.difficulty }}/5</span>
           }
           @if (task.context) {
-            <span [matTooltip]="task.aiRationale || 'Área técnica principal de la tarea'" class="cursor-help rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">{{ task.context }}</span>
+            <span [matTooltip]="task.aiRationale || 'Área técnica principal de la tarea'" class="cursor-help rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">{{ contextLabels[task.context] ?? task.context }}</span>
           }
           @if (task.urgency) {
-            <span matTooltip="Urgencia estimada" class="cursor-help rounded-lg border border-amber-100 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ task.urgency }}</span>
+            <span matTooltip="Urgencia estimada" class="cursor-help rounded-lg border border-amber-100 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ urgencyLabels[task.urgency] ?? task.urgency }}</span>
           }
           @for (label of labelsOf(task.labels); track label) {
             <span class="rounded-lg bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{{ label }}</span>

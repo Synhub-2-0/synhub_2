@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TasksStore } from '../../../application/tasks.store';
 import { TaskStatus } from '../../../domain/model/task.entity';
-import { DIFFICULTY_SCALE } from '../../../../ai/domain/model/task-classification.entity';
+import { CONTEXT_LABELS, DIFFICULTY_LABELS, DIFFICULTY_SCALE, URGENCY_LABELS } from '../../../../ai/domain/model/task-classification.entity';
 
 @Component({
   selector: 'app-task-details',
@@ -19,6 +19,9 @@ export class TaskDetails implements OnInit {
   private readonly location = inject(Location);
   readonly tasksStore = inject(TasksStore);
   readonly difficultyScale = DIFFICULTY_SCALE;
+  readonly contextLabels = CONTEXT_LABELS;
+  readonly urgencyLabels = URGENCY_LABELS;
+  readonly difficultyLabels = DIFFICULTY_LABELS;
 
   labelsOf(labels?: string): string[] {
     return (labels ?? '').split(',').map((l) => l.trim()).filter(Boolean);

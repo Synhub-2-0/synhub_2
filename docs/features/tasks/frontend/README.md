@@ -59,7 +59,7 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 
 ## Integración con IA en `TaskForm`
 
-La sección "Clasificación (opcional)" aparece al crear y al editar. Sus campos (`difficulty`, `context`, `urgency`, `labels`) pueden quedar vacíos, llenarse a mano o con la IA.
+La sección "Clasificación (opcional)" aparece al crear y al editar. Sus campos (`difficulty`, `context`, `urgency`, `labels`) pueden quedar vacíos, llenarse a mano o con la IA. Los valores se muestran en lenguaje natural (dificultad `1 · Trivial`, contexto `Base de datos`, urgencia `Baja`) con los diccionarios de `task-classification.entity.ts`; lo que se guarda y se envía a la API sigue siendo el código (`1`, `DATABASE`, `LOW`). `TaskCard` y `TaskDetails` aplican la misma traducción.
 
 1. El líder pulsa "Sugerir con IA" (o "Volver a sugerir con IA" si ya hay clasificación): `AiStore.classifyTask` llama a `POST /ai/classify` con el título, la descripción y la fecha límite actuales.
 2. La sugerencia llena los campos y el líder puede editarlos. "Quitar clasificación" los vacía.

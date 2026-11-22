@@ -69,7 +69,7 @@
           <select name="difficulty" [(ngModel)]="difficulty"
             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
             <option [ngValue]="null">Sin definir</option>
-            @for (d of difficulties; track d) { <option [ngValue]="d">{{ d }}</option> }
+            @for (d of difficulties; track d) { <option [ngValue]="d">{{ d }} · {{ difficultyLabels[d] }}</option> }
           </select>
           @if (difficulty) { <span class="mt-1 block text-[11px] text-slate-500">{{ difficultyScale[difficulty] }}</span> }
         </label>
@@ -78,7 +78,7 @@
           <select name="context" [(ngModel)]="context"
             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
             <option value="">Sin definir</option>
-            @for (c of contexts; track c) { <option [value]="c">{{ c }}</option> }
+            @for (c of contexts; track c) { <option [value]="c">{{ contextLabels[c] }}</option> }
           </select>
         </label>
         <label class="block">
@@ -86,7 +86,7 @@
           <select name="urgency" [(ngModel)]="urgency"
             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-[#4A90E2]">
             <option value="">Sin definir</option>
-            @for (u of urgencies; track u) { <option [value]="u">{{ u }}</option> }
+            @for (u of urgencies; track u) { <option [value]="u">{{ urgencyLabels[u] }}</option> }
           </select>
         </label>
         <label class="block">

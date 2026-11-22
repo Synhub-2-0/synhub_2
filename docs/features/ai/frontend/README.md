@@ -35,6 +35,7 @@ Carpeta: [`frontend/src/app/ai`](../../../../frontend/src/app/ai). No tiene ruta
 | `TaskContext`, `TASK_CONTEXTS` | `FRONTEND`, `BACKEND`, `DATABASE`, `CLOUD`, `QA`, `DOCS`, `DESIGN`, `GENERAL`: deben coincidir con el backend. |
 | `TaskUrgency`, `TASK_URGENCIES` | `LOW`, `MEDIUM`, `HIGH` |
 | `DIFFICULTY_SCALE` | Texto descriptivo para cada valor de 1 a 5. |
+| `CONTEXT_LABELS`, `URGENCY_LABELS`, `DIFFICULTY_LABELS` | Diccionarios código → nombre en español (`BACKEND` → Backend, `LOW` → Baja, `1` → Trivial). La BD y la API siguen usando los códigos; solo la interfaz los traduce. Al agregar un valor nuevo hay que añadirlo aquí también. |
 | `GroupReport` | `text`, `generatedAt` |
 | `parseReport(markdown)` | Convierte el markdown mínimo del informe (títulos, listas y negritas) en bloques renderizables **sin `innerHTML`**, para evitar XSS a partir de la salida del modelo. |
 
