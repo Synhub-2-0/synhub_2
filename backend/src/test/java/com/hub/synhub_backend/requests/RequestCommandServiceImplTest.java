@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import com.hub.synhub_backend.requests.application.internal.commandservices.RequestCommandServiceImpl;
+import com.hub.synhub_backend.requests.domain.exceptions.ModificationResolvedByEditingException;
 import com.hub.synhub_backend.requests.domain.exceptions.PendingRequestAlreadyExistsException;
 import com.hub.synhub_backend.requests.domain.exceptions.RequestAlreadyReviewedException;
 import com.hub.synhub_backend.requests.domain.exceptions.TaskWithIncorrectStatusException;
@@ -114,6 +115,42 @@ class RequestCommandServiceImplTest {
     }
 
     @Test
+    void memberRequestsAModificationAndTheTaskIsPutOnHold() {
+        when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
+        service.handle(new CreateRequestCommand("Cambiar el alcance", "MODIFICATION", TASK, MEMBER));
+        verify(tasks).putOnHoldForModification(TASK);
+        verify(repo).save(any(Request.class));
+    }
+
+    @Test
+    void aModificationNeedsAComment() {
+        when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.handle(new CreateRequestCommand("   ", "MODIFICATION", TASK, MEMBER)));
+        verify(tasks, never()).putOnHoldForModification(anyLong());
+        verify(repo, never()).save(any(Request.class));
+    }
+
+    @Test
+    void aModificationNeedsAnInProgressTask() {
+        when(task.getStatus()).thenReturn(TaskStatus.ON_HOLD);
+        assertThrows(
+                TaskWithIncorrectStatusException.class,
+                () -> service.handle(new CreateRequestCommand("Cambiar", "MODIFICATION", TASK, MEMBER)));
+        verify(tasks, never()).putOnHoldForModification(anyLong());
+    }
+
+    @Test
+    void theLeaderCannotRequestAModification() {
+        when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
+        assertThrows(
+                AccessDeniedException.class,
+                () -> service.handle(new CreateRequestCommand("Cambiar", "MODIFICATION", TASK, LEADER)));
+        verify(tasks, never()).putOnHoldForModification(anyLong());
+    }
+
+    @Test
     void usersCannotCreateExpired() {
         var e = assertThrows(
                 IllegalArgumentException.class,
@@ -210,11 +247,19 @@ class RequestCommandServiceImplTest {
     }
 
     @Test
-    void modificationDoesNotTouchTask() {
-        pending("MODIFICATION");
-        when(task.getStatus()).thenReturn(TaskStatus.COMPLETED);
-        service.handle(review("APPROVED", LEADER));
+    void aModificationIsResolvedByEditingTheTaskNotByReviewingIt() {
+        var request = pending("MODIFICATION");
+        assertThrows(ModificationResolvedByEditingException.class, () -> service.handle(review("APPROVED", LEADER)));
+        assertThrows(ModificationResolvedByEditingException.class, () -> service.handle(review("REJECTED", LEADER)));
+        assertEquals("PENDING", request.getRequestStatus());
+        verify(repo, never()).save(any(Request.class));
         verify(tasks, never()).applySubmissionReview(anyLong(), anyBoolean());
+    }
+
+    @Test
+    void onlyTheLeaderGetsToKnowAboutAModificationReview() {
+        pending("MODIFICATION");
+        assertThrows(AccessDeniedException.class, () -> service.handle(review("APPROVED", MEMBER)));
     }
 
     // ---- Borrar (AUDIT SEC-02)
@@ -229,6 +274,23 @@ class RequestCommandServiceImplTest {
     void memberDeletesOwnPendingSubmission() {
         var request = pending("SUBMISSION");
         service.handle(new DeleteRequestCommand(REQUEST, MEMBER));
+        verify(repo).delete(request);
+    }
+
+    @Test
+    void aPendingModificationCannotBeDeletedByAnyone() {
+        var request = pending("MODIFICATION");
+        assertThrows(
+                ModificationResolvedByEditingException.class,
+                () -> service.handle(new DeleteRequestCommand(REQUEST, LEADER)));
+        assertThrows(
+                ModificationResolvedByEditingException.class,
+                () -> service.handle(new DeleteRequestCommand(REQUEST, MEMBER)));
+        verify(repo, never()).delete(any(Request.class));
+
+        // Resuelta al editar la tarea, el líder ya puede borrarla.
+        request.updateRequestStatus("APPROVED");
+        service.handle(new DeleteRequestCommand(REQUEST, LEADER));
         verify(repo).delete(request);
     }
 

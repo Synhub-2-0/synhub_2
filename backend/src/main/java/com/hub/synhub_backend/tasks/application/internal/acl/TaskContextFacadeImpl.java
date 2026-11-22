@@ -60,6 +60,16 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
     }
 
     @Override
+    public Task putOnHoldForModification(Long taskId) {
+        var task = taskRepository
+                .findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
+        task.ensureNotFinished();
+        task.updateStatus(new UpdateTaskStatusCommand(null, taskId, TaskStatus.ON_HOLD));
+        return taskRepository.save(task);
+    }
+
+    @Override
     public Task updateTaskStatus(Long taskId, TaskStatus status, Long requesterId) {
         var updateStatusCommand = new UpdateTaskStatusCommand(requesterId, taskId, status);
         var newTask = taskCommandService.handle(updateStatusCommand);
