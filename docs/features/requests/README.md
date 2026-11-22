@@ -12,7 +12,7 @@ Estados: `PENDING` → `APPROVED` \| `REJECTED` (una sola revisión).
 
 | | |
 |---|---|
-| **Recursos REST** | `/api/v1/tasks/{taskId}/requests` (sub-recurso de tareas) y `/api/v1/groups/{groupId}/requests` (vista por grupo) |
+| **Recursos REST** | `/api/v1/requests` (backend, desde el commit `727054f`: `/requests`, `/requests/task?taskId=`, `/requests/group?groupId=`, `/requests/{id}/status/{status}`). **El frontend todavía llama a las rutas anteriores** `/tasks/{taskId}/requests…` y `/groups/{groupId}/requests`, que ya no existen: las tablas y el diagrama de abajo describen esas llamadas y están pendientes de alinear. |
 | **Bounded context (backend)** | [`requests`](../../../backend/src/main/java/com/hub/synhub_backend/requests) |
 | **Módulo (frontend)** | [`src/app/requests`](../../../frontend/src/app/requests) |
 | **Rutas de la web** | `/validations?groupId=` (bandeja del líder) y el botón "enviar entrega" de `TaskCard` |

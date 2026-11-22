@@ -6,21 +6,18 @@ Paquete: [`com.hub.synhub_backend.requests`](../../../../backend/src/main/java/c
 
 Todos requieren token.
 
-### `RequestController`: `/api/v1/tasks/{taskId}/requests`
+### `RequestController`: `/api/v1/requests`
+
+Desde el commit `727054f` las solicitudes son un recurso raíz: la tarea o el grupo se indican con `taskId` / `groupId`, ya no van en la ruta.
 
 | Método | Ruta | Cuerpo / parámetros | Respuesta | Regla |
 |---|---|---|---|---|
-| `POST` | `/` | `CreateRequestResource { description, requestType }` | `201 RequestResource` | Ver "Reglas al crear". |
-| `GET` | `/` | — | `200 RequestResource[]` · `403` · `404` | Solo integrantes del grupo de la tarea. |
-| `GET` | `/{requestId}` | — | `200` · `404` · `400` si la request es de otra tarea | Solo integrantes del grupo de la tarea (403). |
-| `PUT` | `/{requestId}/status/{status}` | `status` = `APPROVED` \| `REJECTED` | `200 RequestResource` | Ver "Reglas al revisar". |
-| `DELETE` | `/{requestId}` | — | `204` · `403` · `404` (no existe o es de otra tarea) | El líder del grupo borra cualquiera; el integrante asignado, solo las suyas en `PENDING` que no sean `EXPIRED`. |
-
-### `GroupRequestController`: `/api/v1/groups/{groupId}/requests`
-
-| Método | Parámetros | Respuesta | Regla |
-|---|---|---|---|
-| `GET` | `?status=` y `?type=` (opcionales; no distinguen mayúsculas); `?page=&size=` (opcionales) | `200 RequestResource[]`, de la más nueva a la más antigua, o `PageResource<RequestResource>` si se pide página. El filtro y el orden se hacen en SQL (`RequestRepository.findByGroupFiltered`) | Solo el líder del grupo (403). 404 si el grupo no existe. 400 si el filtro tiene un valor desconocido. |
+| `POST` | `/requests` | `CreateRequestResource { taskId, description, requestType }` | `201 RequestResource` | Ver "Reglas al crear". |
+| `GET` | `/requests/task?taskId=` | — | `200 RequestResource[]` · `403` · `404` | Solo integrantes del grupo de la tarea. |
+| `GET` | `/requests/{requestId}` | — | `200` · `404` | Solo integrantes del grupo de la tarea (403). |
+| `PUT` | `/requests/{requestId}/status/{status}` | `status` = `APPROVED` \| `REJECTED` | `200 RequestResource` | Ver "Reglas al revisar". |
+| `DELETE` | `/requests/{requestId}` | — | `204` · `403` · `404` | El líder del grupo borra cualquiera; el integrante asignado, solo las suyas en `PENDING` que no sean `EXPIRED`. |
+| `GET` | `/requests/group?groupId=` | `&status=` y `&type=` (opcionales; no distinguen mayúsculas); `&page=&size=` (opcionales) | `200 RequestResource[]`, de la más nueva a la más antigua, o `PageResource<RequestResource>` si se pide página. El filtro y el orden se hacen en SQL (`RequestRepository.findByGroupFiltered`) | Solo el líder del grupo (403). 404 si el grupo no existe. 400 si el filtro tiene un valor desconocido. |
 
 `RequestResource = { id, description, requestType, requestStatus, task: TaskResource }`
 
