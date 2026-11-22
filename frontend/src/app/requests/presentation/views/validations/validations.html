@@ -2,7 +2,7 @@
   <header class="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
     <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Espacio Líder</span>
     <h1 class="mt-1 text-2xl font-extrabold text-slate-900">Validaciones</h1>
-    <p class="mt-1 text-sm text-slate-500">Revisa las entregas de tu equipo: aprueba las tareas terminadas o devuélvelas para que se corrijan.</p>
+    <p class="mt-1 text-sm text-slate-500">Atiende las solicitudes de tu equipo: revisa las entregas, edita las tareas con una modificación pedida y reanuda las que vencieron.</p>
   </header>
 
   @if (!groupsStore.loading() && groupsStore.leaderGroups().length === 0) {
@@ -17,7 +17,7 @@
     </section>
   } @else {
     @if (groupsStore.leaderGroups().length > 1) {
-      <div class="flex items-center gap-2 overflow-x-auto pb-1">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="mr-2 text-xs font-bold uppercase text-slate-400">Grupo:</span>
         @for (group of groupsStore.leaderGroups(); track group.id) {
           <button type="button" (click)="selectGroup(group.id)"
@@ -34,6 +34,16 @@
       </div>
     }
 
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="mr-2 text-xs font-bold uppercase text-slate-400">Tipo:</span>
+      @for (option of typeOptions; track option.value) {
+        <button type="button" (click)="setType(option.value)"
+          [class]="'font-bold px-4 py-2 rounded-xl text-xs border transition cursor-pointer shrink-0 ' + (requestsStore.typeFilter() === option.value ? typeChipClass[option.value].on + ' shadow-sm' : typeChipClass[option.value].off)">
+          {{ option.label }}
+        </button>
+      }
+    </div>
+
     <div class="flex items-center gap-2 overflow-x-auto pb-1">
       @for (option of statusOptions; track option.value) {
         <button type="button" (click)="setStatus(option.value)"
@@ -46,19 +56,19 @@
     @if (requestsStore.loading()) {
       <div class="flex flex-col items-center justify-center gap-3 py-16">
         <mat-icon fontIcon="cached" class="animate-spin text-4xl text-[#4A90E2]"></mat-icon>
-        <span class="text-sm font-medium text-slate-500">Cargando entregas del grupo...</span>
+        <span class="text-sm font-medium text-slate-500">Cargando solicitudes del grupo...</span>
       </div>
-    } @else if (requestsStore.submissions().length === 0) {
+    } @else if (requestsStore.groupRequests().length === 0) {
       <div class="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
         <mat-icon class="scale-150 text-slate-300">inbox</mat-icon>
-        <h3 class="mt-2 text-lg font-bold text-slate-700">No hay entregas para mostrar</h3>
+        <h3 class="mt-2 text-lg font-bold text-slate-700">No hay solicitudes para mostrar</h3>
         <p class="max-w-md text-sm text-slate-500">
-          {{ requestsStore.statusFilter() === 'PENDING' ? 'No tienes entregas por revisar en este grupo.' : 'No hay entregas con este estado en el grupo.' }}
+          {{ requestsStore.statusFilter() === 'PENDING' ? 'No tienes solicitudes pendientes de este tipo en este grupo.' : 'No hay solicitudes de este tipo con este estado en el grupo.' }}
         </p>
       </div>
     } @else {
       <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        @for (request of requestsStore.submissions(); track request.id) {
+        @for (request of requestsStore.groupRequests(); track request.id) {
           <article class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all hover:shadow-md">
             <div class="flex flex-col gap-4">
               <header class="flex items-start justify-between gap-3">
@@ -75,6 +85,7 @@
                       <span class="font-normal text-slate-400">(&#64;{{ request.task.assignedTo?.username }})</span>
                     </p>
                     <h3 class="truncate text-lg font-extrabold text-slate-800">{{ request.task.title }}</h3>
+                    <span class="mt-0.5 inline-block rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest" [ngClass]="typeBadgeClass[request.requestType]">{{ typeLabels[request.requestType] }}</span>
                   </div>
                 </div>
                 <span class="shrink-0 rounded-xl border px-3 py-1 text-xs font-bold"
@@ -86,26 +97,70 @@
                   {{ request.requestStatus === 'PENDING' ? 'Pendiente' : request.requestStatus === 'APPROVED' ? 'Aprobada' : 'Rechazada' }}
                 </span>
               </header>
+            </div>
 
-              <div class="min-h-[84px] rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Mensaje del integrante</span>
-                @if (request.description) {
-                  <p class="mt-1 text-sm leading-relaxed text-slate-700">{{ request.description }}</p>
-                } @else {
-                  <p class="mt-1 text-sm italic text-slate-400">Sin mensaje.</p>
+            @if (request.requestType === 'MODIFICATION') {
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Qué pide cambiar el integrante</span>
+                <p class="mt-1 text-sm leading-relaxed text-slate-700">{{ request.description }}</p>
+                @if (request.requestStatus === 'PENDING') {
+                  <p class="mt-2 text-xs text-slate-500">La tarea está en espera y su tiempo detenido: edítala para aprobar el cambio o recházalo para que siga como estaba.</p>
                 }
               </div>
-            </div>
+            } @else if (request.requestType === 'EXPIRED') {
+              <div class="rounded-2xl border border-red-100 bg-red-50 p-4">
+                <p class="text-sm font-semibold text-red-700">La tarea venció: pasó su fecha límite sin entregarse.</p>
+              </div>
+            }
 
             <div class="flex flex-col gap-3">
               <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-500">
                 <span>Vence: {{ request && request.task && request.task.dueDate ? (request.task.dueDate | date:'dd/MM/yyyy HH:mm') : 'Sin fecha' }}</span>
-                @if (request.requestStatus === 'PENDING' && isOverdue(request)) {
+                @if (request.requestStatus === 'PENDING' && request.requestType === 'SUBMISSION' && isOverdue(request)) {
                   <span class="font-bold text-red-600">Fecha límite vencida</span>
                 }
               </div>
 
-              @if (request.requestStatus === 'PENDING') {
+              @if (request.requestStatus === 'PENDING' && isLocked(request)) {
+                <p class="flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800"><mat-icon class="scale-75">lock</mat-icon> Grupo bloqueado: solo lectura</p>
+              }
+
+              @if (request.requestStatus === 'PENDING' && !isLocked(request) && request.requestType === 'MODIFICATION') {
+                <footer class="grid grid-cols-2 gap-3 border-t pt-4">
+                  <button type="button" (click)="reject(request)" [disabled]="requestsStore.processing()"
+                    class="rounded-xl bg-red-50 px-4 py-2.5 text-center text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50">
+                    Rechazar
+                  </button>
+                  <button type="button" (click)="editTask(request)"
+                    class="flex items-center justify-center gap-2 rounded-xl bg-[#4A90E2] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-blue-600">
+                    <mat-icon class="scale-75">edit</mat-icon> Editar tarea
+                  </button>
+                </footer>
+              }
+
+              @if (request.requestStatus === 'PENDING' && !isLocked(request) && request.requestType === 'EXPIRED') {
+                <footer class="flex flex-col gap-3 border-t pt-4">
+                  @if (resumingRequestId() === request.id) {
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400" [attr.for]="'resume-' + request.id">Nueva fecha límite</label>
+                    <input type="datetime-local" [attr.id]="'resume-' + request.id" [value]="resumeDate()" (input)="onResumeDateInput($event)"
+                      class="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#4A90E2]" />
+                    @if (resumeDate() && !isResumeDateValid()) {
+                      <p class="text-xs font-semibold text-red-600">Elige una fecha futura: si no, la tarea vuelve a vencer.</p>
+                    }
+                    <div class="grid grid-cols-2 gap-3">
+                      <button type="button" (click)="cancelResume()"
+                        class="rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">Cancelar</button>
+                      <button type="button" (click)="confirmResume(request)" [disabled]="!isResumeDateValid() || requestsStore.processing()"
+                        class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-50">Reanudar</button>
+                    </div>
+                  } @else {
+                    <button type="button" (click)="startResume(request)" [disabled]="requestsStore.processing()"
+                      class="rounded-xl bg-[#4A90E2] px-4 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-50">Reanudar tarea</button>
+                  }
+                </footer>
+              }
+
+              @if (request.requestStatus === 'PENDING' && !isLocked(request) && request.requestType === 'SUBMISSION') {
                 <footer class="grid grid-cols-2 gap-3 border-t pt-4">
                   <button type="button" (click)="reject(request)" [disabled]="requestsStore.processing()"
                     class="rounded-xl bg-red-50 px-4 py-2.5 text-center text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50">

@@ -64,20 +64,31 @@ class AuthorizationApiTests extends ApiTestSupport {
     }
 
     @Test
+    void onlyTheLeaderChangesTaskStatus() {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        assertEquals(
+                403,
+                put("/tasks/" + taskId + "/status?status=ON_HOLD", team.member().token(), null)
+                        .status());
+        assertEquals(
+                200,
+                put("/tasks/" + taskId + "/status?status=ON_HOLD", team.leader().token(), null)
+                        .status());
+    }
+
+    @Test
     void onlyTheLeaderReviewsSubmissions() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());
         var requestId = submit(team.member(), taskId);
         assertEquals(
                 403,
-                put(
-                                "/tasks/" + taskId + "/requests/" + requestId + "/status/APPROVED",
-                                team.member().token(),
-                                null)
+                put("/requests/" + requestId + "/status/APPROVED", team.member().token(), null)
                         .status());
         assertEquals(
                 403,
-                get("/groups/" + team.groupId() + "/requests", team.member().token())
+                get("/requests/group?groupId=" + team.groupId(), team.member().token())
                         .status());
     }
 
@@ -153,7 +164,7 @@ class AuthorizationApiTests extends ApiTestSupport {
                                 .status(),
                         "GET tasks of member"),
                 () -> assertEquals(
-                        403, get("/tasks/" + taskId + "/requests", token).status(), "GET task requests"));
+                        403, get("/requests/task?taskId=" + taskId, token).status(), "GET task requests"));
     }
 
     // AUDIT SEC-01 (resuelto)
@@ -181,16 +192,8 @@ class AuthorizationApiTests extends ApiTestSupport {
         var taskId = createTask(team.leader(), team.groupId(), team.member());
         var requestId = submit(team.member(), taskId);
         assertEquals(
-                403,
-                delete(
-                                "/tasks/" + taskId + "/requests/" + requestId,
-                                team.stranger().token())
-                        .status());
-        assertEquals(
-                200,
-                get("/tasks/" + taskId + "/requests/" + requestId, team.leader().token())
-                        .status(),
-                "la request sigue existiendo");
+                403, delete("/requests/" + requestId, team.stranger().token()).status());
+        assertEquals(200, get("/requests/" + requestId, team.leader().token()).status(), "la request sigue existiendo");
     }
 
     // AUDIT SEC-06 (resuelto) + HUM-06: los demás ven nombre, correo y foto, pero no los roles

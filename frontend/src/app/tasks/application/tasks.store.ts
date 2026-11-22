@@ -5,7 +5,7 @@ import { Task, TaskStatus } from '../domain/model/task.entity';
 import { CreateTaskCommand } from '../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../domain/model/update-task.command';
 import { TasksApi } from '../infrastructure/tasks.api';
-import { retry } from 'rxjs';
+import { catchError, retry, switchMap, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TasksStore {
@@ -217,6 +217,48 @@ export class TasksStore {
           this.loadingSignal.set(false);
         },
       });
+  }
+
+  /**
+   * The leader resumes an EXPIRED task: first a new (future) due date, then IN_PROGRESS, because changing the date
+   * alone does not revive an expired task. If the second call fails the date is already saved, and the message says so.
+   */
+  resumeExpiredTask(task: Task, newDueDate: Date, onResumed?: () => void): void {
+    const assigneeId = task.assignedTo?.id;
+    if (assigneeId === undefined) {
+      this.setError('La tarea no tiene un responsable asignado: no se puede reanudar.');
+      return;
+    }
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+    this.tasksApi
+      .updateTask(task.id, new UpdateTaskCommand(task.title, task.description, newDueDate, assigneeId))
+      .pipe(
+        switchMap(() =>
+          this.tasksApi.updateTaskStatus(task.id, 'IN_PROGRESS').pipe(
+            catchError((err) =>
+              throwError(() => new Error(`${this.formatError(err, 'No se pudo reanudar la tarea')} La fecha ya se actualizó: vuelve a intentar reanudarla.`)),
+            ),
+          ),
+        ),
+      )
+      .subscribe({
+        next: (updatedTask) => {
+          this.applyUpdatedTask(updatedTask);
+          this.loadingSignal.set(false);
+          onResumed?.();
+        },
+        error: (err) => {
+          this.setError(err instanceof Error ? err.message : this.formatError(err, 'No se pudo reanudar la tarea'));
+          this.loadingSignal.set(false);
+        },
+      });
+  }
+
+  /** Replaces a task in the list with a fresher copy returned by another endpoint (e.g. a submission completes it). */
+  applyUpdatedTask(updatedTask: Task): void {
+    this.tasksSignal.update((tasks) => tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+    if (this.selectedTaskSignal()?.id === updatedTask.id) this.selectedTaskSignal.set(updatedTask);
   }
 
   /** DELETE /api/v1/tasks/{taskId} */

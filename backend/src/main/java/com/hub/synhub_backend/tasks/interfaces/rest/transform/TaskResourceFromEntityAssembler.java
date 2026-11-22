@@ -23,6 +23,7 @@ public class TaskResourceFromEntityAssembler {
                 entity.getContext(),
                 entity.getUrgency(),
                 entity.getLabels(),
-                entity.getAiAccepted());
+                entity.getAiAccepted(),
+                entity.getAiRationale());
     }
 }

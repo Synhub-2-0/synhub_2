@@ -111,6 +111,9 @@ export class GroupsStore {
           this.groupsSignal.update((groups) => [...groups, createdGroup]);
           this.leaderGroupsSignal.update((groups) => [...groups, createdGroup]);
           this.loadingSignal.set(false);
+          if (createdGroup.locked) {
+            this.toastStore.info('El grupo se creó bloqueado porque superaste el límite de grupos de tu plan. Actívalo cuando tengas cupo o cambia de plan en "Mi plan".');
+          }
           this.loadGroups(); // Sincroniza con la base de datos
           router.navigate(['/groups/leader']).then();
         },
@@ -119,6 +122,38 @@ export class GroupsStore {
           this.loadingSignal.set(false);
         },
       });
+  }
+
+  /** The leader deletes the group (and its tasks, requests and invitations): it frees a slot of the plan. */
+  deleteGroup(groupId: number, onSuccess?: () => void): void {
+    this.errorSignal.set(null);
+    this.groupsApi.deleteGroup(groupId).subscribe({
+      next: () => {
+        const without = (groups: Group[]) => groups.filter((group) => group.id !== groupId);
+        this.groupsSignal.update(without);
+        this.leaderGroupsSignal.update(without);
+        this.memberGroupsSignal.update(without);
+        this.toastStore.success('Grupo eliminado.');
+        onSuccess?.();
+      },
+      error: (err) => this.setError(this.formatError(err, 'Failed to delete group')),
+    });
+  }
+
+  /** The leader activates a locked group (needs a free slot in the plan). */
+  activateGroup(groupId: number, onSuccess?: () => void): void {
+    this.errorSignal.set(null);
+    this.groupsApi.activateGroup(groupId).subscribe({
+      next: (activated) => {
+        const replace = (groups: Group[]) => groups.map((group) => (group.id === activated.id ? activated : group));
+        this.groupsSignal.update(replace);
+        this.leaderGroupsSignal.update(replace);
+        this.memberGroupsSignal.update(replace);
+        this.toastStore.success(`Grupo "${activated.name}" activado.`);
+        onSuccess?.();
+      },
+      error: (err) => this.setError(this.formatError(err, 'Failed to activate group')),
+    });
   }
 
   updateGroup(updatedGroup: Group, router: Router): void {

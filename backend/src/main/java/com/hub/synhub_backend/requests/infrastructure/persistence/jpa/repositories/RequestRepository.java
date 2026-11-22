@@ -40,4 +40,6 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
 
     boolean existsByTask_IdAndRequestTypeAndRequestStatus(
             Long taskId, RequestType requestType, RequestStatus requestStatus);
+
+    boolean existsByTask_IdAndRequestStatus(Long taskId, RequestStatus requestStatus);
 }

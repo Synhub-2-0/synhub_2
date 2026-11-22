@@ -1,5 +1,7 @@
 package com.hub.synhub_backend.requests.application.internal.acl;
 
+import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestStatus;
+import com.hub.synhub_backend.requests.domain.model.valueobjects.RequestType;
 import com.hub.synhub_backend.requests.infrastructure.persistence.jpa.repositories.RequestRepository;
 import com.hub.synhub_backend.requests.interfaces.acl.RequestsContextFacade;
 import org.springframework.stereotype.Service;
@@ -22,5 +24,33 @@ public class RequestsContextFacadeImpl implements RequestsContextFacade {
     @Transactional
     public void deleteAllRequestsByTaskId(Long taskId) {
         requestRepository.deleteByTaskId(taskId);
+    }
+
+    @Override
+    public boolean hasPendingModification(Long taskId) {
+        return requestRepository.existsByTask_IdAndRequestTypeAndRequestStatus(
+                taskId, RequestType.MODIFICATION, RequestStatus.PENDING);
+    }
+
+    @Override
+    @Transactional
+    public boolean resolvePendingModification(Long taskId) {
+        return approvePending(taskId, RequestType.MODIFICATION);
+    }
+
+    @Override
+    @Transactional
+    public boolean resolvePendingExpiration(Long taskId) {
+        return approvePending(taskId, RequestType.EXPIRED);
+    }
+
+    private boolean approvePending(Long taskId, RequestType type) {
+        var pending = requestRepository.findByTaskId(taskId).stream()
+                .filter(request -> type.name().equals(request.getRequestType())
+                        && RequestStatus.PENDING.name().equals(request.getRequestStatus()))
+                .toList();
+        pending.forEach(request -> request.updateRequestStatus(RequestStatus.APPROVED.name()));
+        if (!pending.isEmpty()) requestRepository.saveAll(pending);
+        return !pending.isEmpty();
     }
 }

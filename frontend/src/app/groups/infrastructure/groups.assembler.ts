@@ -20,7 +20,8 @@ export class GroupsAssembler implements BaseAssembler<Group, GroupResource, Grou
       imgUrl: resource.imgUrl,
       description: resource.description,
       code: resource.code,
-      memberCount: resource.memberCount ?? 0
+      memberCount: resource.memberCount ?? 0,
+      locked: resource.locked ?? false
     });
   }
 
@@ -42,7 +43,8 @@ export class GroupsAssembler implements BaseAssembler<Group, GroupResource, Grou
       imgUrl: entity.imgUrl,
       description: entity.description,
       code: entity.code,
-      memberCount: entity.memberCount
+      memberCount: entity.memberCount,
+      locked: entity.locked
     } as GroupResource;
   }
 

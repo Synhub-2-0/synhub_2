@@ -7,6 +7,7 @@ export class Group implements BaseEntity {
   private _description: string;
   private _code: string;
   private _memberCount: number;
+  private _locked: boolean;
 
   constructor(props: {
     id: number;
@@ -15,6 +16,7 @@ export class Group implements BaseEntity {
     description: string;
     code: string;
     memberCount: number;
+    locked?: boolean;
   }) {
     this._id = props.id;
     this._name = props.name;
@@ -22,6 +24,7 @@ export class Group implements BaseEntity {
     this._description = props.description;
     this._code = props.code;
     this._memberCount = props.memberCount;
+    this._locked = props.locked ?? false;
   }
 
   get id(): number {return this._id;}
@@ -30,6 +33,8 @@ export class Group implements BaseEntity {
   get description(): string {return this._description;}
   get code(): string {return this._code;}
   get memberCount(): number {return this._memberCount;}
+  /** Bloqueado: su líder superó el límite de su plan; es de solo lectura hasta que se active. */
+  get locked(): boolean {return this._locked;}
 
   set id(value: number) {this._id = value;}
   set name(value: string) {this._name = value;}
@@ -37,4 +42,5 @@ export class Group implements BaseEntity {
   set description(value: string) {this._description = value;}
   set code(value: string) {this._code = value;}
   set memberCount(value: number) {this._memberCount = value;}
+  set locked(value: boolean) {this._locked = value;}
 }

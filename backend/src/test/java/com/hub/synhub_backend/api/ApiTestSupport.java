@@ -158,15 +158,12 @@ abstract class ApiTestSupport {
         return res.id();
     }
 
-    /** El asignado completa la tarea y envía la entrega; devuelve el id de la request. */
+    /** El asignado envía la entrega (la tarea pasa a COMPLETED sola); devuelve el id de la request. */
     protected long submit(Account member, long taskId) {
-        var completed = put("/tasks/" + taskId + "/status?status=COMPLETED", member.token(), null);
-        if (completed.status() != 200)
-            throw new IllegalStateException("completar " + completed.status() + ": " + completed.raw());
         var request = post(
-                "/tasks/" + taskId + "/requests",
+                "/requests",
                 member.token(),
-                Map.of("description", "Listo", "requestType", "SUBMISSION"));
+                Map.of("taskId", taskId, "description", "Listo", "requestType", "SUBMISSION"));
         if (request.status() != 201)
             throw new IllegalStateException("entregar " + request.status() + ": " + request.raw());
         return request.id();

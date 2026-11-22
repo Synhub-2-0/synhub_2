@@ -6,6 +6,7 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.CreateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
+import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskClassificationUpdate;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -23,13 +24,21 @@ class TaskTest {
                 1L, title, "Descripción", NOW.plusDays(2), 2L, 10L, 3, "BACKEND", "HIGH", "api, auth", true);
     }
 
-    /** Tarea con createdAt/updatedAt fijados (en producción los pone @PrePersist). */
+    /**
+     * Tarea con createdAt/updatedAt fijados (en producción los pone @PrePersist). Si está IN_PROGRESS, lleva
+     * {@code age} activa; en cualquier otro estado no tiene tiempo corriendo.
+     */
     static Task task(TaskStatus status, Duration age) {
         var task = new Task(create("Implementar login"));
         ReflectionTestUtils.setField(task, "createdAt", NOW.minus(age));
         ReflectionTestUtils.setField(task, "updatedAt", NOW.minus(age));
+        ReflectionTestUtils.setField(task, "activeSince", status == TaskStatus.IN_PROGRESS ? NOW.minus(age) : null);
         task.setStatus(status);
         return task;
+    }
+
+    private static double hours(Task task) {
+        return Duration.ofMillis(task.getTimePassed()).toMinutes() / 60.0;
     }
 
     private static void move(Task task, TaskStatus to) {
@@ -48,10 +57,11 @@ class TaskTest {
         assertTrue(task.getAiAccepted());
         assertEquals(0, task.getTimesRearranged());
         assertEquals(0L, task.getTimePassed());
+        assertNotNull(task.getActiveSince(), "el tiempo activo empieza al crearla");
     }
 
     @Test
-    void completingMeasuresTimeSinceCreation() {
+    void completingMeasuresTheActiveTime() {
         var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(2));
         move(task, TaskStatus.COMPLETED);
         assertEquals(TaskStatus.COMPLETED, task.getStatus());
@@ -60,13 +70,67 @@ class TaskTest {
     }
 
     @Test
-    void completingAfterReschedulingAddsTimeSinceLastUpdate() {
+    void completingAfterReschedulingAddsTheActiveTimeToWhatWasAccumulated() {
         var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(1));
         ReflectionTestUtils.setField(task, "timesRearranged", 1);
         ReflectionTestUtils.setField(task, "timePassed", Duration.ofHours(5).toMillis());
         move(task, TaskStatus.COMPLETED);
         var hours = Duration.ofMillis(task.getTimePassed()).toMinutes() / 60.0;
         assertTrue(hours >= 6 && hours < 6.1, "timePassed ≈ 5h + 1h, fue " + hours);
+    }
+
+    @Test
+    void timeOnHoldIsNotCounted() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(2));
+        move(task, TaskStatus.ON_HOLD);
+        assertNull(task.getActiveSince(), "en espera no corre el tiempo");
+        assertTrue(hours(task) >= 2 && hours(task) < 2.1, "se guarda lo activo hasta la pausa: " + hours(task));
+
+        // Estuvo 10 h en espera: al reanudar y completar enseguida, el total sigue siendo ≈2 h.
+        ReflectionTestUtils.setField(task, "updatedAt", NOW.minusHours(10));
+        move(task, TaskStatus.IN_PROGRESS);
+        assertNotNull(task.getActiveSince());
+        move(task, TaskStatus.COMPLETED);
+        assertTrue(hours(task) >= 2 && hours(task) < 2.1, "el tiempo en espera no suma: " + hours(task));
+    }
+
+    @Test
+    void editingTheTaskDoesNotLoseActiveTime() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(3));
+        ReflectionTestUtils.setField(task, "timesRearranged", 1);
+        ReflectionTestUtils.setField(task, "updatedAt", NOW); // una edición reciente mueve updatedAt
+        move(task, TaskStatus.COMPLETED);
+        assertTrue(hours(task) >= 3 && hours(task) < 3.1, "se mide desde que está activa, no desde updatedAt");
+    }
+
+    @Test
+    void expiringStopsTheTimeAtTheDeadline() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(5));
+        ReflectionTestUtils.setField(task, "dueDate", NOW.minusHours(1));
+        move(task, TaskStatus.EXPIRED);
+        assertNull(task.getActiveSince());
+        assertTrue(hours(task) >= 4 && hours(task) < 4.1, "cuenta hasta la fecha límite (4 h): " + hours(task));
+    }
+
+    @Test
+    void anExpiredTaskResumedStartsCountingAgain() {
+        var task = task(TaskStatus.EXPIRED, Duration.ofHours(1));
+        ReflectionTestUtils.setField(task, "timePassed", Duration.ofHours(4).toMillis());
+        move(task, TaskStatus.IN_PROGRESS);
+        assertNotNull(task.getActiveSince());
+        assertEquals(Duration.ofHours(4).toMillis(), task.getTimePassed());
+    }
+
+    @Test
+    void settlingAtTheDeadlineAddsTheTimeUpToIt() {
+        var task = task(TaskStatus.EXPIRED, Duration.ofHours(1));
+        ReflectionTestUtils.setField(task, "activeSince", NOW.minusHours(5));
+        ReflectionTestUtils.setField(task, "dueDate", NOW.minusHours(2));
+        task.settleActiveTime();
+        assertNull(task.getActiveSince());
+        assertEquals(Duration.ofHours(3).toMillis(), task.getTimePassed());
+        task.settleActiveTime();
+        assertEquals(Duration.ofHours(3).toMillis(), task.getTimePassed(), "es idempotente");
     }
 
     @Test
@@ -85,6 +149,19 @@ class TaskTest {
         move(task, TaskStatus.ON_HOLD);
         assertEquals(TaskStatus.ON_HOLD, task.getStatus());
         assertEquals(0, task.getTimesRearranged());
+    }
+
+    @Test
+    void editingTheDueDateKeepsTheClockConsistent() {
+        var paused = task(TaskStatus.ON_HOLD, Duration.ofDays(1));
+        paused.updateTask(new UpdateTaskCommand(1L, 5L, null, null, NOW.plusDays(3), 2L));
+        assertNotNull(paused.getActiveSince(), "reanudada por la edición: vuelve a correr");
+
+        var active = task(TaskStatus.IN_PROGRESS, Duration.ofHours(2));
+        active.updateTask(new UpdateTaskCommand(1L, 5L, null, null, NOW.minusHours(1), 2L));
+        assertEquals(TaskStatus.EXPIRED, active.getStatus());
+        assertNull(active.getActiveSince());
+        assertTrue(hours(active) >= 1 && hours(active) < 1.1, "cuenta hasta la nueva fecha límite: " + hours(active));
     }
 
     @Test
@@ -114,6 +191,64 @@ class TaskTest {
         task.updateTask(new UpdateTaskCommand(1L, 5L, "Nuevo título", "Nueva desc", null, 2L));
         assertEquals("Nuevo título", task.getTitle());
         assertEquals("Nueva desc", task.getDescription());
+    }
+
+    @Test
+    void updateWithoutClassificationKeepsTheSavedOne() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(1));
+        task.updateTask(new UpdateTaskCommand(1L, 5L, "Nuevo título", null, null, 2L));
+        assertEquals(3, task.getDifficulty());
+        assertEquals("BACKEND", task.getContext());
+        assertEquals(true, task.getAiAccepted());
+    }
+
+    @Test
+    void updateReplacesTheClassification() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(1));
+        task.updateTask(new UpdateTaskCommand(
+                1L, 5L, null, null, null, 2L, new TaskClassificationUpdate(5, "CLOUD", "", " infra ", false)));
+        assertEquals(5, task.getDifficulty());
+        assertEquals("CLOUD", task.getContext());
+        assertNull(task.getUrgency(), "un campo vacío se quita");
+        assertEquals("infra", task.getLabels());
+        assertEquals(false, task.getAiAccepted());
+    }
+
+    @Test
+    void removingTheClassificationAlsoClearsTheAiMeasure() {
+        var task = task(TaskStatus.IN_PROGRESS, Duration.ofHours(1));
+        task.updateTask(new UpdateTaskCommand(
+                1L, 5L, null, null, null, 2L, new TaskClassificationUpdate(null, null, "", " ", true)));
+        assertNull(task.getDifficulty());
+        assertNull(task.getContext());
+        assertNull(task.getUrgency());
+        assertNull(task.getLabels());
+        assertNull(task.getAiAccepted());
+    }
+
+    @Test
+    void theAiRationaleIsKeptOnlyWhileTheClassificationComesFromTheAi() {
+        var fromAi = new Task(new CreateTaskCommand(
+                1L, "Login", "d", NOW.plusDays(2), 2L, 10L, 3, "BACKEND", "HIGH", "api", true, " Toca el token. "));
+        assertEquals("Toca el token.", fromAi.getAiRationale());
+
+        fromAi.updateTask(new UpdateTaskCommand(
+                1L,
+                5L,
+                null,
+                null,
+                null,
+                2L,
+                new TaskClassificationUpdate(4, "BACKEND", "HIGH", "api", false, "Toca el token.")));
+        assertEquals("Toca el token.", fromAi.getAiRationale(), "editada a mano sigue siendo una sugerencia de la IA");
+
+        fromAi.updateTask(new UpdateTaskCommand(
+                1L, 5L, null, null, null, 2L, new TaskClassificationUpdate(4, "QA", null, null, null, "no aplica")));
+        assertNull(fromAi.getAiRationale(), "clasificada a mano no tiene justificación de la IA");
+
+        var byHand = new Task(new CreateTaskCommand(
+                1L, "Login", "d", NOW.plusDays(2), 2L, 10L, 3, null, null, null, null, "no aplica"));
+        assertNull(byHand.getAiRationale());
     }
 
     @Test

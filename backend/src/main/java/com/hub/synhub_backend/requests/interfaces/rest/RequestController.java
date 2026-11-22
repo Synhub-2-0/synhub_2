@@ -1,9 +1,12 @@
 package com.hub.synhub_backend.requests.interfaces.rest;
 
+import static com.hub.synhub_backend.shared.interfaces.rest.Pagination.*;
+
 import com.hub.synhub_backend.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.hub.synhub_backend.iam.domain.services.UserQueryService;
 import com.hub.synhub_backend.requests.domain.model.commands.DeleteRequestCommand;
 import com.hub.synhub_backend.requests.domain.model.queries.GetRequestByIdQuery;
+import com.hub.synhub_backend.requests.domain.model.queries.GetRequestsByGroupIdQuery;
 import com.hub.synhub_backend.requests.domain.model.queries.GetRequestsByTaskIdQuery;
 import com.hub.synhub_backend.requests.domain.services.RequestCommandService;
 import com.hub.synhub_backend.requests.domain.services.RequestQueryService;
@@ -13,6 +16,7 @@ import com.hub.synhub_backend.requests.interfaces.rest.transform.CreateRequestCo
 import com.hub.synhub_backend.requests.interfaces.rest.transform.RequestResourceFromEntityAssembler;
 import com.hub.synhub_backend.requests.interfaces.rest.transform.UpdateRequestCommandFromResourceAssembler;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.shared.interfaces.rest.resources.PageResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,7 +30,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(value = "/api/v1/tasks/{taskId}/requests", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1/requests", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Request", description = "Request management API")
 public class RequestController {
 
@@ -49,14 +53,12 @@ public class RequestController {
             description =
                     "Create a request for a task. Only the assigned member; a SUBMISSION needs the task COMPLETED and no pending submission")
     public ResponseEntity<RequestResource> createRequest(
-            @PathVariable Long taskId,
-            @Valid @RequestBody CreateRequestResource resource,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @Valid @RequestBody CreateRequestResource resource, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService
                 .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var createRequestCommand =
-                CreateRequestCommandFromResourceAssembler.toCommandFromResource(resource, taskId, user.getId());
+                CreateRequestCommandFromResourceAssembler.toCommandFromResource(resource, user.getId());
         var requestId = this.requestCommandService.handle(createRequestCommand);
         var request = this.requestQueryService
                 .handle(new GetRequestByIdQuery(requestId, user.getId()))
@@ -65,10 +67,10 @@ public class RequestController {
                 .body(RequestResourceFromEntityAssembler.toResourceFromEntity(request));
     }
 
-    @GetMapping
+    @GetMapping("/task")
     @Operation(summary = "Get requests from a task", description = "Get a list of requests from a task id")
     public ResponseEntity<List<RequestResource>> getRequestsByTaskId(
-            @PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
+            @RequestParam Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService
                 .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -84,7 +86,7 @@ public class RequestController {
     @GetMapping("/{requestId}")
     @Operation(summary = "Get a request by id", description = "Get a request by id")
     public ResponseEntity<RequestResource> getRequestById(
-            @PathVariable Long taskId, @PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails) {
+            @PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService
                 .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -95,12 +97,33 @@ public class RequestController {
             return ResponseEntity.notFound().build();
         }
 
-        if (!optionalRequest.get().getTask().getId().equals(taskId)) {
-            return ResponseEntity.badRequest().build();
-        }
-
         var requestResource = RequestResourceFromEntityAssembler.toResourceFromEntity(optionalRequest.get());
         return ResponseEntity.ok(requestResource);
+    }
+
+    @GetMapping("/group")
+    @Operation(summary = "Get all requests from a group.")
+    public ResponseEntity<?> getRequestsByGroupId(
+            @RequestParam Long groupId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var query = new GetRequestsByGroupIdQuery(groupId, status, type, user.getId());
+        // ?page / ?size: una página (PageResource); sin ellos, el arreglo completo de siempre (AUDIT PERF-02).
+        var pageable = of(page, size);
+        if (pageable.isPresent())
+            return ResponseEntity.ok(PageResource.of(
+                    this.requestQueryService.handle(query, pageable.get()),
+                    RequestResourceFromEntityAssembler::toResourceFromEntity));
+        var requests = this.requestQueryService.handle(query);
+        return ResponseEntity.ok(requests.stream()
+                .map(RequestResourceFromEntityAssembler::toResourceFromEntity)
+                .toList());
     }
 
     @PutMapping("/{requestId}/status/{status}")
@@ -109,15 +132,14 @@ public class RequestController {
             description =
                     "Approve or reject a request. Leader only; approving a submission marks the task DONE, rejecting sends it back to IN_PROGRESS")
     public ResponseEntity<RequestResource> updateRequestStatus(
-            @PathVariable Long taskId,
             @PathVariable Long requestId,
             @PathVariable String status,
             @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService
                 .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        var updateRequestCommand = UpdateRequestCommandFromResourceAssembler.toCommandFromResource(
-                taskId, requestId, status, user.getId());
+        var updateRequestCommand =
+                UpdateRequestCommandFromResourceAssembler.toCommandFromResource(requestId, status, user.getId());
         var updatedRequest = this.requestCommandService.handle(updateRequestCommand);
 
         if (updatedRequest.isEmpty()) {
@@ -131,11 +153,11 @@ public class RequestController {
     @DeleteMapping("/{requestId}")
     @Operation(summary = "Delete a request by id", description = "Delete a request by id")
     public ResponseEntity<Void> deleteRequestById(
-            @PathVariable Long taskId, @PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails) {
+            @PathVariable Long requestId, @AuthenticationPrincipal UserDetails userDetails) {
         var user = this.userQueryService
                 .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        var deleteRequestCommand = new DeleteRequestCommand(taskId, requestId, user.getId());
+        var deleteRequestCommand = new DeleteRequestCommand(requestId, user.getId());
         this.requestCommandService.handle(deleteRequestCommand);
         return ResponseEntity.noContent().build();
     }

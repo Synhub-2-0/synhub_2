@@ -9,4 +9,5 @@ public record GroupResourceReduced(
         String description,
         String code,
         int memberCount,
-        PublicUserResource leader) {}
+        PublicUserResource leader,
+        boolean locked) {}

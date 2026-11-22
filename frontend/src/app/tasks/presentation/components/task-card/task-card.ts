@@ -1,40 +1,31 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
-import { RequestsStore } from '../../../../requests/application/requests.store';
-import { DIFFICULTY_SCALE } from '../../../../ai/domain/model/task-classification.entity';
+import { TaskMemberActions } from '../task-member-actions/task-member-actions';
+import { CONTEXT_LABELS, DIFFICULTY_LABELS, DIFFICULTY_SCALE, URGENCY_LABELS } from '../../../../ai/domain/model/task-classification.entity';
 
 @Component({
   selector: 'app-task-card',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatTooltipModule],
+  imports: [CommonModule, MatIconModule, MatTooltipModule, TaskMemberActions],
   templateUrl: './task-card.html',
   styleUrl: './task-card.css',
 })
-export class TaskCard implements OnInit {
+export class TaskCard {
   private readonly router = inject(Router);
-
-  readonly requestsStore = inject(RequestsStore);
-  readonly showSubmitForm = signal(false);
-  readonly submissionMessage = signal('');
 
   @Input({ required: true }) task!: Task;
   @Input() isLeader = false;
   @Input() showGroup = false;
   @Output() deleteRequested = new EventEmitter<number>();
-  @Output() statusChangeRequested = new EventEmitter<{ taskId: number; status: TaskStatus }>();
 
   readonly difficultyScale = DIFFICULTY_SCALE;
-
-  ngOnInit(): void {
-    // A COMPLETED task of the member may already have a submission waiting for the leader.
-    if (!this.isLeader && this.task.status === 'COMPLETED') {
-      this.requestsStore.loadTaskRequests(this.task.id);
-    }
-  }
+  readonly contextLabels = CONTEXT_LABELS;
+  readonly urgencyLabels = URGENCY_LABELS;
+  readonly difficultyLabels = DIFFICULTY_LABELS;
 
   get initials(): string {
     const name = this.task.assignedTo?.name ?? '';
@@ -110,26 +101,9 @@ export class TaskCard implements OnInit {
       .then();
   }
 
-  toggleSubmitForm(event: Event): void {
+  /** The group name opens the group screen (the same route serves leaders and members). */
+  openGroup(event: Event): void {
     event.stopPropagation();
-    this.requestsStore.clearError();
-    this.showSubmitForm.update((value) => !value);
-  }
-
-  onSubmissionInput(event: Event): void {
-    this.submissionMessage.set((event.target as HTMLTextAreaElement).value);
-  }
-
-  onSubmit(event: Event): void {
-    event.stopPropagation();
-    this.requestsStore.submitTask(this.task.id, this.submissionMessage().trim(), () => {
-      this.showSubmitForm.set(false);
-      this.submissionMessage.set('');
-    });
-  }
-
-  onChangeStatus(event: Event, status: TaskStatus): void {
-    event.stopPropagation();
-    this.statusChangeRequested.emit({ taskId: this.task.id, status });
+    if (this.task.group) this.router.navigate(['/groups', this.task.group.id]).then();
   }
 }

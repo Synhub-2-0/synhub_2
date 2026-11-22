@@ -10,7 +10,7 @@ Carpeta: [`frontend/src/app/groups`](../../../../frontend/src/app/groups)
 |---|---|---|---|
 | `/groups/leader` | `LeaderGroups` | `GroupsStore` | Lista los grupos donde soy líder. `?create=true` abre el modal para crear un grupo (`addGroup`). |
 | `/groups/member` | `MemberGroups` | `GroupsStore`, `InvitationsStore` | Lista los grupos donde soy miembro. El panel "Unirse a un grupo" acepta un **código** o muestra **mis invitaciones pendientes** (aceptar / rechazar). |
-| `/groups?id=…&role=leader\|member` | `GroupDetails` | `GroupsStore`, `TasksStore`, `InvitationsStore`, `IamStore` | Detalle del grupo: integrantes, edición (líder), quitar integrantes con confirmación (líder) o salir del grupo (miembro), tablero de tareas del grupo, invitaciones enviadas e invitación por nombre de usuario. |
+| `/groups/:id` | `GroupDetails` | `GroupsStore`, `TasksStore`, `InvitationsStore`, `IamStore` | Detalle del grupo (el rol sale de `leaderGroups`, no de la URL; secciones con el mismo diseño de tarjeta y un botón que lleva a Gestión de tareas): integrantes, edición (líder), quitar integrantes con confirmación (líder) o salir del grupo (miembro), tablero de tareas del grupo, invitaciones enviadas e invitación por nombre de usuario. |
 
 Componentes: `GroupList` → `GroupCard` (navega al detalle o a las tareas del grupo con `queryParams`), `NoGroupLeader` y `NoGroupMember` (estados vacíos). `GroupDetails` reutiliza `TaskBoard` y `TaskList` de [tasks](../../tasks/frontend/README.md).
 
@@ -62,3 +62,7 @@ Los errores se muestran con `ToastStore` (shared).
 ## Pruebas
 
 `group-card`, `group-list`, `no-group-leader`, `no-group-member`, `group-details`, `leader-groups` y `member-groups` (`*.spec.ts`).
+
+## Grupos bloqueados
+
+`Group.locked` viene del backend. `GroupCard` muestra la insignia "Bloqueado" y, al líder, "Activar grupo" (deshabilitado sin cupo; carga `SubscriptionsStore` si hace falta). `GroupDetails` muestra un aviso de solo lectura, con "Activar grupo" y "Ver mi plan" para el líder, y oculta la edición, las invitaciones y quitar integrantes (`canManage = isLeaderView && !isLocked`). `GroupsStore.activateGroup` reemplaza el grupo en las listas; `addGroup` avisa si el grupo nació bloqueado. El líder puede **eliminar el grupo** desde `GroupDetails` ("Eliminar grupo", con confirmación; también si está bloqueado): `GroupsStore.deleteGroup` hace `DELETE /groups/{id}`, lo quita de las listas, refresca los cupos del plan y vuelve a Grupos Liderados. Es la forma de liberar un cupo sin cambiar de plan.

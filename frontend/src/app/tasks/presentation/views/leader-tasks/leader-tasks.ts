@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,6 +21,11 @@ export class LeaderTasks implements OnInit {
   readonly groupsStore = inject(GroupsStore);
 
   selectedGroupId = signal<number | null>(null);
+
+  /** A locked group (the leader exceeded the plan limit) is read-only: no new tasks. */
+  readonly selectedGroupLocked = computed(
+    () => this.groupsStore.leaderGroups().find((group) => group.id === this.selectedGroupId())?.locked ?? false,
+  );
 
   readonly statusOptions: (TaskStatus | 'ALL')[] = [
     'ALL',
@@ -83,9 +88,5 @@ export class LeaderTasks implements OnInit {
     if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
       this.tasksStore.deleteTask(taskId);
     }
-  }
-
-  onChangeStatus(event: { taskId: number; status: TaskStatus }): void {
-    this.tasksStore.updateTaskStatus(event.taskId, event.status);
   }
 }

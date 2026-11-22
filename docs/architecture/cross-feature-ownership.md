@@ -8,7 +8,7 @@ En orden de prioridad:
 
 1. **Dueño del invariante.** La pieza le pertenece al contexto cuya regla de negocio protege o cuyo estado modifica. *Aceptar una invitación crea una membresía* → groups.
 2. **Dueño del agregado que se escribe.** Si la pieza escribe, el dueño es el contexto del agregado que persiste. Si solo lee, el dueño es el contexto que **necesita** el dato, no el que lo almacena (`TaskMetricsQueryServiceImpl` lee tareas, pero le pertenece a metrics).
-3. **Dueño del recurso REST.** Para endpoints, se considera la URL **raíz** del recurso, pero cede ante los criterios 1 y 2: `/groups/{id}/requests` le pertenece a requests porque devuelve requests.
+3. **Dueño del recurso REST.** Para endpoints, se considera la URL **raíz** del recurso, pero cede ante los criterios 1 y 2: `/requests/group?groupId=` recibe un grupo pero le pertenece a requests porque devuelve requests.
 4. **En el frontend, dueño del store.** Un componente le pertenece a la feature de la carpeta donde vive; el store o API que usa determina **qué feature documenta la interacción**.
 
 ## Matriz del backend
@@ -16,7 +16,7 @@ En orden de prioridad:
 | Pieza | Ubicación | Toca | **Dueño** | Por qué |
 |---|---|---|---|---|
 | `InvitationController`, `Invitation`, `Invitation*Service` | `groups` | groups, iam | **groups** (recurso REST `/invitations`) | Aceptar crea `GroupProfile`; `Group.invitations` las contiene en cascada. |
-| `GroupRequestController` (`GET /groups/{id}/requests`) | `requests` | requests, groups | **requests** | Devuelve `Request`; de groups solo consulta quién es el líder, mediante ACL. |
+| `RequestController` (`GET /requests/group?groupId=`) | `requests` | requests, groups | **requests** | Devuelve `Request`; de groups solo consulta quién es el líder, mediante ACL. |
 | `RequestRepository.findByTask_Profile_Group_Id` | `requests` | requests → tasks → groups | **requests** | Consulta de requests; navega las relaciones JPA. |
 | `TaskRepository.findByProfile_Group_Id…` / `…_User_Id` | `tasks` | tasks → groups → iam | **tasks** | Consulta de tareas filtrada por membresía. |
 | `GroupProfile.tasks` / `Task.profile` | `groups` / `tasks` | groups ↔ tasks | **tasks** es dueño de la asignación; **groups**, de la membresía | La tarea se asigna a una membresía; la membresía no tiene reglas sobre tareas. |
@@ -25,6 +25,10 @@ En orden de prioridad:
 | `TaskCommandServiceImpl` (usa `GroupsContextFacade` e `IamContextFacade`) | `tasks` | tasks, groups, iam | **tasks** | Escribe `Task`; la membresía y el usuario llegan por las ACL. |
 | `GroupCommandServiceImpl` / `InvitationCommandServiceImpl` (usan `IamContextFacade`) | `groups` | groups, iam | **groups** | Escriben grupos y membresías. |
 | `TaskMetricsQueryServiceImpl` | `metrics` | tasks, iam, groups | **metrics** | Solo lee; el cálculo es de metrics. |
+| `Group.locked`, `Group.ensureNotLocked()`, `GroupLockedException` | `groups` | groups, tasks, requests, ai | **groups** | El bloqueo es un estado del grupo; tasks, requests y ai solo lo comprueban antes de escribir. |
+| `GroupsContextFacade.applyGroupLimit` / `fetchLedGroups` | `groups` | groups, subscriptions | **groups** (escribe `locked`) | La llama subscriptions al cambiar de plan; usa los repositorios de groups (no `GroupCommandService`) para evitar un ciclo de beans. |
+| `SubscriptionsContextFacade.maxLedGroups` | `subscriptions` | subscriptions, groups | **subscriptions** | Dueño del plan; groups lo consulta al crear y activar grupos. |
+| `POST /groups/{id}/activate` | `groups` | groups, subscriptions | **groups** | Escribe `Group.locked`; consulta el límite en subscriptions. |
 | `GroupReportQueryServiceImpl` | `ai` | metrics, tasks | **ai** | Orquesta datos de otros contextos para el informe. |
 | `AiController.getGroupReport` (valida al líder) | `ai` | groups, iam | **ai** | La regla "solo el líder" se *consulta* en groups, pero el caso de uso es de ai. |
 | Campos de IA en `Task` (`difficulty`, `context`, `urgency`, `labels`, `aiAccepted`) | `tasks` | tasks, ai | **tasks** (persistencia) · **ai** (valores y significado) | ai sugiere y tasks guarda. |

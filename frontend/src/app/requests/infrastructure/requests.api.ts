@@ -31,11 +31,11 @@ export class RequestsApi {
     return this.requestsEndpoint.getRequestsByGroup(groupId, status, type);
   }
 
-  approveRequest(taskId: number, requestId: number): Observable<TaskRequest> {
-    return this.requestsEndpoint.reviewRequest(taskId, requestId, 'APPROVED');
+  approveRequest(requestId: number): Observable<TaskRequest> {
+    return this.requestsEndpoint.reviewRequest(requestId, 'APPROVED');
   }
 
-  rejectRequest(taskId: number, requestId: number): Observable<TaskRequest> {
-    return this.requestsEndpoint.reviewRequest(taskId, requestId, 'REJECTED');
+  rejectRequest(requestId: number): Observable<TaskRequest> {
+    return this.requestsEndpoint.reviewRequest(requestId, 'REJECTED');
   }
 }

@@ -20,7 +20,7 @@ Monorepo de **SynHub**: `frontend/` (Angular 22) y `backend/` (Spring Boot 4.1, 
 - **Sesión**: cookie `HttpOnly` `SYNHUB_SESSION` (1 día); la web nunca guarda el JWT.
 - **Frontend**: los componentes solo hablan con stores (`application/*.store.ts`, con signals); los stores con `*Api`; los `*Api` con `*ApiEndpoint` + assembler (`infrastructure/`). Las URLs salen de `src/environments`.
 - **Invitations** se implementa en el paquete `groups` del backend; no existe un paquete `invitations`.
-- `GET /groups/{id}/requests` le pertenece a **requests** (`GroupRequestController`).
+- `GET /requests/group?groupId=` (bandeja de requests por grupo) le pertenece a **requests** (`RequestController`).
 - No copies las desviaciones que aún listan `docs/architecture/backend.md §10` y `frontend.md §8`.
 
 ## Comandos

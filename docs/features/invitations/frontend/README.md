@@ -7,7 +7,7 @@ Carpeta: [`frontend/src/app/invitations`](../../../../frontend/src/app/invitatio
 | Vista (de groups) | Qué muestra | Métodos del store |
 |---|---|---|
 | `MemberGroups` (`/groups/member`) | Invitaciones recibidas, con botones para aceptar y rechazar. Al aceptar se recargan los grupos. | `loadInvitations`, `acceptInvitation`, `declineInvitation`, `invitations` |
-| `GroupDetails` (`/groups?id=…`) | Formulario "invitar por nombre de usuario" y lista de invitaciones enviadas (cancelables). | `inviteByUsername`, `loadGroupInvitations`, `declineInvitation`, `clearError` |
+| `GroupDetails` (`/groups/:id`) | Formulario "invitar por nombre de usuario" y lista de invitaciones enviadas (cancelables). | `inviteByUsername`, `loadGroupInvitations`, `declineInvitation`, `clearError` |
 
 ## Estado: `InvitationsStore` (`application/invitations.store.ts`)
 

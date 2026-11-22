@@ -73,36 +73,31 @@ class TaskLifecycleApiTests extends ApiTestSupport {
         assertEquals(
                 409,
                 post(
-                                "/tasks/" + taskId + "/requests",
+                                "/requests",
                                 team.member().token(),
-                                Map.of("description", "otra", "requestType", "SUBMISSION"))
+                                Map.of("taskId", taskId, "description", "otra", "requestType", "SUBMISSION"))
                         .status(),
                 "solo una entrega pendiente");
 
         var inbox = get(
-                "/groups/" + team.groupId() + "/requests?status=PENDING&type=SUBMISSION",
+                "/requests/group?groupId=" + team.groupId() + "&status=PENDING&type=SUBMISSION",
                 team.leader().token());
         assertEquals(200, inbox.status());
         assertTrue(containsId(inbox.json(), requestId));
 
-        var approved = put(
-                "/tasks/" + taskId + "/requests/" + requestId + "/status/APPROVED",
-                team.leader().token(),
-                null);
+        var approved =
+                put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null);
         assertEquals(200, approved.status(), approved.raw());
         assertEquals("APPROVED", approved.text("requestStatus"));
         assertEquals("DONE", get("/tasks/" + taskId, team.leader().token()).text("status"));
         assertEquals(
                 409,
-                put(
-                                "/tasks/" + taskId + "/requests/" + requestId + "/status/REJECTED",
-                                team.leader().token(),
-                                null)
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null)
                         .status(),
                 "una request se revisa una sola vez");
         assertFalse(containsId(
                 get(
-                                "/groups/" + team.groupId() + "/requests?status=PENDING",
+                                "/requests/group?groupId=" + team.groupId() + "&status=PENDING",
                                 team.leader().token())
                         .json(),
                 requestId));
@@ -116,10 +111,7 @@ class TaskLifecycleApiTests extends ApiTestSupport {
         var requestId = submit(team.member(), taskId);
         assertEquals(
                 200,
-                put(
-                                "/tasks/" + taskId + "/requests/" + requestId + "/status/APPROVED",
-                                team.leader().token(),
-                                null)
+                put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null)
                         .status());
 
         assertEquals(
@@ -133,7 +125,7 @@ class TaskLifecycleApiTests extends ApiTestSupport {
                 409,
                 put(
                                 "/tasks/" + taskId + "/status?status=IN_PROGRESS",
-                                team.member().token(),
+                                team.leader().token(),
                                 null)
                         .status());
         assertEquals(409, delete("/tasks/" + taskId, team.leader().token()).status());
@@ -152,10 +144,8 @@ class TaskLifecycleApiTests extends ApiTestSupport {
         var taskId = createTask(team.leader(), team.groupId(), team.member());
         var requestId = submit(team.member(), taskId);
 
-        var rejected = put(
-                "/tasks/" + taskId + "/requests/" + requestId + "/status/REJECTED",
-                team.leader().token(),
-                null);
+        var rejected =
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null);
 
         assertEquals(200, rejected.status());
         assertEquals(
@@ -173,14 +163,178 @@ class TaskLifecycleApiTests extends ApiTestSupport {
     }
 
     @Test
-    void submissionRequiresACompletedTask() {
+    void submissionNeedsAnInProgressOrCompletedTask() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());
+        assertEquals(
+                200,
+                put("/tasks/" + taskId + "/status?status=ON_HOLD", team.leader().token(), null)
+                        .status());
         var res = post(
-                "/tasks/" + taskId + "/requests",
+                "/requests",
                 team.member().token(),
-                Map.of("description", "x", "requestType", "SUBMISSION"));
+                Map.of("taskId", taskId, "description", "x", "requestType", "SUBMISSION"));
         assertEquals(409, res.status());
+    }
+
+    @Test
+    void submittingMarksTheTaskCompleted() {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        submit(team.member(), taskId);
+        assertEquals("COMPLETED", get("/tasks/" + taskId, team.leader().token()).text("status"));
+    }
+
+    /** El integrante pide una modificación: la tarea queda en espera hasta que el líder la edita. */
+    private long requestModification(Team team, long taskId) {
+        var request = post(
+                "/requests",
+                team.member().token(),
+                Map.of("taskId", taskId, "description", "Cambiar el alcance", "requestType", "MODIFICATION"));
+        assertEquals(201, request.status(), request.raw());
+        return request.id();
+    }
+
+    private Map<String, Object> edit(Team team, String title) {
+        return Map.of(
+                "title",
+                title,
+                "description",
+                "Descripción de prueba",
+                "userId",
+                team.member().id());
+    }
+
+    @Test
+    void aModificationRequestPutsTheTaskOnHoldUntilTheLeaderEditsIt() throws InterruptedException {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        var requestId = requestModification(team, taskId);
+
+        assertEquals("ON_HOLD", get("/tasks/" + taskId, team.leader().token()).text("status"));
+        assertEquals(
+                "PENDING", get("/requests/" + requestId, team.leader().token()).text("requestStatus"));
+
+        // Sin editar no se resuelve: ni reanudar a mano, ni aprobar, ni rechazar, ni borrar.
+        assertEquals(
+                409,
+                put(
+                                "/tasks/" + taskId + "/status?status=IN_PROGRESS",
+                                team.leader().token(),
+                                null)
+                        .status());
+        assertEquals(
+                409,
+                put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null)
+                        .status());
+        assertEquals(
+                409, delete("/requests/" + requestId, team.leader().token()).status());
+        assertEquals(
+                409, delete("/requests/" + requestId, team.member().token()).status());
+        assertEquals(
+                409,
+                post(
+                                "/requests",
+                                team.member().token(),
+                                Map.of("taskId", taskId, "description", "x", "requestType", "SUBMISSION"))
+                        .status(),
+                "en espera no se puede entregar");
+        assertEquals("ON_HOLD", get("/tasks/" + taskId, team.leader().token()).text("status"));
+
+        // Un PUT que no cambia nada tampoco la resuelve.
+        var task = get("/tasks/" + taskId, team.leader().token());
+        var unchanged = new java.util.LinkedHashMap<String, Object>();
+        unchanged.put("title", task.text("title"));
+        unchanged.put("description", task.text("description"));
+        unchanged.put("dueDate", task.text("dueDate"));
+        unchanged.put("userId", team.member().id());
+        assertEquals(
+                200, put("/tasks/" + taskId, team.leader().token(), unchanged).status());
+        assertEquals("ON_HOLD", get("/tasks/" + taskId, team.leader().token()).text("status"));
+
+        // Editar la tarea la reanuda y cierra la solicitud.
+        Thread.sleep(1500); // tiempo en espera: no debe contarse
+        var edited = put("/tasks/" + taskId, team.leader().token(), edit(team, "Tarea con nuevo alcance"));
+        assertEquals(200, edited.status(), edited.raw());
+        assertEquals("IN_PROGRESS", edited.text("status"));
+        assertEquals(
+                "APPROVED", get("/requests/" + requestId, team.leader().token()).text("requestStatus"));
+
+        // El integrante ya puede entregar; el tiempo medido no incluye la espera de 1,5 s.
+        submit(team.member(), taskId);
+        var time =
+                get("/metrics/tasks/" + taskId + "/time-passed", team.leader().token());
+        assertEquals(200, time.status(), time.raw());
+        assertTrue(time.json().get("timePassed").asLong() < 1500, "el tiempo en espera no cuenta: " + time.raw());
+    }
+
+    @Test
+    void theLeaderCanDenyAModificationAndTheTaskGoesBackToInProgress() throws InterruptedException {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        var requestId = requestModification(team, taskId);
+        assertEquals("ON_HOLD", get("/tasks/" + taskId, team.leader().token()).text("status"));
+
+        // Un ajeno y el propio integrante no la deniegan; aprobarla sigue siendo editar la tarea.
+        assertEquals(
+                403,
+                put(
+                                "/requests/" + requestId + "/status/REJECTED",
+                                team.stranger().token(),
+                                null)
+                        .status());
+        assertEquals(
+                403,
+                put("/requests/" + requestId + "/status/REJECTED", team.member().token(), null)
+                        .status());
+        assertEquals(
+                409,
+                put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null)
+                        .status());
+
+        Thread.sleep(1500); // tiempo en espera: no debe contarse
+        var denied =
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null);
+
+        assertEquals(200, denied.status(), denied.raw());
+        assertEquals("REJECTED", denied.text("requestStatus"));
+        assertEquals(
+                "IN_PROGRESS", get("/tasks/" + taskId, team.leader().token()).text("status"));
+        assertEquals(
+                409,
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null)
+                        .status(),
+                "una sola revisión");
+
+        // La tarea sigue su curso: el integrante ya puede entregar y la espera no cuenta.
+        submit(team.member(), taskId);
+        var time =
+                get("/metrics/tasks/" + taskId + "/time-passed", team.leader().token());
+        assertEquals(200, time.status(), time.raw());
+        assertTrue(time.json().get("timePassed").asLong() < 1500, "el tiempo en espera no cuenta: " + time.raw());
+    }
+
+    @Test
+    void onlyTheAssignedMemberRequestsAModificationAndOnlyWhileInProgress() {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        var body = Map.of("taskId", taskId, "description", "Cambiar", "requestType", "MODIFICATION");
+
+        assertEquals(403, post("/requests", team.leader().token(), body).status());
+        assertEquals(403, post("/requests", team.stranger().token(), body).status());
+        assertEquals(
+                400,
+                post(
+                                "/requests",
+                                team.member().token(),
+                                Map.of("taskId", taskId, "description", "  ", "requestType", "MODIFICATION"))
+                        .status(),
+                "el comentario es obligatorio");
+        assertEquals(
+                "IN_PROGRESS", get("/tasks/" + taskId, team.leader().token()).text("status"));
+
+        requestModification(team, taskId);
+        assertEquals(409, post("/requests", team.member().token(), body).status(), "ya hay una pendiente");
     }
 
     @Test

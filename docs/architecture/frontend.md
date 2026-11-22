@@ -13,6 +13,7 @@ Cada carpeta de primer nivel replica un bounded context del backend:
 | `invitations/` | [invitations](../features/invitations/README.md) | domain · application · infrastructure (sin presentation: la UI está en groups) |
 | `tasks/` | [tasks](../features/tasks/README.md) | domain · application · infrastructure · presentation |
 | `requests/` | [requests](../features/requests/README.md) | domain · application · infrastructure · presentation |
+| `subscriptions/` | [subscriptions](../features/subscriptions/README.md) | domain · application · infrastructure · presentation |
 | `ai/` | [ai](../features/ai/README.md) | domain · application · infrastructure · presentation (solo un componente) |
 | `tour/` | [tour](../features/tour/README.md) | domain · presentation |
 | `shared/` | Transversal | Clases base, layout, toasts, home y 404 |
@@ -90,7 +91,7 @@ flowchart LR
 | Restaurar la sesión | `app.config.ts` → `provideAppInitializer` | `IamStore.restoreSession()` antes del primer render. |
 | HTTP | `app.config.ts` | `provideHttpClient(withFetch(), withInterceptors([iamInterceptor]))` |
 
-Los parámetros de contexto viajan en **query params** (`?groupId=`, `?id=&role=`), y el id de recurso en path params (`/tasks/:id`).
+Los parámetros de contexto viajan en **query params** (`?groupId=`), y el id de recurso en path params (`/tasks/:id`).
 
 ## 6. Presentación y estilos
 

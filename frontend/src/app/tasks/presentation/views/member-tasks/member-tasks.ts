@@ -97,8 +97,4 @@ export class MemberTasks implements OnInit {
   labelFor(status: TaskStatus | 'ALL'): string {
     return this.statusLabels[status];
   }
-
-  onChangeStatus(event: { taskId: number; status: TaskStatus }): void {
-    this.tasksStore.updateTaskStatus(event.taskId, event.status);
-  }
 }

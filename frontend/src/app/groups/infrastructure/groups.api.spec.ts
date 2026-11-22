@@ -50,6 +50,45 @@ describe('GroupsApi (HTTP)', () => {
     expect(message).toBe('Failed to create group: 400');
   });
 
+  it('activar un grupo bloqueado hace POST /groups/{id}/activate', () => {
+    let activated: Group | undefined;
+    api.activateGroup(7).subscribe((g) => (activated = g));
+    const post = backend.expectOne({ method: 'POST', url: `${url}/7/activate` });
+    expect(post.request.body).toBeNull();
+    post.flush({ ...resource, id: 7, locked: false });
+    expect(activated?.id).toBe(7);
+    expect(activated?.locked).toBe(false);
+  });
+
+  it.each<[number, string]>([
+    [403, 'Solo el líder del grupo puede activarlo.'],
+    [409, 'No tienes cupo para activar otro grupo: elimina uno de tus grupos activos o sube de plan.'],
+    [500, 'No se pudo activar el grupo.'],
+  ])('al activar, un %i se traduce a un mensaje en español', (status, expected) => {
+    let message = '';
+    api.activateGroup(7).subscribe({ error: (e: Error) => (message = e.message) });
+    backend.expectOne({ method: 'POST', url: `${url}/7/activate` }).flush({}, { status, statusText: 'Error' });
+    expect(message).toBe(expected);
+  });
+
+  it('eliminar un grupo hace DELETE /groups/{id}', () => {
+    let done = false;
+    api.deleteGroup(7).subscribe(() => (done = true));
+    backend.expectOne({ method: 'DELETE', url: `${url}/7` }).flush(null, { status: 204, statusText: 'No Content' });
+    expect(done).toBe(true);
+  });
+
+  it.each<[number, string]>([
+    [403, 'Solo el líder del grupo puede eliminarlo.'],
+    [404, 'El grupo ya no existe.'],
+    [500, 'No se pudo eliminar el grupo.'],
+  ])('al eliminar, un %i se traduce a un mensaje en español', (status, expected) => {
+    let message = '';
+    api.deleteGroup(7).subscribe({ error: (e: Error) => (message = e.message) });
+    backend.expectOne({ method: 'DELETE', url: `${url}/7` }).flush({}, { status, statusText: 'Error' });
+    expect(message).toBe(expected);
+  });
+
   it('HUM-05: unirse con código y quitar integrantes', () => {
     let joined: Group | undefined;
     api.joinGroupByCode('ABC123XYZ').subscribe((g) => (joined = g));

@@ -7,7 +7,7 @@ El líder de un grupo invita a un usuario por su nombre de usuario; el invitado 
 | **Recurso REST** | `/api/v1/invitations` |
 | **Bounded context (backend)** | **[`groups`](../../../backend/src/main/java/com/hub/synhub_backend/groups)**: no hay un paquete `invitations` |
 | **Módulo (frontend)** | [`src/app/invitations`](../../../frontend/src/app/invitations): sin vistas propias |
-| **Dónde aparece en la web** | `/groups/member` (invitaciones recibidas) y `/groups?id=…` (invitar y ver las enviadas) |
+| **Dónde aparece en la web** | `/groups/member` (invitaciones recibidas) y `/groups/:id` (invitar y ver las enviadas) |
 | **Documentación** | [Backend](backend/README.md) · [Frontend](frontend/README.md) |
 
 ## A quién le pertenece
@@ -54,3 +54,7 @@ sequenceDiagram
 
 - **Backend**: depende de IAM (`IamContextFacade`, para cargar al invitado) y de las membresías de groups (`GroupProfileRepository`).
 - **Frontend**: `InvitationsStore` depende de `IamApi` (buscar el usuario) y de `IamStore`; `InvitationsAssembler` reutiliza `GroupsAssembler` y `ProfilesAssembler`.
+
+## Grupos bloqueados
+
+Invitar (`POST /invitations`) y aceptar (`POST /invitations/accept`) responden 409 si el grupo está bloqueado por el plan de su líder; cancelar o rechazar una invitación sigue permitido. Ver [subscriptions](../subscriptions/README.md).

@@ -72,10 +72,10 @@ class QueryCountApiTests extends ApiTestSupport {
         var small = group(1);
         var large = group(5);
         var few = statementsOf(() -> get(
-                "/groups/" + small.groupId() + "/requests?status=PENDING&type=SUBMISSION",
+                "/requests/group?groupId=" + small.groupId() + "&status=PENDING&type=SUBMISSION",
                 small.leader().token()));
         var many = statementsOf(() -> get(
-                "/groups/" + large.groupId() + "/requests?status=PENDING&type=SUBMISSION",
+                "/requests/group?groupId=" + large.groupId() + "&status=PENDING&type=SUBMISSION",
                 large.leader().token()));
         assertEquals(few, many, "GET /groups/{id}/requests: " + few + " sentencias con 1 request y " + many + " con 5");
     }
@@ -84,6 +84,11 @@ class QueryCountApiTests extends ApiTestSupport {
     void groupsOfALeaderUseAConstantNumberOfQueries() {
         var leader = account("lider");
         var other = account("lider2");
+        // Cuatro grupos activos: con el plan Gratis (2) los demás nacerían bloqueados y no admitirían invitaciones.
+        assertEquals(
+                200,
+                put("/subscriptions/me", other.token(), java.util.Map.of("plan", "ULTRA"))
+                        .status());
         join(leader, account("y"), createGroup(leader));
         for (int i = 0; i < 4; i++) {
             var groupId = createGroup(other);

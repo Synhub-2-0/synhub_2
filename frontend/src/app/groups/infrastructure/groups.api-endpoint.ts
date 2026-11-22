@@ -2,9 +2,9 @@ import {BaseApiEndpoint} from '../../shared/infrastructure/base-api-endpoint';
 import {Group} from '../domain/model/group.entity';
 import {GroupResource, GroupsResponse, GroupUsersResource} from './groups.response';
 import {GroupsAssembler} from './groups.assembler';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
-import {catchError, map, Observable} from 'rxjs';
+import {catchError, map, Observable, throwError} from 'rxjs';
 import {CreateGroupCommand} from '../domain/model/create-group.command';
 import {GroupUser} from '../domain/model/group-user.entity';
 
@@ -47,6 +47,38 @@ export class GroupsApiEndpoint extends BaseApiEndpoint<Group, GroupResource, Gro
       map(resource => this.assembler.toEntityFromResource(resource)),
       catchError(this.handleError('Failed to join group')),
     );
+  }
+
+  /** El líder elimina su grupo (también sus tareas, solicitudes e invitaciones); libera un cupo del plan. */
+  deleteGroup(groupId: number): Observable<void> {
+    return this.http.delete<void>(`${groupsEndpointUrl}/${groupId}`).pipe(
+      catchError((error: HttpErrorResponse) => throwError(() => new Error(this.deleteErrorMessage(error)))),
+    );
+  }
+
+  private deleteErrorMessage(error: HttpErrorResponse): string {
+    switch (error.status) {
+      case 403: return 'Solo el líder del grupo puede eliminarlo.';
+      case 404: return 'El grupo ya no existe.';
+      default: return 'No se pudo eliminar el grupo.';
+    }
+  }
+
+  /** Activar un grupo bloqueado (solo su líder y con un cupo libre en su plan). */
+  activateGroup(groupId: number): Observable<Group> {
+    return this.http.post<GroupResource>(`${groupsEndpointUrl}/${groupId}/activate`, null).pipe(
+      map(resource => this.assembler.toEntityFromResource(resource)),
+      catchError((error: HttpErrorResponse) => throwError(() => new Error(this.activateErrorMessage(error)))),
+    );
+  }
+
+  // The backend answers in English: the status is mapped to a user-facing text.
+  private activateErrorMessage(error: HttpErrorResponse): string {
+    switch (error.status) {
+      case 403: return 'Solo el líder del grupo puede activarlo.';
+      case 409: return 'No tienes cupo para activar otro grupo: elimina uno de tus grupos activos o sube de plan.';
+      default: return 'No se pudo activar el grupo.';
+    }
   }
 
   /** El líder quita a un integrante, o un integrante sale del grupo (HUM-05). */

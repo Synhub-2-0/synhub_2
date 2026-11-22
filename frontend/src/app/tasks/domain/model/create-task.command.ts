@@ -10,5 +10,6 @@ export class CreateTaskCommand {
     public readonly urgency?: string,
     public readonly labels?: string,
     public readonly aiAccepted?: boolean,
+    public readonly aiRationale?: string,
   ) {}
 }

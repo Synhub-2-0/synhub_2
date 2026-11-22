@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,7 @@ import { CreateTaskCommand } from '../../../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../../../domain/model/update-task.command';
 import { Task } from '../../../domain/model/task.entity';
 import { AiStore } from '../../../../ai/application/ai.store';
-import { DIFFICULTY_SCALE, TASK_CONTEXTS, TASK_URGENCIES } from '../../../../ai/domain/model/task-classification.entity';
+import { CONTEXT_LABELS, DIFFICULTY_LABELS, DIFFICULTY_SCALE, TASK_CONTEXTS, TASK_URGENCIES, URGENCY_LABELS } from '../../../../ai/domain/model/task-classification.entity';
 
 @Component({
   selector: 'app-task-form',
@@ -20,7 +20,7 @@ import { DIFFICULTY_SCALE, TASK_CONTEXTS, TASK_URGENCIES } from '../../../../ai/
   templateUrl: './task-form.html',
   styleUrl: './task-form.css',
 })
-export class TaskForm implements OnInit {
+export class TaskForm implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly tasksStore = inject(TasksStore);
@@ -35,15 +35,21 @@ export class TaskForm implements OnInit {
   dueDateTime = '';
   groupId: number | null = null;
   userId: number | null = null;
-  // Sugerencia de IA (editable). aiStore.classification() conserva el original para medir la aceptación.
+  // Clasificación (opcional y editable, con o sin IA). aiStore.classification() conserva la sugerencia
+  // original para medir la aceptación.
   difficulty: number | null = null;
   context = '';
   urgency = '';
   labels = '';
+  // Clasificación guardada de la tarea que se edita.
+  private savedClassification: { difficulty: number | null; context: string; urgency: string; labels: string; aiAccepted?: boolean; aiRationale?: string } | null = null;
   readonly contexts = TASK_CONTEXTS;
   readonly urgencies = TASK_URGENCIES;
   readonly difficulties = [1, 2, 3, 4, 5];
   readonly difficultyScale = DIFFICULTY_SCALE;
+  readonly contextLabels = CONTEXT_LABELS;
+  readonly urgencyLabels = URGENCY_LABELS;
+  readonly difficultyLabels = DIFFICULTY_LABELS;
   private readonly activeGroupId = signal<number | null>(null);
   // Every member of the group can be assigned a task, the leader included (listed first).
   readonly members = computed(() => [...(this.groupsStore.membersByGroup()[this.activeGroupId() ?? 0] ?? [])]
@@ -71,8 +77,14 @@ export class TaskForm implements OnInit {
     });
   }
 
+  /** Internal route to go back to after saving or cancelling (e.g. the leader came from Validaciones). */
+  private returnTo: string | null = null;
+
   ngOnInit(): void {
     this.aiStore.clearClassification();
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    // Only internal paths ("/x"): never "//host", a scheme or a relative path.
+    this.returnTo = returnTo && /^\/(?!\/)/.test(returnTo) ? returnTo : null;
     const idParam = this.route.snapshot.paramMap.get('id');
     const queryGroupId = this.route.snapshot.queryParamMap.get('groupId');
     this.groupId = queryGroupId ? Number(queryGroupId) : this.groupsStore.leaderGroups()[0]?.id ?? null;
@@ -101,7 +113,19 @@ export class TaskForm implements OnInit {
     const date = new Date(task.dueDate);
     const pad = (value: number) => value.toString().padStart(2, '0');
     this.dueDateTime = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    this.difficulty = task.difficulty ?? null;
+    this.context = task.context ?? '';
+    this.urgency = task.urgency ?? '';
+    this.labels = task.labels ?? '';
+    this.savedClassification = {
+      difficulty: this.difficulty, context: this.context, urgency: this.urgency, labels: this.labels, aiAccepted: task.aiAccepted, aiRationale: task.aiRationale,
+    };
     if (this.groupId) this.loadGroupMembers(this.groupId);
+  }
+
+  // La sugerencia es de este formulario: al salir se descarta, también si la respuesta aún no llegó.
+  ngOnDestroy(): void {
+    this.aiStore.clearClassification();
   }
 
   onGroupChange(groupId: number | string | null): void {
@@ -127,12 +151,43 @@ export class TaskForm implements OnInit {
     });
   }
 
+  get hasClassification(): boolean {
+    return this.difficulty != null || !!this.context || !!this.urgency || !!this.labels.trim();
+  }
+
+  /** Justificación de la IA: la de la sugerencia actual o, al editar, la guardada con la tarea. */
+  get rationale(): string {
+    return this.aiStore.classification()?.rationale ?? this.savedClassification?.aiRationale ?? '';
+  }
+
+  removeClassification(): void {
+    this.aiStore.clearClassification();
+    this.savedClassification = null;
+    this.difficulty = null;
+    this.context = '';
+    this.urgency = '';
+    this.labels = '';
+  }
+
   /** true si se guardó la sugerencia tal cual, false si se editó, undefined si no se usó la IA. */
   private get aiAccepted(): boolean | undefined {
+    if (!this.hasClassification) return undefined;
     const s = this.aiStore.classification();
-    if (!s) return undefined;
-    return s.difficulty === this.difficulty && s.context === this.context &&
-      s.urgency === this.urgency && s.labels.join(', ') === this.labels.trim();
+    if (s) {
+      return s.difficulty === this.difficulty && s.context === this.context &&
+        s.urgency === this.urgency && s.labels.join(', ') === this.labels.trim();
+    }
+    // Al editar sin volver a sugerir: se conserva lo medido, salvo que se cambie una sugerencia aceptada.
+    const saved = this.savedClassification;
+    if (saved?.aiAccepted == null) return undefined;
+    const unchanged = saved.difficulty === this.difficulty && saved.context === this.context &&
+      saved.urgency === this.urgency && saved.labels.trim() === this.labels.trim();
+    return unchanged ? saved.aiAccepted : false;
+  }
+
+  /** Solo acompaña a una clasificación que viene de la IA. */
+  private get aiRationale(): string | undefined {
+    return this.aiAccepted === undefined ? undefined : this.rationale || undefined;
   }
 
   save(): void {
@@ -141,12 +196,16 @@ export class TaskForm implements OnInit {
     if (this.isEditMode && this.taskId) {
       this.tasksStore.updateTask(this.taskId, new UpdateTaskCommand(
         this.title.trim(), this.description.trim(), dueDate, this.userId,
+        {
+          difficulty: this.difficulty, context: this.context || null, urgency: this.urgency || null,
+          labels: this.labels.trim() || null, aiAccepted: this.aiAccepted ?? null, aiRationale: this.aiRationale ?? null,
+        },
       ));
     } else {
       this.tasksStore.addTask(new CreateTaskCommand(
         this.title.trim(), this.description.trim(), dueDate, this.userId, this.groupId,
         this.difficulty ?? undefined, this.context || undefined, this.urgency || undefined,
-        this.labels.trim() || undefined, this.aiAccepted,
+        this.labels.trim() || undefined, this.aiAccepted, this.aiRationale,
       ));
     }
     this.backToGroupTasks();
@@ -156,6 +215,10 @@ export class TaskForm implements OnInit {
 
   // Vuelve a la lista del grupo de la tarea; sin groupId la lista abre otro grupo y la tarea "desaparece".
   private backToGroupTasks(): void {
+    if (this.returnTo) {
+      this.router.navigateByUrl(this.returnTo).then();
+      return;
+    }
     this.router.navigate(['/tasks/leader'], { queryParams: this.groupId ? { groupId: this.groupId } : {} }).then();
   }
 }

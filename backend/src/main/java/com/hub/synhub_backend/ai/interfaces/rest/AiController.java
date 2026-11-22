@@ -59,8 +59,10 @@ public class AiController {
         if (!group.getLeader().getId().equals(user.getId())) {
             throw new AccessDeniedException("Only the leader can generate the group report");
         }
+        // El informe llama a Bedrock (cuesta): un grupo bloqueado no lo genera.
+        group.ensureNotLocked();
 
-        var report = groupReportQueryService.handle(new GenerateGroupReportQuery(groupId));
+        var report = groupReportQueryService.handle(new GenerateGroupReportQuery(groupId, user.getId()));
         if (report.isEmpty()) return ResponseEntity.status(503).build();
         return ResponseEntity.ok(new GroupReportResource(report.get()));
     }

@@ -13,33 +13,39 @@ Todos requieren token.
 | `GET` | `/api/v1/tasks/{taskId}` | — | `200 TaskResource` · `403` · `404` | Solo integrantes del grupo de la tarea. |
 | `GET` | `/api/v1/tasks/group/{groupId}` | `?status=` (opcional, `TaskStatus`); `?page=&size=` (opcionales) | `200 TaskResource[]`, o `PageResource<TaskResource>` ordenado por fecha límite si se pide página · `403` | Solo integrantes del grupo. |
 | `GET` | `/api/v1/tasks/group/{groupId}/user/{userId}` | — | `200 TaskResource[]` · `403` | Solo integrantes del grupo. |
-| `PUT` | `/api/v1/tasks/{taskId}` | `UpdateTaskResource` | `200 TaskResource` | Solo el líder. Puede reasignar a otro integrante. |
-| `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | Líder o asignado. `DONE` → 409. Una tarea que ya está `DONE` no cambia de estado (409). |
+| `PUT` | `/api/v1/tasks/{taskId}` | `UpdateTaskResource` | `200 TaskResource` | Solo el líder. Puede reasignar a otro integrante y cambiar o quitar la clasificación. |
+| `PUT` | `/api/v1/tasks/{taskId}/status` | `?status=` | `200 TaskResource` | **Solo el líder** (403 para el integrante asignado). `DONE` → 409. Una tarea que ya está `DONE` no cambia de estado (409). El integrante no cambia estados: al enviar su entrega la tarea pasa a `COMPLETED` por `POST /requests`. |
 | `DELETE` | `/api/v1/tasks/{taskId}` | — | `204` | Solo el líder. |
 
 ```text
 CreateTaskResource = { title, description, dueDate (OffsetDateTime), userId, groupId,
-                       difficulty?, context?, urgency?, labels?, aiAccepted? }
-UpdateTaskResource = { title, description, dueDate, userId }
+                       difficulty?, context?, urgency?, labels?, aiAccepted?, aiRationale? }
+UpdateTaskResource = { title, description, dueDate, userId,
+                       classification?: { difficulty, context, urgency, labels, aiAccepted, aiRationale } }
 TaskResource       = { id, title, description, dueDate, createdAt, updatedAt, status,
                        group: GroupResourceReduced, assignedTo: PublicUserResource,
-                       difficulty, context, urgency, labels, aiAccepted }
+                       difficulty, context, urgency, labels, aiAccepted, aiRationale }
 ```
 
 Quien edita se toma siempre de la sesión; el cuerpo no lo incluye (BUG-16).
+
+En `PUT /tasks/{taskId}`, si `classification` no viene, la clasificación de la tarea no cambia. Si viene, reemplaza a la guardada: un campo nulo o vacío se quita, y si no queda ninguno también se borra `aiAccepted`.
+
+`aiRationale` (máx. 500, columna `ai_rationale`, migración `V2__task_ai_rationale.sql`) es la justificación que dio la IA al sugerir la clasificación. Solo se guarda cuando la clasificación viene de la IA (`aiAccepted` no nulo): una clasificación hecha a mano o quitada la deja en nulo.
 
 
 ## Modelo de dominio
 
 | Tipo | Clase | Notas |
 |---|---|---|
-| Agregado | `Task` | `title` (obligatorio), `description` (vacía si no se indica), `status`, `dueDate` (obligatoria), `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`), y métricas (`timesRearranged`, `timePassed` en ms). |
+| Agregado | `Task` | `title` (obligatorio), `description` (vacía si no se indica), `status`, `dueDate` (obligatoria), `profile: GroupProfile` (groups), campos de IA (`difficulty`, `context`, `urgency`, `labels` como texto separado por comas, `aiAccepted`, `aiRationale`), y métricas (`timesRearranged`, `timePassed` en ms, y `activeSince`: desde cuándo corre el tiempo activo, solo con la tarea `IN_PROGRESS`). |
 | Value object | `TaskStatus` | `ON_HOLD`, `IN_PROGRESS`, `COMPLETED`, `DONE`, `EXPIRED`. |
 
 Comportamiento del agregado:
 
-- `updateStatus(cmd)`: al pasar de `IN_PROGRESS` a `COMPLETED` acumula `timePassed` (desde `createdAt`, o desde `updatedAt` si ya fue reagendada). Las transiciones `COMPLETED`, `ON_HOLD` o `EXPIRED` → `IN_PROGRESS` incrementan `timesRearranged`.
-- `updateTask(cmd)`: actualiza los campos no vacíos; si cambia `dueDate`, recalcula `EXPIRED` / `IN_PROGRESS`.
+- `updateStatus(cmd)` y `updateTask(cmd)` mantienen el reloj del tiempo activo: al salir de `IN_PROGRESS` (a `ON_HOLD`, `COMPLETED` o `EXPIRED`) suman a `timePassed` lo transcurrido desde `activeSince` (sin pasar de `dueDate`) y lo limpian; al entrar a `IN_PROGRESS` lo fijan. Las transiciones `COMPLETED`, `ON_HOLD` o `EXPIRED` → `IN_PROGRESS` incrementan `timesRearranged`.
+- `settleActiveTime()`: la usa `TaskStatusScheduler` tras marcar `EXPIRED` una tarea (el `UPDATE` condicional solo cambia el estado) para sumar el tiempo hasta la fecha límite.
+- `updateTask(cmd)`: actualiza los campos no vacíos; si `dueDate` es distinta de la actual, recalcula `EXPIRED` / `IN_PROGRESS`. Devuelve si cambió algún dato (título, descripción, fecha, clasificación): `TaskCommandServiceImpl` lo usa, junto con la reasignación, para resolver la `MODIFICATION` pendiente (`RequestsContextFacade.resolvePendingModification`) y reanudar la tarea (`resumeAfterEditing`).
 - `applySubmissionReview(approved)`: `DONE` si se aprueba, `IN_PROGRESS` si se rechaza. Solo lo invoca requests.
 - `ensureNotFinished()`: una tarea `DONE` es definitiva; editarla, cambiarle el estado o borrarla responde 409 (`TaskFinishedException`, AUDIT BUG-18).
 
