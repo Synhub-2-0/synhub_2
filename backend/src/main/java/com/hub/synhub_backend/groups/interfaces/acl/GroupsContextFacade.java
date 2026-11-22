@@ -1,6 +1,8 @@
 package com.hub.synhub_backend.groups.interfaces.acl;
 
+import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
+import java.util.List;
 import java.util.Optional;
 
 public interface GroupsContextFacade {
@@ -15,4 +17,14 @@ public interface GroupsContextFacade {
 
     /** Membresía del usuario en el grupo (a ella se asignan las tareas); vacío si no pertenece. */
     Optional<GroupProfile> fetchMembership(Long groupId, Long userId);
+
+    /** Grupos que el usuario lidera (activos y bloqueados), del más antiguo al más reciente. */
+    List<Group> fetchLedGroups(Long userId);
+
+    /**
+     * Aplica el límite de grupos activos de un plan a los grupos que el usuario lidera. Si ya caben, no hace nada;
+     * si no, {@code activeGroupIds} debe traer exactamente {@code limit} de sus grupos activos: el resto se bloquea.
+     * Subir de plan no activa grupos: el líder los activa uno a uno.
+     */
+    void applyGroupLimit(Long userId, int limit, List<Long> activeGroupIds);
 }

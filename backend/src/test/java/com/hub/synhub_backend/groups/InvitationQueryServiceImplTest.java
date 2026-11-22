@@ -50,7 +50,8 @@ class InvitationQueryServiceImplTest {
         when(queries.handle(new GetGroupByIdQuery(10L))).thenReturn(Optional.of(group(10, user(1, "lider"))));
         assertEquals(
                 Optional.of(1L),
-                new GroupsContextFacadeImpl(queries, mock(GroupProfileRepository.class)).fetchLeaderIdByGroupId(10L));
+                new GroupsContextFacadeImpl(queries, mock(GroupProfileRepository.class), mock(GroupRepository.class))
+                        .fetchLeaderIdByGroupId(10L));
     }
 
     @Test
@@ -59,7 +60,8 @@ class InvitationQueryServiceImplTest {
         when(queries.handle(new GetGroupByIdQuery(10L)))
                 .thenReturn(Optional.of(new Group("G", "d", "", GroupCode.random())));
         when(queries.handle(new GetGroupByIdQuery(99L))).thenReturn(Optional.empty());
-        var facade = new GroupsContextFacadeImpl(queries, mock(GroupProfileRepository.class));
+        var facade =
+                new GroupsContextFacadeImpl(queries, mock(GroupProfileRepository.class), mock(GroupRepository.class));
         assertTrue(facade.fetchLeaderIdByGroupId(10L).isEmpty());
         assertTrue(facade.fetchLeaderIdByGroupId(99L).isEmpty());
     }
@@ -74,7 +76,7 @@ class InvitationQueryServiceImplTest {
         when(profiles.findByGroup_IdAndUser_Id(10L, 2L))
                 .thenReturn(Optional.of(group.getUserProfiles().get(1)));
         assertEquals(GroupRole.GROUP_MEMBER, group.getUserProfiles().get(1).getRoleInGroup());
-        var facade = new GroupsContextFacadeImpl(mock(GroupQueryService.class), profiles);
+        var facade = new GroupsContextFacadeImpl(mock(GroupQueryService.class), profiles, mock(GroupRepository.class));
 
         assertTrue(facade.isMember(10L, 2L));
         assertFalse(facade.isMember(10L, 99L));

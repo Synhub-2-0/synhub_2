@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.hub.synhub_backend.groups.application.internal.commandservices.InvitationCommandServiceImpl;
+import com.hub.synhub_backend.groups.domain.exceptions.GroupLockedException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyHasInvitationForGroupException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
@@ -57,6 +58,37 @@ class InvitationCommandServiceImplTest {
         when(users.fetchUserById(STRANGER)).thenReturn(Optional.of(user(STRANGER, "ajeno")));
         when(groups.findById(GROUP)).thenReturn(Optional.of(group));
         when(invitations.findById(INVITATION)).thenReturn(Optional.of(invitation));
+    }
+
+    // ---- Un grupo bloqueado es de solo lectura
+    @Test
+    void nobodyIsInvitedToALockedGroup() {
+        group.lock();
+        assertThrows(
+                GroupLockedException.class, () -> service.handle(new CreateInvitationCommand(LEADER, GUEST, GROUP)));
+        verify(invitations, never()).save(any());
+    }
+
+    @Test
+    void permissionsAreCheckedBeforeTheLock() {
+        group.lock();
+        assertThrows(
+                AccessDeniedException.class, () -> service.handle(new CreateInvitationCommand(MEMBER, GUEST, GROUP)));
+    }
+
+    @Test
+    void aPendingInvitationToALockedGroupCannotBeAccepted() {
+        group.lock();
+        assertThrows(GroupLockedException.class, () -> service.handle(new AcceptInvitationCommand(GUEST, INVITATION)));
+        verify(profiles, never()).save(any());
+        verify(invitations, never()).delete(any());
+    }
+
+    @Test
+    void anInvitationToALockedGroupCanStillBeCancelled() {
+        group.lock();
+        service.handle(new CancelInvitationCommand(GUEST, INVITATION));
+        verify(invitations).delete(invitation);
     }
 
     // ---- Crear

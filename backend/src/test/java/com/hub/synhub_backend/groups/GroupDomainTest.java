@@ -3,6 +3,7 @@ package com.hub.synhub_backend.groups;
 import static com.hub.synhub_backend.groups.GroupFixtures.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.hub.synhub_backend.groups.domain.exceptions.GroupLockedException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.commands.UpdateGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
@@ -41,6 +42,23 @@ class GroupDomainTest {
     }
 
     // ---- Group
+    @Test
+    void aNewGroupIsNotLocked() {
+        var group = GroupFixtures.group(1, GroupFixtures.user(1, "lider"));
+        assertFalse(group.isLocked());
+        assertDoesNotThrow(group::ensureNotLocked);
+    }
+
+    @Test
+    void aLockedGroupRejectsWorkUntilItIsUnlocked() {
+        var group = GroupFixtures.group(7, GroupFixtures.user(1, "lider"));
+        group.lock();
+        assertTrue(group.isLocked());
+        assertThrows(GroupLockedException.class, group::ensureNotLocked);
+        group.unlock();
+        assertDoesNotThrow(group::ensureNotLocked);
+    }
+
     @Test
     void leaderAndMemberCountComeFromMemberships() {
         var leader = user(1, "lider");

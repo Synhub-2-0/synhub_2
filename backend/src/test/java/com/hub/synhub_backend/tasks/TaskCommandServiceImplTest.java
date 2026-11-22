@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
+import com.hub.synhub_backend.groups.domain.exceptions.GroupLockedException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
 import com.hub.synhub_backend.groups.domain.model.entities.GroupProfile;
 import com.hub.synhub_backend.groups.interfaces.acl.GroupsContextFacade;
@@ -76,6 +77,45 @@ class TaskCommandServiceImplTest {
 
     private CreateTaskCommand createFor(long requester, long assignee) {
         return new CreateTaskCommand(requester, "Nueva", "desc", DUE, assignee, GROUP, 2, "QA", "LOW", "tests", false);
+    }
+
+    // ---- Un grupo bloqueado es de solo lectura
+    @Test
+    void nothingIsWrittenInALockedGroup() {
+        group.lock();
+
+        assertThrows(GroupLockedException.class, () -> service.handle(createFor(LEADER, LUIS)));
+        assertThrows(
+                GroupLockedException.class,
+                () -> service.handle(new UpdateTaskCommand(LEADER, TASK, "Login v2", "", null, ANA)));
+        assertThrows(
+                GroupLockedException.class,
+                () -> service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.ON_HOLD)));
+        assertThrows(GroupLockedException.class, () -> service.handle(new DeleteTaskCommand(LEADER, TASK)));
+
+        verify(tasks, never()).save(any(Task.class));
+        verify(tasks, never()).delete(any(Task.class));
+        assertEquals("Login", task.getTitle());
+        assertEquals(TaskStatus.IN_PROGRESS, task.getStatus());
+    }
+
+    @Test
+    void permissionsAreCheckedBeforeTheLockInTasks() {
+        group.lock();
+        assertThrows(AccessDeniedException.class, () -> service.handle(createFor(ANA, LUIS)));
+        assertThrows(
+                AccessDeniedException.class,
+                () -> service.handle(new UpdateTaskStatusCommand(ANA, TASK, TaskStatus.COMPLETED)));
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteTaskCommand(ANA, TASK)));
+    }
+
+    @Test
+    void deletingTheTasksOfAMemberWhoLeavesStillWorksInALockedGroup() {
+        group.lock();
+        // salir de un grupo bloqueado sigue permitido: sus tareas se borran en cascada
+        when(tasks.findByProfile_Id(anaProfile.getId())).thenReturn(List.of(task));
+        service.handle(new DeleteTasksByUserIdAndGroupIdCommand(ANA, GROUP));
+        verify(tasks, atLeastOnce()).delete(any(Task.class));
     }
 
     // ---- Crear

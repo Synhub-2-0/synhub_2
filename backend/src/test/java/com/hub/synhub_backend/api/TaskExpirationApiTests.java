@@ -48,6 +48,19 @@ class TaskExpirationApiTests extends ApiTestSupport {
     }
 
     @Test
+    void anOverdueTaskStillExpiresInALockedGroup() {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        jdbc.update("update groups set locked = true where id = ?", team.groupId());
+        jdbc.update("update tasks set due_date = now() - interval '1 hour' where id = ?", taskId);
+
+        scheduler.updateExpiredTasks();
+
+        assertEquals("EXPIRED", get("/tasks/" + taskId, team.member().token()).text("status"));
+        assertEquals(1, expiredRequests(taskId), "el tiempo pasa aunque el grupo esté en solo lectura");
+    }
+
+    @Test
     void taskWithinItsDeadlineIsUntouched() {
         var team = team();
         var taskId = createTask(team.leader(), team.groupId(), team.member());

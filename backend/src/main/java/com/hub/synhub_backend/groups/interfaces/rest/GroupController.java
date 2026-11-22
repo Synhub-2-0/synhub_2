@@ -1,5 +1,6 @@
 package com.hub.synhub_backend.groups.interfaces.rest;
 
+import com.hub.synhub_backend.groups.domain.model.commands.ActivateGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.commands.DeleteGroupCommand;
 import com.hub.synhub_backend.groups.domain.model.commands.JoinGroupByCodeCommand;
 import com.hub.synhub_backend.groups.domain.model.commands.RemoveMemberUserFromGroupCommand;
@@ -150,6 +151,19 @@ public class GroupController {
         var group = this.groupCommandService.handle(updateGroupCommand);
         var groupResource = GroupResourceFromEntityAssembler.toResourceFromEntity(group);
         return ResponseEntity.ok(groupResource);
+    }
+
+    @PostMapping("/{groupId}/activate")
+    @Operation(
+            summary = "Activates a locked group",
+            description = "Leader only, and only while the leader's plan has a free slot for active groups")
+    public ResponseEntity<GroupResource> activateGroup(
+            @PathVariable Long groupId, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = this.userQueryService
+                .handle(new GetUserByUsernameQuery(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        var group = this.groupCommandService.handle(new ActivateGroupCommand(user.getId(), groupId));
+        return ResponseEntity.ok(GroupResourceFromEntityAssembler.toResourceFromEntity(group));
     }
 
     @DeleteMapping("/{groupId}")

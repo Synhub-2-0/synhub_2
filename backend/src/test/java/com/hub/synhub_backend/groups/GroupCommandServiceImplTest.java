@@ -7,7 +7,10 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import com.hub.synhub_backend.groups.application.internal.commandservices.GroupCommandServiceImpl;
+import com.hub.synhub_backend.groups.domain.exceptions.GroupAlreadyActiveException;
+import com.hub.synhub_backend.groups.domain.exceptions.GroupLockedException;
 import com.hub.synhub_backend.groups.domain.exceptions.LeaderCannotBeRemovedException;
+import com.hub.synhub_backend.groups.domain.exceptions.NoFreeGroupSlotException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserAlreadyInGroupException;
 import com.hub.synhub_backend.groups.domain.exceptions.UserNotInGroupException;
 import com.hub.synhub_backend.groups.domain.model.aggregates.Group;
@@ -21,6 +24,7 @@ import com.hub.synhub_backend.iam.domain.model.aggregates.User;
 import com.hub.synhub_backend.iam.interfaces.acl.IamContextFacade;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.BusinessRuleViolationException;
 import com.hub.synhub_backend.shared.interfaces.rest.exceptions.ResourceNotFoundException;
+import com.hub.synhub_backend.subscriptions.interfaces.acl.SubscriptionsContextFacade;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +39,7 @@ class GroupCommandServiceImplTest {
     private GroupProfileRepository profiles;
     private TasksContextFacade tasks;
     private InvitationRepository invitations;
+    private SubscriptionsContextFacade subscriptions;
     private GroupCommandServiceImpl service;
     private User leader, member;
     private Group group;
@@ -46,7 +51,9 @@ class GroupCommandServiceImplTest {
         profiles = mock(GroupProfileRepository.class);
         tasks = mock(TasksContextFacade.class);
         invitations = mock(InvitationRepository.class);
-        service = new GroupCommandServiceImpl(groups, users, profiles, tasks, invitations);
+        subscriptions = mock(SubscriptionsContextFacade.class);
+        when(subscriptions.maxLedGroups(any())).thenReturn(2);
+        service = new GroupCommandServiceImpl(groups, users, profiles, tasks, invitations, subscriptions);
         leader = user(1, "lider");
         member = user(2, "ana");
         group = group(10, leader, member);
@@ -54,6 +61,150 @@ class GroupCommandServiceImplTest {
         when(groups.save(any(Group.class))).thenAnswer(inv -> inv.getArgument(0));
         when(users.fetchUserById(1L)).thenReturn(Optional.of(leader));
         when(users.fetchUserById(2L)).thenReturn(Optional.of(member));
+    }
+
+    // ---- Un grupo bloqueado es de solo lectura
+    @Test
+    void aLockedGroupCannotBeEdited() {
+        group.lock();
+        assertThrows(
+                GroupLockedException.class,
+                () -> service.handle(new UpdateGroupCommand(1L, 10L, "Renombrado", "", "")));
+        assertEquals("Equipo", group.getName());
+    }
+
+    @Test
+    void permissionsAreCheckedBeforeTheLock() {
+        group.lock();
+        assertThrows(AccessDeniedException.class, () -> service.handle(new UpdateGroupCommand(2L, 10L, "X", "", "")));
+    }
+
+    @Test
+    void nobodyJoinsALockedGroupByCode() {
+        group.lock();
+        when(groups.findByCode(group.getCode())).thenReturn(Optional.of(group));
+        var newcomer = user(3, "luis");
+        when(users.fetchUserById(3L)).thenReturn(Optional.of(newcomer));
+
+        assertThrows(
+                GroupLockedException.class,
+                () -> service.handle(new JoinGroupByCodeCommand(group.getCode().code(), 3L)));
+        assertEquals(2, group.getMemberCount());
+    }
+
+    @Test
+    void theLeaderCannotRemoveMembersFromALockedGroupButTheyCanLeave() {
+        group.lock();
+        when(profiles.findByGroup_IdAndUser_Id(10L, 2L))
+                .thenReturn(Optional.of(group.getUserProfiles().get(1)));
+
+        assertThrows(
+                GroupLockedException.class, () -> service.handle(new RemoveMemberUserFromGroupCommand(1L, 2L, 10L)));
+        assertEquals(2, group.getMemberCount());
+
+        service.handle(new RemoveMemberUserFromGroupCommand(2L, 2L, 10L)); // salir del grupo sigue permitido
+        assertEquals(1, group.getMemberCount());
+    }
+
+    @Test
+    void aLockedGroupCanStillBeDeletedByItsLeader() {
+        group.lock();
+        service.handle(new DeleteGroupCommand(1L, 10L));
+        verify(groups).delete(group);
+    }
+
+    // ---- Crear: por encima del límite del plan el grupo nace bloqueado
+    private void leaderAlreadyLeads(Group... led) {
+        // setUp ya hizo que el líder lidere el grupo 10; los demás se agregan.
+        when(profiles.findByUser_Id(1L)).thenReturn(leader.getGroupProfiles());
+        for (var g : led) join(g, leader, GroupRole.GROUP_LEADER);
+    }
+
+    private Group created() {
+        return service.handle(new CreateGroupCommand("Nuevo", "", "desc", 1L));
+    }
+
+    @Test
+    void aGroupWithinThePlanLimitIsCreatedActive() {
+        leaderAlreadyLeads(); // lidera solo el grupo 10: 1 de 2
+        assertFalse(created().isLocked());
+    }
+
+    @Test
+    void aGroupAboveThePlanLimitIsCreatedLocked() {
+        var other = group(11, user(9, "x"));
+        leaderAlreadyLeads(other); // 10 y 11: 2 de 2
+        assertTrue(created().isLocked());
+    }
+
+    @Test
+    void lockedGroupsDoNotCountTowardsTheLimitWhenCreating() {
+        var other = group(11, user(9, "x"));
+        other.lock();
+        leaderAlreadyLeads(other); // 10 activo y 11 bloqueado: 1 de 2
+        assertFalse(created().isLocked());
+    }
+
+    @Test
+    void groupsWhereTheUserIsOnlyAMemberDoNotCount() {
+        var foreign = group(11, user(9, "otro"));
+        var foreign2 = group(12, user(8, "otro2"));
+        leaderAlreadyLeads();
+        join(foreign, leader, GroupRole.GROUP_MEMBER);
+        join(foreign2, leader, GroupRole.GROUP_MEMBER);
+        assertFalse(created().isLocked());
+    }
+
+    @Test
+    void anUnlimitedPlanNeverLocksANewGroup() {
+        when(subscriptions.maxLedGroups(1L)).thenReturn(Integer.MAX_VALUE);
+        leaderAlreadyLeads(group(11, user(9, "x")), group(12, user(8, "y")), group(13, user(7, "z")));
+        assertFalse(created().isLocked());
+    }
+
+    // ---- Activar un grupo bloqueado
+    @Test
+    void theLeaderActivatesALockedGroupWhenThereIsASlot() {
+        group.lock();
+        when(profiles.findByUser_Id(1L)).thenReturn(leader.getGroupProfiles()); // solo el 10, bloqueado: 0 de 2
+
+        var activated = service.handle(new ActivateGroupCommand(1L, 10L));
+
+        assertFalse(activated.isLocked());
+        verify(groups).save(group);
+    }
+
+    @Test
+    void activatingNeedsAFreeSlot() {
+        group.lock();
+        var g11 = group(11, user(9, "x"));
+        var g12 = group(12, user(8, "y"));
+        join(g11, leader, GroupRole.GROUP_LEADER);
+        join(g12, leader, GroupRole.GROUP_LEADER);
+        when(profiles.findByUser_Id(1L)).thenReturn(leader.getGroupProfiles()); // 11 y 12 activos: 2 de 2
+
+        assertThrows(NoFreeGroupSlotException.class, () -> service.handle(new ActivateGroupCommand(1L, 10L)));
+        assertTrue(group.isLocked());
+        verify(groups, never()).save(any(Group.class));
+    }
+
+    @Test
+    void anActiveGroupCannotBeActivatedAgain() {
+        assertThrows(GroupAlreadyActiveException.class, () -> service.handle(new ActivateGroupCommand(1L, 10L)));
+    }
+
+    @Test
+    void onlyTheLeaderActivates() {
+        group.lock();
+        assertThrows(AccessDeniedException.class, () -> service.handle(new ActivateGroupCommand(2L, 10L)));
+        assertThrows(AccessDeniedException.class, () -> service.handle(new ActivateGroupCommand(99L, 10L)));
+        assertTrue(group.isLocked());
+    }
+
+    @Test
+    void activatingAnUnknownGroupIs404() {
+        when(groups.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> service.handle(new ActivateGroupCommand(1L, 99L)));
     }
 
     // ---- Crear

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
+import com.hub.synhub_backend.groups.domain.exceptions.GroupLockedException;
 import com.hub.synhub_backend.requests.application.internal.commandservices.RequestCommandServiceImpl;
 import com.hub.synhub_backend.requests.domain.exceptions.ModificationResolvedByEditingException;
 import com.hub.synhub_backend.requests.domain.exceptions.PendingRequestAlreadyExistsException;
@@ -148,6 +149,52 @@ class RequestCommandServiceImplTest {
                 AccessDeniedException.class,
                 () -> service.handle(new CreateRequestCommand("Cambiar", "MODIFICATION", TASK, LEADER)));
         verify(tasks, never()).putOnHoldForModification(anyLong());
+    }
+
+    // ---- Un grupo bloqueado es de solo lectura
+    private void lockTheGroup() {
+        var lockedGroup = task.getProfile().getGroup();
+        doThrow(new GroupLockedException(10L)).when(lockedGroup).ensureNotLocked();
+    }
+
+    @Test
+    void nothingIsSentInALockedGroup() {
+        when(task.getStatus()).thenReturn(TaskStatus.IN_PROGRESS);
+        lockTheGroup();
+
+        assertThrows(GroupLockedException.class, () -> service.handle(submission(MEMBER)));
+        assertThrows(
+                GroupLockedException.class,
+                () -> service.handle(new CreateRequestCommand("Cambiar", "MODIFICATION", TASK, MEMBER)));
+        verify(tasks, never()).completeForSubmission(anyLong());
+        verify(tasks, never()).putOnHoldForModification(anyLong());
+        verify(repo, never()).save(any(Request.class));
+    }
+
+    @Test
+    void nothingIsReviewedOrDeletedInALockedGroup() {
+        var request = pending("SUBMISSION");
+        lockTheGroup();
+
+        assertThrows(GroupLockedException.class, () -> service.handle(review("APPROVED", LEADER)));
+        assertThrows(GroupLockedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, LEADER)));
+        assertEquals("PENDING", request.getRequestStatus());
+        verify(repo, never()).delete(any(Request.class));
+    }
+
+    @Test
+    void theSystemStillRecordsExpiredTasksInALockedGroup() {
+        lockTheGroup();
+        service.handle(new CreateRequestCommand("La tarea venció automáticamente.", "EXPIRED", TASK));
+        verify(repo).save(any(Request.class));
+    }
+
+    @Test
+    void permissionsAreCheckedBeforeTheLockInRequests() {
+        pending("SUBMISSION");
+        lockTheGroup();
+        assertThrows(AccessDeniedException.class, () -> service.handle(review("APPROVED", MEMBER)));
+        assertThrows(AccessDeniedException.class, () -> service.handle(new DeleteRequestCommand(REQUEST, 99L)));
     }
 
     @Test
