@@ -80,6 +80,14 @@ describe('Validations', () => {
     expect(component.typeOptions.map((o) => o.value)).toEqual(['SUBMISSION', 'MODIFICATION', 'EXPIRED']);
   });
 
+  it('las solicitudes de un grupo bloqueado no se pueden atender', () => {
+    const open = request(1);
+    const locked = request(2);
+    (locked.task as unknown as { _group: unknown })._group = { id: 3, locked: true };
+    expect(component.isLocked(open)).toBe(false);
+    expect(component.isLocked(locked)).toBe(true);
+  });
+
   it('cada tipo tiene su color: entregas verde, modificaciones amarillo y vencidas rojo', () => {
     expect(component.typeChipClass.SUBMISSION.on).toContain('emerald');
     expect(component.typeChipClass.MODIFICATION.on).toContain('amber');

@@ -40,6 +40,14 @@ export class GroupsApi {
     return this.groupsEndpoint.joinByCode(code);
   }
 
+  deleteGroup(groupId: number): Observable<void> {
+    return this.groupsEndpoint.deleteGroup(groupId);
+  }
+
+  activateGroup(groupId: number): Observable<Group> {
+    return this.groupsEndpoint.activateGroup(groupId);
+  }
+
   removeMember(groupId: number, userId: number): Observable<void> {
     return this.groupsEndpoint.removeMember(groupId, userId);
   }

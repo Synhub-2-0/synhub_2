@@ -12,11 +12,11 @@ import { GroupUser } from '../domain/model/group-user.entity';
 import { CreateGroupCommand } from '../domain/model/create-group.command';
 import { Profile } from '../../iam/domain/model/profile.entity';
 
-const group = (id: number, name = `Grupo ${id}`) =>
-  new Group({ id, name, imgUrl: '', description: 'd', code: 'ABC123XYZ', memberCount: 1 });
+const group = (id: number, name = `Grupo ${id}`, locked = false) =>
+  new Group({ id, name, imgUrl: '', description: 'd', code: 'ABC123XYZ', memberCount: 1, locked });
 
 describe('GroupsStore', () => {
-  let api: Record<'getLeaderGroups' | 'getMemberGroups' | 'getGroupMembers' | 'createGroup' | 'updateGroup' | 'joinGroupByCode' | 'removeMember', ReturnType<typeof vi.fn>>;
+  let api: Record<'getLeaderGroups' | 'getMemberGroups' | 'getGroupMembers' | 'createGroup' | 'updateGroup' | 'joinGroupByCode' | 'removeMember' | 'activateGroup' | 'deleteGroup', ReturnType<typeof vi.fn>>;
   let isSignedIn: ReturnType<typeof signal<boolean>>;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let store: GroupsStore;
@@ -25,7 +25,7 @@ describe('GroupsStore', () => {
   beforeEach(() => {
     localStorage.clear();
     // Con sesión iniciada, el store carga los grupos al crearse.
-    api = { getLeaderGroups: vi.fn().mockReturnValue(of([])), getMemberGroups: vi.fn().mockReturnValue(of([])), getGroupMembers: vi.fn(), createGroup: vi.fn(), updateGroup: vi.fn(), joinGroupByCode: vi.fn(), removeMember: vi.fn() };
+    api = { getLeaderGroups: vi.fn().mockReturnValue(of([])), getMemberGroups: vi.fn().mockReturnValue(of([])), getGroupMembers: vi.fn(), createGroup: vi.fn(), updateGroup: vi.fn(), joinGroupByCode: vi.fn(), removeMember: vi.fn(), activateGroup: vi.fn(), deleteGroup: vi.fn() };
     isSignedIn = signal(true);
     router = { navigate: vi.fn().mockResolvedValue(true) };
     TestBed.configureTestingModule({
@@ -37,6 +37,75 @@ describe('GroupsStore', () => {
     });
     store = TestBed.inject(GroupsStore);
     toasts = TestBed.inject(ToastStore);
+  });
+
+  it('eliminar un grupo lo quita de todas las listas, avisa y llama a onSuccess', () => {
+    api.getLeaderGroups.mockReturnValue(of([group(1), group(2)]));
+    api.getMemberGroups.mockReturnValue(of([group(3)]));
+    store.loadGroups();
+    api.deleteGroup.mockReturnValue(of(undefined));
+    const onSuccess = vi.fn();
+
+    store.deleteGroup(2, onSuccess);
+
+    expect(api.deleteGroup).toHaveBeenCalledWith(2);
+    expect(store.leaderGroups().map((g) => g.id)).toEqual([1]);
+    expect(store.groups().map((g) => g.id)).toEqual([1, 3]);
+    expect(toasts.toasts()[0].message).toContain('eliminado');
+    expect(onSuccess).toHaveBeenCalled();
+  });
+
+  it('si no se puede eliminar, el grupo sigue y el mensaje llega tal cual', () => {
+    api.getLeaderGroups.mockReturnValue(of([group(1)]));
+    store.loadGroups();
+    api.deleteGroup.mockReturnValue(throwError(() => new Error('Solo el líder del grupo puede eliminarlo.')));
+    const onSuccess = vi.fn();
+
+    store.deleteGroup(1, onSuccess);
+
+    expect(store.leaderGroups()).toHaveLength(1);
+    expect(toasts.toasts()[0].message).toBe('Solo el líder del grupo puede eliminarlo.');
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('activar un grupo bloqueado lo reemplaza en las listas, avisa y llama a onSuccess', () => {
+    api.getLeaderGroups.mockReturnValue(of([group(1), group(2, 'Grupo 2', true)]));
+    store.loadGroups();
+    api.activateGroup.mockReturnValue(of(group(2)));
+    const onSuccess = vi.fn();
+
+    store.activateGroup(2, onSuccess);
+
+    expect(api.activateGroup).toHaveBeenCalledWith(2);
+    expect(store.leaderGroups().find((g) => g.id === 2)?.locked).toBe(false);
+    expect(store.groups().find((g) => g.id === 2)?.locked).toBe(false);
+    expect(toasts.toasts()[0].message).toContain('activado');
+    expect(onSuccess).toHaveBeenCalled();
+  });
+
+  it('si no se puede activar, el grupo sigue bloqueado y el mensaje llega tal cual', () => {
+    api.getLeaderGroups.mockReturnValue(of([group(2, 'Grupo 2', true)]));
+    store.loadGroups();
+    api.activateGroup.mockReturnValue(throwError(() => new Error('No tienes cupo para activar otro grupo: elimina uno de tus grupos activos o sube de plan.')));
+    const onSuccess = vi.fn();
+
+    store.activateGroup(2, onSuccess);
+
+    expect(store.leaderGroups()[0].locked).toBe(true);
+    expect(toasts.toasts()[0].message).toContain('No tienes cupo');
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('crear un grupo que nace bloqueado avisa que superó el límite del plan', () => {
+    api.createGroup.mockReturnValue(of(group(9, 'Nuevo', true)));
+    store.addGroup(new CreateGroupCommand({ name: 'Nuevo', description: 'd', imgUrl: '' }), router as unknown as Router);
+    expect(toasts.toasts().some((t) => t.message.includes('bloqueado') && t.message.includes('Mi plan'))).toBe(true);
+  });
+
+  it('crear un grupo activo no avisa de ningún bloqueo', () => {
+    api.createGroup.mockReturnValue(of(group(9, 'Nuevo')));
+    store.addGroup(new CreateGroupCommand({ name: 'Nuevo', description: 'd', imgUrl: '' }), router as unknown as Router);
+    expect(toasts.toasts().some((t) => t.message.includes('bloqueado'))).toBe(false);
   });
 
   it('loadGroups separa líder y miembro y une sin duplicar', () => {

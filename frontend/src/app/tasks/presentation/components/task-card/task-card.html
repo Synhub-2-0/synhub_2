@@ -56,7 +56,7 @@
       <span class="font-semibold text-slate-700">{{ remainingTimeLabel }}</span>
     </div>
 
-    @if (isLeader) {
+    @if (isLeader && !task.group?.locked) {
       <footer class="mt-2 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
         @if (task.status === 'COMPLETED') {
           <button type="button" (click)="onReviewSubmission($event)"

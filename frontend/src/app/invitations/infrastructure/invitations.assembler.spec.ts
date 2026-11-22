@@ -6,7 +6,7 @@ describe('InvitationsAssembler', () => {
   const assembler = new InvitationsAssembler();
   const resource: InvitationResource = {
     id: 50,
-    group: { id: 10, name: 'Equipo', imgUrl: '', description: 'd', code: 'ABC123XYZ', memberCount: 3 },
+    group: { id: 10, name: 'Equipo', imgUrl: '', description: 'd', code: 'ABC123XYZ', memberCount: 3, locked: false },
     user: { id: 9, name: 'Luis', surname: 'Paz', email: 'l@x', imgUrl: '', username: 'luis' },
   };
 

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { GroupsStore } from '../../../application/groups.store';
 import { Group } from '../../../domain/model/group.entity';
@@ -11,11 +11,12 @@ import { TaskList } from '../../../../tasks/presentation/components/task-list/ta
 import { TaskBoard } from '../../../../tasks/presentation/components/task-board/task-board';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { InvitationsStore } from '../../../../invitations/application/invitations.store';
+import { SubscriptionsStore } from '../../../../subscriptions/application/subscriptions.store';
 
 @Component({
   selector: 'app-group-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, TaskList, TaskBoard],
+  imports: [CommonModule, FormsModule, MatIconModule, RouterLink, TaskList, TaskBoard],
   templateUrl: './group-details.html',
   styleUrl: './group-details.css',
 })
@@ -26,6 +27,7 @@ export class GroupDetails implements OnInit {
   readonly tasksStore = inject(TasksStore);
   readonly invitationsStore = inject(InvitationsStore);
   readonly iamStore = inject(IamStore);
+  readonly subscriptionsStore = inject(SubscriptionsStore);
   readonly groupId = signal(0);
   readonly isEditing = signal(false);
   editName = '';
@@ -39,6 +41,21 @@ export class GroupDetails implements OnInit {
 
   // The role is not in the URL: the group is led by the user when it is in the list of groups they lead.
   readonly isLeaderView = computed(() => this.groupsStore.leaderGroups().some(group => group.id === this.groupId()));
+
+  /** A locked group (its leader exceeded the plan limit) is read-only for everyone. */
+  readonly isLocked = computed(() => this.group()?.locked ?? false);
+
+  /** The leader can always delete the group, also while it is locked (it is how a slot is freed). */
+  readonly canDelete = computed(() => this.isLeaderView());
+
+  /** Delete waits for confirmation: it also deletes the tasks, requests and invitations of the group. */
+  readonly confirmingDelete = signal(false);
+
+  /** Only the leader of an active group administers it (edit, invite, remove, manage tasks). */
+  readonly canManage = computed(() => this.isLeaderView() && !this.isLocked());
+
+  /** Unknown plan (not loaded yet): the button stays enabled and the backend decides. */
+  readonly hasFreeSlot = computed(() => this.subscriptionsStore.subscription()?.hasFreeSlot ?? true);
 
   // Members are a separate resource (GET /groups/{id}/members), cached by group in the store.
   private readonly groupMembers = computed(() => this.groupsStore.membersByGroup()[this.groupId()] ?? []);
@@ -54,6 +71,7 @@ export class GroupDetails implements OnInit {
       if (id && this.isLeaderView()) {
         this.invitationsStore.clearError();
         this.invitationsStore.loadGroupInvitations(id);
+        if (!this.subscriptionsStore.subscription()) this.subscriptionsStore.load();
       }
     });
   }
@@ -65,6 +83,23 @@ export class GroupDetails implements OnInit {
       this.groupsStore.loadGroupMembers(id);
       this.tasksStore.loadTasksByGroup(id);
     }
+  }
+
+  askDelete(): void { this.confirmingDelete.set(true); }
+  cancelDelete(): void { this.confirmingDelete.set(false); }
+
+  confirmDelete(): void {
+    this.confirmingDelete.set(false);
+    if (!this.groupId()) return;
+    this.groupsStore.deleteGroup(this.groupId(), () => {
+      this.subscriptionsStore.load();
+      this.router.navigate(['/groups/leader']).then();
+    });
+  }
+
+  activateGroup(): void {
+    if (!this.groupId()) return;
+    this.groupsStore.activateGroup(this.groupId(), () => this.subscriptionsStore.load());
   }
 
   goToTasks(): void {

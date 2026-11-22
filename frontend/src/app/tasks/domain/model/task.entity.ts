@@ -19,6 +19,8 @@ export interface TaskGroup {
   code: string;
   memberCount: number;
   leader: TaskUser;
+  /** Bloqueado: de solo lectura hasta que su líder lo active. */
+  locked?: boolean;
 }
 
 export class Task implements BaseEntity {

@@ -6,7 +6,7 @@ describe('Rutas de la aplicación', () => {
   const byPath = (path: string) => routes.find((r) => r.path === path);
 
   it('todas las rutas privadas usan iamGuard', () => {
-    for (const path of ['home', 'groups', 'tasks', 'validations', 'recorrido']) {
+    for (const path of ['home', 'groups', 'tasks', 'validations', 'subscription', 'recorrido']) {
       expect(byPath(path)?.canActivate, path).toContain(iamGuard);
     }
   });
@@ -22,7 +22,7 @@ describe('Rutas de la aplicación', () => {
   });
 
   it('las features se cargan de forma diferida', () => {
-    for (const path of ['auth', 'groups', 'tasks', 'validations']) {
+    for (const path of ['auth', 'groups', 'tasks', 'validations', 'subscription']) {
       expect(typeof byPath(path)?.loadChildren, path).toBe('function');
     }
     expect(typeof byPath('recorrido')?.loadComponent).toBe('function');

@@ -234,6 +234,39 @@ describe('Vistas de tasks', () => {
   describe('LeaderTasks: selección de grupo y filtros', () => {
     const makeGroup = (id: number) => ({ id, name: `G${id}`, imgUrl: '', description: '', code: 'ABC123XYZ', memberCount: 1 });
 
+    it('en un grupo bloqueado el líder ve el aviso y no puede crear tareas', async () => {
+      TestBed.resetTestingModule();
+      const leaderGroups = signal([{ ...makeGroup(10), locked: true }, makeGroup(20)]);
+      await TestBed.configureTestingModule({
+        imports: [LeaderTasks],
+        providers: [
+          provideRouter([]),
+          { provide: TasksApi, useValue: apiStub() },
+          { provide: GroupsApi, useValue: apiStub() },
+          { provide: IamApi, useValue: apiStub() },
+          { provide: AiApi, useValue: apiStub() },
+          { provide: RequestsApi, useValue: apiStub() },
+          { provide: TasksStore, useValue: { loadTasksByGroup: vi.fn(), setStatusFilter: vi.fn(), tasks: signal([]), filteredTasks: signal([]), loading: signal(false), error: signal(null), statusFilter: signal('ALL') } },
+          { provide: GroupsStore, useValue: { leaderGroups, memberGroups: signal([]), groups: signal([]), loading: signal(false), loadGroups: vi.fn() } },
+          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(LeaderTasks);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const component = fixture.componentInstance;
+      const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+      expect(component.selectedGroupLocked()).toBe(true);
+      expect(text()).toContain('Grupo bloqueado');
+      expect(text()).not.toContain('Crear Tarea');
+
+      component.selectGroup(20);
+      fixture.detectChanges();
+      expect(component.selectedGroupLocked()).toBe(false);
+      expect(text()).toContain('Crear Tarea');
+    });
+
     it('selecciona el primer grupo al iniciar y pasa el filtro al store', async () => {
       TestBed.resetTestingModule();
       const loadTasksByGroup = vi.fn();

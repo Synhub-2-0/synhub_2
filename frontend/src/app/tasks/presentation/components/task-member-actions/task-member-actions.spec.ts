@@ -13,16 +13,21 @@ const task = (status: TaskStatus) => new Task({
   id: 7, title: 'Login', description: '', dueDate: new Date(Date.now() + 86_400_000), createdAt: new Date(), updatedAt: new Date(), status,
 });
 
+const lockedTask = (status: TaskStatus) => new Task({
+  id: 7, title: 'Login', description: '', dueDate: new Date(Date.now() + 86_400_000), createdAt: new Date(), updatedAt: new Date(), status,
+  group: { id: 3, name: 'G', imgUrl: '', description: '', code: 'C', memberCount: 2, locked: true, leader: { id: 1, username: 'lider', name: 'Lia', surname: 'D', imgUrl: '', email: '' } },
+});
+
 describe('TaskMemberActions', () => {
   let fixture: ComponentFixture<TaskMemberActions>;
   let component: TaskMemberActions;
   let api: Record<'getRequestsByTask' | 'createRequest', ReturnType<typeof vi.fn>>;
   let tasksStore: { applyUpdatedTask: ReturnType<typeof vi.fn> };
 
-  const render = async (status: TaskStatus) => {
+  const render = async (status: TaskStatus, locked = false) => {
     fixture = TestBed.createComponent(TaskMemberActions);
     component = fixture.componentInstance;
-    component.task = task(status);
+    component.task = locked ? lockedTask(status) : task(status);
     fixture.detectChanges();
     await fixture.whenStable();
   };
@@ -121,6 +126,14 @@ describe('TaskMemberActions', () => {
       expect(text()).toContain('Solo el líder del grupo puede cambiar su estado');
       expect(text()).not.toContain('Marcar completada');
     }
+  });
+
+  it('en un grupo bloqueado no se completa ni se pide modificación: solo se avisa', async () => {
+    await render('IN_PROGRESS', true);
+    expect(text()).toContain('Grupo bloqueado');
+    expect(text()).not.toContain('Marcar completada');
+    expect(text()).not.toContain('Solicitar modificación');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('button').length).toBe(0);
   });
 
   it('una tarea terminada no ofrece nada', async () => {

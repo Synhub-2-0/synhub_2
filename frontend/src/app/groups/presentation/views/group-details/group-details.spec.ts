@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
+import { Group } from '../../../domain/model/group.entity';
 import { GroupDetails } from './group-details';
 import { GroupsStore } from '../../../application/groups.store';
 
@@ -33,6 +34,69 @@ describe('GroupDetails', () => {
     expect(component.isLeaderView()).toBe(true);
     component.groupId.set(11);
     expect(component.isLeaderView()).toBe(false);
+  });
+
+  it('un grupo bloqueado es de solo lectura: el líder no administra pero sigue viéndolo', () => {
+    const store = TestBed.inject(GroupsStore);
+    const led = signal([{ id: 10 }] as never[]);
+    vi.spyOn(store, 'leaderGroups').mockImplementation(led as never);
+    const groups = (store as unknown as { groupsSignal: WritableSignal<Group[]> }).groupsSignal;
+    const withLock = (locked: boolean) => new Group({ id: 10, name: 'G', imgUrl: '', description: '', code: 'C', memberCount: 1, locked });
+    groups.set([withLock(true)]);
+    component.groupId.set(10);
+
+    expect(component.isLeaderView()).toBe(true);
+    expect(component.isLocked()).toBe(true);
+    expect(component.canManage()).toBe(false);
+
+    groups.set([withLock(false)]);
+    expect(component.canManage()).toBe(true);
+  });
+
+  it('un integrante nunca administra, esté o no bloqueado el grupo', () => {
+    component.groupId.set(10);
+    expect(component.canManage()).toBe(false);
+  });
+
+  it('activar el grupo bloqueado delega al store y refresca los cupos', () => {
+    const store = TestBed.inject(GroupsStore);
+    const activate = vi.spyOn(store, 'activateGroup').mockImplementation(() => undefined);
+    component.groupId.set(10);
+
+    component.activateGroup();
+
+    expect(activate).toHaveBeenCalledWith(10, expect.any(Function));
+  });
+
+  it('eliminar el grupo pide confirmación, lo borra y vuelve a Grupos Liderados', () => {
+    const store = TestBed.inject(GroupsStore);
+    const remove = vi.spyOn(store, 'deleteGroup').mockImplementation(() => undefined);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    component.groupId.set(10);
+
+    component.askDelete();
+    expect(component.confirmingDelete()).toBe(true);
+    component.cancelDelete();
+    expect(component.confirmingDelete()).toBe(false);
+    expect(remove).not.toHaveBeenCalled();
+
+    component.askDelete();
+    component.confirmDelete();
+    expect(remove).toHaveBeenCalledWith(10, expect.any(Function));
+    expect(component.confirmingDelete()).toBe(false);
+
+    remove.mock.calls[0][1]?.();
+    expect(navigate).toHaveBeenCalledWith(['/groups/leader']);
+  });
+
+  it('el líder puede eliminar su grupo aunque esté bloqueado; un integrante no', () => {
+    const store = TestBed.inject(GroupsStore);
+    const led = signal([{ id: 10 }] as never[]);
+    vi.spyOn(store, 'leaderGroups').mockImplementation(led as never);
+    component.groupId.set(10);
+    expect(component.canDelete()).toBe(true);
+    component.groupId.set(11);
+    expect(component.canDelete()).toBe(false);
   });
 
   it('el botón de tareas lleva a Gestión de tareas del grupo', () => {

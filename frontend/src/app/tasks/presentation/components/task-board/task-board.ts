@@ -53,6 +53,8 @@ export class TaskBoard {
 
   canChangeStatus(task: Task): boolean {
     if (task.status === 'DONE') return false;
+    // A locked group (its leader exceeded the plan limit) is read-only.
+    if (task.group?.locked) return false;
     return this.canManageAll();
   }
 

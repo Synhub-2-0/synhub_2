@@ -19,6 +19,16 @@ describe('TaskBoard', () => {
     await fixture.whenStable();
   });
 
+  it('en un grupo bloqueado el líder no cambia estados desde el tablero', () => {
+    fixture.componentRef.setInput('canManageAll', true);
+    const locked = new Task({
+      id: 9, title: 'T9', description: '', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date(), status: 'IN_PROGRESS',
+      group: { id: 3, name: 'G', imgUrl: '', description: '', code: 'C', memberCount: 1, locked: true, leader: { id: 1, username: 'lider', name: 'Lia', surname: 'D', imgUrl: '', email: '' } },
+    });
+    expect(board.canChangeStatus(task(1, 'IN_PROGRESS'))).toBe(true);
+    expect(board.canChangeStatus(locked)).toBe(false);
+  });
+
   it('agrupa las tareas por columna de estado', () => {
     const byStatus = board.tasksByStatus();
     expect(byStatus.IN_PROGRESS.map((t) => t.id)).toEqual([1, 3]);

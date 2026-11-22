@@ -9,6 +9,7 @@ export interface GroupResource extends BaseResource {
   code: string;
   memberCount?: number;
   leader?: ProfileResource;
+  locked?: boolean;
 }
 
 export interface GroupUsersResource {

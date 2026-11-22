@@ -97,6 +97,22 @@ describe('TaskCard', () => {
     expect(text).toContain('Solicitar modificación');
   });
 
+  it('el líder de un grupo bloqueado no ve editar, eliminar ni revisar', async () => {
+    fixture = TestBed.createComponent(TaskCard);
+    card = fixture.componentInstance;
+    card.task = new Task({
+      id: 7, title: 'Login', description: '', dueDate: new Date(Date.now() + 86_400_000), createdAt: new Date(), updatedAt: new Date(), status: 'COMPLETED',
+      group: { id: 3, name: 'G', imgUrl: '', description: '', code: 'C', memberCount: 2, locked: true, leader: { id: 1, username: 'lider', name: 'Lia', surname: 'D', imgUrl: '', email: '' } },
+    });
+    card.isLeader = true;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('Editar');
+    expect(text).not.toContain('Eliminar');
+    expect(text).not.toContain('Revisar entrega');
+  });
+
   it('el líder no ve el botón de solicitar modificación', async () => {
     await render('IN_PROGRESS', true);
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Solicitar modificación');

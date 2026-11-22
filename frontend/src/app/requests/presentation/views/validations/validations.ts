@@ -100,6 +100,11 @@ export class Validations implements OnInit {
     if (groupId) this.requestsStore.loadGroupRequests(groupId, undefined, type);
   }
 
+  /** The requests of a locked group (its leader exceeded the plan limit) cannot be handled until it is activated. */
+  isLocked(request: TaskRequest): boolean {
+    return request.task?.group?.locked ?? false;
+  }
+
   isOverdue(request: TaskRequest): boolean {
     if (!request?.task?.dueDate) return false;
     return new Date(request.task.dueDate).getTime() < Date.now();
