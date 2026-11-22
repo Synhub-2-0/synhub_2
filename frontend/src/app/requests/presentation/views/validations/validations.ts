@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { GroupsStore } from '../../../../groups/application/groups.store';
 import { TasksStore } from '../../../../tasks/application/tasks.store';
+import { isFutureDateTime } from '../../../../tasks/domain/model/future-date-time';
 import { RequestsStore } from '../../../application/requests.store';
 import { RequestStatus, RequestType, TaskRequest } from '../../../domain/model/task-request.entity';
 
@@ -159,8 +160,7 @@ export class Validations implements OnInit {
 
   /** A new due date in the future, so the task does not expire again in a minute. */
   isResumeDateValid(): boolean {
-    const value = this.resumeDate();
-    return !!value && new Date(value).getTime() > Date.now();
+    return isFutureDateTime(this.resumeDate());
   }
 
   /** Resumes the expired task (new date, then IN_PROGRESS): the backend closes its expiration notice. */

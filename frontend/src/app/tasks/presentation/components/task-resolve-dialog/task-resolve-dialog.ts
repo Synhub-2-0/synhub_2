@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signa
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { Task } from '../../../domain/model/task.entity';
+import { isFutureDateTime } from '../../../domain/model/future-date-time';
 import { TasksStore } from '../../../application/tasks.store';
 import { RequestsStore } from '../../../../requests/application/requests.store';
 
@@ -50,8 +51,7 @@ export class TaskResolveDialog implements OnInit {
 
   /** A new due date in the future, so the task does not expire again in a minute. */
   isDateValid(): boolean {
-    const value = this.newDueDate();
-    return !!value && new Date(value).getTime() > Date.now();
+    return isFutureDateTime(this.newDueDate());
   }
 
   onDateInput(event: Event): void {
