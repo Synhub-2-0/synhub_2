@@ -6,7 +6,7 @@ Carpeta: [`frontend/src/app/requests`](../../../../frontend/src/app/requests)
 
 | Ruta | Vista | Stores | Qué hace |
 |---|---|---|---|
-| `/validations?groupId=` | `Validations` (`presentation/views/validations`) | `RequestsStore`, `GroupsStore` | Bandeja del líder: elige uno de sus grupos (`leaderGroups`), filtra por tipo (Entregas, Modificaciones, Vencidas; por defecto entregas) y por estado (por defecto `PENDING`). Entrega: aprobar o rechazar. Modificación: muestra el comentario del integrante y "Editar tarea" (`/tasks/:id/edit`; no se aprueba ni rechaza). Vencida: "Descartar aviso" o "Reanudar tarea" con una nueva fecha futura. |
+| `/validations?groupId=` | `Validations` (`presentation/views/validations`) | `RequestsStore`, `GroupsStore` | Bandeja del líder: elige uno de sus grupos (`leaderGroups`), filtra por tipo (Entregas en verde, Modificaciones en amarillo, Vencidas en rojo; por defecto entregas; cada tarjeta lleva su etiqueta de tipo del mismo color) y por estado (por defecto `PENDING`). Entrega: aprobar o rechazar. Modificación: muestra el comentario del integrante y "Editar tarea" (`/tasks/:id/edit`; no se aprueba ni rechaza). Vencida: "Descartar aviso" o "Reanudar tarea" con una nueva fecha futura. |
 
 La otra cara de la feature está en un componente de tasks: **`TaskCard`** usa `RequestsStore` para que el miembro marque completada su tarea y la envíe a validación (el backend la pasa a `COMPLETED`), y vea si ya está "en revisión".
 

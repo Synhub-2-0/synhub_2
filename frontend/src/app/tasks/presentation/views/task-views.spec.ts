@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Location } from '@angular/common';
 import { Type, signal } from '@angular/core';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { LeaderTasks } from './leader-tasks/leader-tasks';
 import { MemberTasks } from './member-tasks/member-tasks';
@@ -18,6 +18,7 @@ import { GroupsStore } from '../../../groups/application/groups.store';
 import { CreateTaskCommand } from '../../domain/model/create-task.command';
 import { UpdateTaskCommand } from '../../domain/model/update-task.command';
 import { Task } from '../../domain/model/task.entity';
+import { IamStore } from '../../../iam/application/iam.store';
 import { TaskClassification } from '../../../ai/domain/model/task-classification.entity';
 
 /** Doble de una API: cualquier metodo devuelve un observable vacío. */
@@ -163,6 +164,31 @@ describe('Vistas de tasks', () => {
       expect(component.labelsOf('login, auth, ')).toEqual(['login', 'auth']);
       expect(component.labelsOf('')).toEqual([]);
       expect(component.labelsOf(undefined)).toEqual([]);
+    });
+
+    it('isAssignee: solo el integrante asignado ve las acciones de su tarea', () => {
+      const component = TestBed.createComponent(TaskDetails).componentInstance;
+      const iam = TestBed.inject(IamStore) as unknown as { currentUserId: () => number | null };
+      const assigned = new Task({
+        id: 7, title: 'T', description: '', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date(), status: 'IN_PROGRESS',
+        assignedTo: { id: 5, username: 'ana', name: 'Ana', surname: 'T', imgUrl: '', email: '' },
+      });
+      vi.spyOn(iam, 'currentUserId').mockReturnValue(5);
+      expect(component.isAssignee(assigned)).toBe(true);
+      vi.spyOn(iam, 'currentUserId').mockReturnValue(9);
+      expect(component.isAssignee(assigned)).toBe(false);
+      vi.spyOn(iam, 'currentUserId').mockReturnValue(null);
+      expect(component.isAssignee(assigned)).toBe(false);
+    });
+
+    it('openGroup lleva a la pantalla del grupo de la tarea', () => {
+      const component = TestBed.createComponent(TaskDetails).componentInstance;
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      component.openGroup(new Task({
+        id: 7, title: 'T', description: '', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date(), status: 'IN_PROGRESS',
+        group: { id: 3, name: 'Diseño', imgUrl: '', description: '', code: 'ABC', memberCount: 1, leader: { id: 1, username: 'lider', name: 'Lia', surname: 'D', imgUrl: '', email: '' } },
+      }));
+      expect(navigate).toHaveBeenCalledWith(['/groups', 3]);
     });
 
     it('labelFor devuelve el texto en español para cada estado', () => {

@@ -80,6 +80,15 @@ describe('Validations', () => {
     expect(component.typeOptions.map((o) => o.value)).toEqual(['SUBMISSION', 'MODIFICATION', 'EXPIRED']);
   });
 
+  it('cada tipo tiene su color: entregas verde, modificaciones amarillo y vencidas rojo', () => {
+    expect(component.typeChipClass.SUBMISSION.on).toContain('emerald');
+    expect(component.typeChipClass.MODIFICATION.on).toContain('amber');
+    expect(component.typeChipClass.EXPIRED.on).toContain('red');
+    expect(component.typeBadgeClass.SUBMISSION).toContain('emerald');
+    expect(component.typeBadgeClass.MODIFICATION).toContain('amber');
+    expect(component.typeBadgeClass.EXPIRED).toContain('red');
+  });
+
   it('cambiar el tipo recarga la bandeja del grupo elegido con ese tipo', () => {
     component.selectedGroupId.set(10);
     component.setType('MODIFICATION');

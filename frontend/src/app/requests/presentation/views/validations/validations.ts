@@ -38,6 +38,28 @@ export class Validations implements OnInit {
     { value: 'EXPIRED', label: 'Vencidas' },
   ];
 
+  /** Each type has its own color so the leader finds it at a glance: submissions green, modifications yellow, expired red. */
+  readonly typeChipClass: Record<RequestType, { on: string; off: string }> = {
+    SUBMISSION: {
+      on: 'bg-emerald-600 text-white border-emerald-600',
+      off: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
+    },
+    MODIFICATION: {
+      on: 'bg-amber-400 text-slate-900 border-amber-400',
+      off: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
+    },
+    EXPIRED: {
+      on: 'bg-red-600 text-white border-red-600',
+      off: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
+    },
+  };
+
+  readonly typeBadgeClass: Record<RequestType, string> = {
+    SUBMISSION: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    MODIFICATION: 'bg-amber-50 text-amber-700 border-amber-200',
+    EXPIRED: 'bg-red-50 text-red-700 border-red-200',
+  };
+
   readonly typeLabels: Record<RequestType, string> = {
     SUBMISSION: 'Entrega',
     MODIFICATION: 'Modificación',

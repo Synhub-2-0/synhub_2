@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { TaskCard } from './task-card';
 import { Task, TaskStatus } from '../../../domain/model/task.entity';
@@ -68,38 +68,33 @@ describe('TaskCard', () => {
     expect(api.getRequestsByTask).not.toHaveBeenCalled();
   });
 
-  it('completar una tarea en progreso la envía a validación sin pedir comentario y actualiza la tarea', async () => {
-    await render('IN_PROGRESS');
-    api.createRequest.mockReturnValue(of(new TaskRequest({ id: 2, description: 'Tarea completada.', requestType: 'SUBMISSION', requestStatus: 'PENDING', task: task('COMPLETED') })));
+  it('el nombre del grupo abre la pantalla del grupo sin abrir la tarea', async () => {
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    fixture = TestBed.createComponent(TaskCard);
+    card = fixture.componentInstance;
+    card.task = new Task({
+      id: 7, title: 'Login', description: '', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date(), status: 'IN_PROGRESS',
+      group: { id: 3, name: 'Diseño UX', imgUrl: '', description: '', code: 'ABC123', memberCount: 4, leader: { id: 1, username: 'lider', name: 'Lia', surname: 'D', imgUrl: '', email: '' } },
+    });
+    card.showGroup = true;
+    fixture.detectChanges();
+    await fixture.whenStable();
 
-    card.onComplete(new Event('click'));
+    const button = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+      .find((b) => b.textContent?.includes('Diseño UX')) as HTMLButtonElement;
+    expect(button.textContent).toContain('Diseño UX');
+    button.click();
 
-    expect(api.createRequest.mock.calls[0][0].taskId).toBe(7);
-    expect(tasksStore.applyUpdatedTask).toHaveBeenCalledWith(expect.objectContaining({ id: 7, status: 'COMPLETED' }));
-    expect(TestBed.inject(RequestsStore).isUnderReview(7)).toBe(true);
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith(['/groups', 3]);
   });
 
-  it('el miembro con una tarea en progreso puede solicitar una modificación con comentario obligatorio', async () => {
+  it('el miembro ve las acciones de su tarea en la tarjeta', async () => {
     await render('IN_PROGRESS');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Solicitar modificación');
-
-    card.toggleModificationForm(new Event('click'));
-    fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).querySelector('textarea')).not.toBeNull();
-
-    card.onRequestModification(new Event('click'));
-    expect(api.createRequest).not.toHaveBeenCalled();
-
-    api.createRequest.mockReturnValue(of(new TaskRequest({ id: 3, description: 'Cambiar el alcance', requestType: 'MODIFICATION', requestStatus: 'PENDING', task: task('ON_HOLD') })));
-    card.modificationComment.set('  Cambiar el alcance  ');
-    card.onRequestModification(new Event('click'));
-
-    const command = api.createRequest.mock.calls[0][0];
-    expect([command.taskId, command.description, command.requestType]).toEqual([7, 'Cambiar el alcance', 'MODIFICATION']);
-    expect(tasksStore.applyUpdatedTask).toHaveBeenCalledWith(expect.objectContaining({ id: 7, status: 'ON_HOLD' }));
-    expect(TestBed.inject(RequestsStore).hasPendingModification(7)).toBe(true);
-    expect(card.showModificationForm()).toBe(false);
-    expect(card.modificationComment()).toBe('');
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Marcar completada y enviar a validación');
+    expect(text).toContain('Solicitar modificación');
   });
 
   it('el líder no ve el botón de solicitar modificación', async () => {

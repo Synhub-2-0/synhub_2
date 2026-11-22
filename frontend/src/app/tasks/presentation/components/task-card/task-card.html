@@ -17,7 +17,8 @@
             </p>
           }
           @if (showGroup && task.group) {
-            <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#4A90E2]"><mat-icon class="scale-75">groups</mat-icon>{{ task.group.name }}</span>
+            <button type="button" (click)="openGroup($event)" matTooltip="Ir al grupo"
+              class="inline-flex cursor-pointer items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#4A90E2] hover:underline"><mat-icon class="scale-75">groups</mat-icon>{{ task.group.name }}</button>
           }
           <h3 class="text-lg font-extrabold text-slate-800 truncate">{{ task.title }}</h3>
         </div>
@@ -80,55 +81,8 @@
       </footer>
     }
 
-    @if (!isLeader && task.status === 'IN_PROGRESS') {
-      <footer class="mt-2 flex flex-col gap-2.5 pt-3 border-t border-slate-100">
-        <button type="button" (click)="onComplete($event)" [disabled]="requestsStore.processing()"
-          class="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer">
-          <mat-icon class="scale-75">check_circle</mat-icon> Marcar completada y enviar a validación
-        </button>
-        @if (!showModificationForm()) {
-          <button type="button" (click)="toggleModificationForm($event)" [disabled]="requestsStore.processing()"
-            class="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 text-xs font-bold transition disabled:opacity-50 cursor-pointer">
-            <mat-icon class="scale-75">edit_note</mat-icon> Solicitar modificación
-          </button>
-        } @else {
-          <div class="flex flex-col gap-2" role="presentation" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
-            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400" [attr.for]="'mod-' + task.id">¿Qué debe cambiar?</label>
-            <textarea [attr.id]="'mod-' + task.id" rows="3" maxlength="255" [value]="modificationComment()" (input)="onModificationInput($event)"
-              placeholder="Explica al líder qué quieres que se modifique de la tarea"
-              class="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#4A90E2]"></textarea>
-            <p class="text-[11px] text-slate-500">La tarea quedará en espera y su tiempo se detendrá hasta que el líder la edite.</p>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" (click)="toggleModificationForm($event)"
-                class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 cursor-pointer">Cancelar</button>
-              <button type="button" (click)="onRequestModification($event)" [disabled]="!modificationComment().trim() || requestsStore.processing()"
-                class="rounded-xl bg-[#4A90E2] px-3 py-2 text-xs font-bold text-white hover:bg-blue-600 disabled:opacity-50 cursor-pointer">Enviar solicitud</button>
-            </div>
-          </div>
-        }
-      </footer>
-    }
-
-    @if (!isLeader && task.status === 'COMPLETED' && requestsStore.isUnderReview(task.id)) {
-      <footer class="mt-2 pt-3 border-t border-slate-100">
-        <span class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800">
-          <mat-icon class="scale-75">hourglass_top</mat-icon> En revisión por el líder
-        </span>
-      </footer>
-    }
-
-    @if (!isLeader && task.status === 'ON_HOLD' && requestsStore.hasPendingModification(task.id)) {
-      <footer class="mt-2 pt-3 border-t border-slate-100">
-        <span class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800">
-          <mat-icon class="scale-75">hourglass_top</mat-icon> Modificación pendiente: el líder debe editar la tarea
-        </span>
-      </footer>
-    } @else if (!isLeader && (task.status === 'ON_HOLD' || task.status === 'EXPIRED')) {
-      <footer class="mt-2 pt-3 border-t border-slate-100">
-        <span class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-500">
-          <mat-icon class="scale-75">lock_clock</mat-icon> Solo el líder del grupo puede cambiar su estado
-        </span>
-      </footer>
+    @if (!isLeader) {
+      <app-task-member-actions [task]="task" />
     }
   </div>
 </article>

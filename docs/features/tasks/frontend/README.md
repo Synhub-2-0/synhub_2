@@ -12,13 +12,14 @@ Carpeta: [`frontend/src/app/tasks`](../../../../frontend/src/app/tasks)
 | `/tasks/member?groupId=` | `MemberTasks` | `TasksStore`, `GroupsStore`, `IamStore` | Mis tareas en uno o en todos mis grupos: una sola petición (`loadMyTasks`) y el grupo y el estado se filtran en el cliente. |
 | `/tasks/create?groupId=` | `TaskForm` | `TasksStore`, `GroupsStore`, `IamStore`, `AiStore`, `ToastStore` | Alta de una tarea: elegir grupo e integrante; botón "sugerir con IA". |
 | `/tasks/:id/edit` | `TaskForm` | ídem | Edición (`updateTask`). |
-| `/tasks/:id` | `TaskDetails` | `TasksStore` | Detalle de solo lectura. |
+| `/tasks/:id` | `TaskDetails` | `TasksStore`, `IamStore` | Detalle de la tarea. El nombre del grupo abre `/groups/:id`; si el usuario es el integrante asignado, también ofrece las acciones del miembro (`TaskMemberActions`). |
 | `/tasks` | — | — | Redirige a `member`. |
 
 | Componente | Uso |
 |---|---|
 | `TaskBoard` | Tablero Kanban por estado. Emite `statusChange` al cambiar el `<select>` de una tarjeta, que **solo ve el líder** (`canManageAll`); para el miembro el tablero es de solo lectura. Se usa en `Home` (shared) y en `GroupDetails` (groups). |
-| `TaskList` → `TaskCard` | Lista de tarjetas. `TaskCard` permite al miembro **marcar completada y enviar a validación** una tarea `IN_PROGRESS` con un solo botón, sin comentario (solo en ese estado), y muestra "en revisión" cuando la `COMPLETED` tiene una entrega pendiente (usa `RequestsStore`; al terminar actualiza la tarea con `TasksStore.applyUpdatedTask`). En una tarea `IN_PROGRESS` también ofrece "Solicitar modificación": un comentario obligatorio (`RequestsStore.createModification`) que deja la tarea `ON_HOLD`; en ella muestra "Modificación pendiente: el líder debe editar la tarea" mientras la solicitud siga pendiente. Para una tarea `ON_HOLD` sin solicitud o `EXPIRED` solo avisa que cambiar su estado es del líder: el miembro no tiene botones de estado. |
+| `TaskList` → `TaskCard` | Lista de tarjetas. Con `showGroup`, el nombre del grupo abre `/groups/:id` (la misma ruta sirve al líder y al miembro). Para el miembro asignado incluye `TaskMemberActions`. |
+| `TaskMemberActions` | Acciones del integrante asignado, compartidas por `TaskCard` y `TaskDetails`. En una tarea `IN_PROGRESS`: **marcar completada y enviar a validación** (botón verde, sin comentario; usa `RequestsStore.submitTask` y actualiza la tarea con `TasksStore.applyUpdatedTask`) y **"Solicitar modificación"** (botón amarillo; abre un comentario obligatorio, `RequestsStore.createModification`, que deja la tarea `ON_HOLD`). Muestra "En revisión por el líder" cuando la `COMPLETED` tiene una entrega pendiente y "Modificación pendiente: el líder debe editar la tarea" cuando la `ON_HOLD` tiene una. Para una tarea `ON_HOLD` sin solicitud o `EXPIRED` solo avisa que cambiar su estado es del líder. |
 
 ## Estado: `TasksStore` (`application/tasks.store.ts`)
 
