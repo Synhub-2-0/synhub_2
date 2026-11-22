@@ -52,7 +52,17 @@ describe('TaskCard', () => {
     expect(TestBed.inject(RequestsStore).isUnderReview(7)).toBe(true);
   });
 
-  it('el líder o una tarea no completada no consultan entregas', async () => {
+  it('una tarea en espera del miembro consulta si tiene una modificación pendiente', async () => {
+    const pending = new TaskRequest({ id: 1, description: 'Cambiar', requestType: 'MODIFICATION', requestStatus: 'PENDING', task: task('ON_HOLD') });
+    api.getRequestsByTask.mockReturnValue(of([pending]));
+    await render('ON_HOLD');
+    expect(api.getRequestsByTask).toHaveBeenCalledWith(7);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Modificación pendiente: el líder debe editar la tarea');
+    expect(text).not.toContain('Solo el líder del grupo puede cambiar su estado');
+  });
+
+  it('el líder o una tarea en progreso no consultan solicitudes', async () => {
     await render('COMPLETED', true);
     await render('IN_PROGRESS');
     expect(api.getRequestsByTask).not.toHaveBeenCalled();
@@ -67,6 +77,34 @@ describe('TaskCard', () => {
     expect(api.createRequest.mock.calls[0][0].taskId).toBe(7);
     expect(tasksStore.applyUpdatedTask).toHaveBeenCalledWith(expect.objectContaining({ id: 7, status: 'COMPLETED' }));
     expect(TestBed.inject(RequestsStore).isUnderReview(7)).toBe(true);
+  });
+
+  it('el miembro con una tarea en progreso puede solicitar una modificación con comentario obligatorio', async () => {
+    await render('IN_PROGRESS');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Solicitar modificación');
+
+    card.toggleModificationForm(new Event('click'));
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('textarea')).not.toBeNull();
+
+    card.onRequestModification(new Event('click'));
+    expect(api.createRequest).not.toHaveBeenCalled();
+
+    api.createRequest.mockReturnValue(of(new TaskRequest({ id: 3, description: 'Cambiar el alcance', requestType: 'MODIFICATION', requestStatus: 'PENDING', task: task('ON_HOLD') })));
+    card.modificationComment.set('  Cambiar el alcance  ');
+    card.onRequestModification(new Event('click'));
+
+    const command = api.createRequest.mock.calls[0][0];
+    expect([command.taskId, command.description, command.requestType]).toEqual([7, 'Cambiar el alcance', 'MODIFICATION']);
+    expect(tasksStore.applyUpdatedTask).toHaveBeenCalledWith(expect.objectContaining({ id: 7, status: 'ON_HOLD' }));
+    expect(TestBed.inject(RequestsStore).hasPendingModification(7)).toBe(true);
+    expect(card.showModificationForm()).toBe(false);
+    expect(card.modificationComment()).toBe('');
+  });
+
+  it('el líder no ve el botón de solicitar modificación', async () => {
+    await render('IN_PROGRESS', true);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Solicitar modificación');
   });
 
   it('no hay formulario ni campo de comentario', async () => {

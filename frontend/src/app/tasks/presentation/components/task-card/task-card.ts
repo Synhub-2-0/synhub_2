@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
@@ -31,9 +31,12 @@ export class TaskCard implements OnInit {
   readonly urgencyLabels = URGENCY_LABELS;
   readonly difficultyLabels = DIFFICULTY_LABELS;
 
+  readonly showModificationForm = signal(false);
+  readonly modificationComment = signal('');
+
   ngOnInit(): void {
-    // A COMPLETED task of the member may already have a submission waiting for the leader.
-    if (!this.isLeader && this.task.status === 'COMPLETED') {
+    // A COMPLETED task may already have a submission waiting for the leader; an ON_HOLD one, a pending modification.
+    if (!this.isLeader && (this.task.status === 'COMPLETED' || this.task.status === 'ON_HOLD')) {
       this.requestsStore.loadTaskRequests(this.task.id);
     }
   }
@@ -110,6 +113,28 @@ export class TaskCard implements OnInit {
     this.router
       .navigate(['/validations'], { queryParams: { groupId: this.task.group?.id } })
       .then();
+  }
+
+  toggleModificationForm(event: Event): void {
+    event.stopPropagation();
+    this.requestsStore.clearError();
+    this.showModificationForm.update((open) => !open);
+  }
+
+  onModificationInput(event: Event): void {
+    this.modificationComment.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  /** Asking for a modification puts the task ON_HOLD (its time stops) until the leader edits it. */
+  onRequestModification(event: Event): void {
+    event.stopPropagation();
+    const comment = this.modificationComment().trim();
+    if (!comment) return;
+    this.requestsStore.createModification(this.task.id, comment, (created) => {
+      this.tasksStore.applyUpdatedTask(created.task);
+      this.showModificationForm.set(false);
+      this.modificationComment.set('');
+    });
   }
 
   // Completing an IN_PROGRESS task sends it to validation; the backend marks it COMPLETED and returns it updated.

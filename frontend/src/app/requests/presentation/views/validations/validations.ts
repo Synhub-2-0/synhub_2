@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, effect, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { GroupsStore } from '../../../../groups/application/groups.store';
+import { TasksStore } from '../../../../tasks/application/tasks.store';
 import { RequestsStore } from '../../../application/requests.store';
-import { RequestStatus, TaskRequest } from '../../../domain/model/task-request.entity';
+import { RequestStatus, RequestType, TaskRequest } from '../../../domain/model/task-request.entity';
 
 @Component({
   selector: 'app-validations',
@@ -15,16 +16,33 @@ import { RequestStatus, TaskRequest } from '../../../domain/model/task-request.e
 })
 export class Validations implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly groupsStore = inject(GroupsStore);
   readonly requestsStore = inject(RequestsStore);
+  private readonly tasksStore = inject(TasksStore);
 
   readonly selectedGroupId = signal<number | null>(null);
+  /** Expired request being resumed (the leader picks a new due date first) and the date typed so far. */
+  readonly resumingRequestId = signal<number | null>(null);
+  readonly resumeDate = signal('');
 
   readonly statusOptions: { value: RequestStatus; label: string }[] = [
     { value: 'PENDING', label: 'Pendientes' },
     { value: 'APPROVED', label: 'Aprobadas' },
     { value: 'REJECTED', label: 'Rechazadas' },
   ];
+
+  readonly typeOptions: { value: RequestType; label: string }[] = [
+    { value: 'SUBMISSION', label: 'Entregas' },
+    { value: 'MODIFICATION', label: 'Modificaciones' },
+    { value: 'EXPIRED', label: 'Vencidas' },
+  ];
+
+  readonly typeLabels: Record<RequestType, string> = {
+    SUBMISSION: 'Entrega',
+    MODIFICATION: 'Modificación',
+    EXPIRED: 'Vencida',
+  };
 
   constructor() {
     effect(() => {
@@ -45,12 +63,19 @@ export class Validations implements OnInit {
 
   selectGroup(groupId: number): void {
     this.selectedGroupId.set(groupId);
-    this.requestsStore.loadGroupSubmissions(groupId);
+    this.cancelResume();
+    this.requestsStore.loadGroupRequests(groupId);
   }
 
   setStatus(status: RequestStatus): void {
     const groupId = this.selectedGroupId();
-    if (groupId) this.requestsStore.loadGroupSubmissions(groupId, status);
+    if (groupId) this.requestsStore.loadGroupRequests(groupId, status);
+  }
+
+  setType(type: RequestType): void {
+    const groupId = this.selectedGroupId();
+    this.cancelResume();
+    if (groupId) this.requestsStore.loadGroupRequests(groupId, undefined, type);
   }
 
   isOverdue(request: TaskRequest): boolean {
@@ -59,7 +84,7 @@ export class Validations implements OnInit {
   }
 
   approve(request: TaskRequest): void {
-    this.requestsStore.approveSubmission(request);
+    this.requestsStore.approveRequest(request);
   }
 
   // A rejected task goes back to IN_PROGRESS, so a past deadline turns it into EXPIRED right away.
@@ -67,7 +92,46 @@ export class Validations implements OnInit {
     if (this.isOverdue(request) && !confirm('La fecha límite ya pasó: si rechazas la entrega, la tarea pasará a Vencida. ¿Deseas continuar?')) {
       return;
     }
-    this.requestsStore.rejectSubmission(request);
+    this.requestsStore.rejectRequest(request);
+  }
+
+  /** A modification is resolved by editing the task: the backend then closes the request and resumes the task. */
+  editTask(request: TaskRequest): void {
+    this.router.navigate(['/tasks', request.task.id, 'edit']).then();
+  }
+
+  /** The leader dismisses an expiration notice and leaves the task as it is. */
+  dismissExpired(request: TaskRequest): void {
+    this.requestsStore.rejectRequest(request);
+  }
+
+  startResume(request: TaskRequest): void {
+    this.resumingRequestId.set(request.id);
+    this.resumeDate.set('');
+  }
+
+  cancelResume(): void {
+    this.resumingRequestId.set(null);
+    this.resumeDate.set('');
+  }
+
+  onResumeDateInput(event: Event): void {
+    this.resumeDate.set((event.target as HTMLInputElement).value);
+  }
+
+  /** A new due date in the future, so the task does not expire again in a minute. */
+  isResumeDateValid(): boolean {
+    const value = this.resumeDate();
+    return !!value && new Date(value).getTime() > Date.now();
+  }
+
+  /** Resumes the expired task (new date, then IN_PROGRESS) and closes its expiration request as approved. */
+  confirmResume(request: TaskRequest): void {
+    if (!this.isResumeDateValid()) return;
+    this.tasksStore.resumeExpiredTask(request.task, new Date(this.resumeDate()), () => {
+      this.cancelResume();
+      this.requestsStore.approveRequest(request);
+    });
   }
 
   initialsOf(request: TaskRequest): string {

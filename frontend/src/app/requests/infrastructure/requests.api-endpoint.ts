@@ -19,7 +19,7 @@ export class RequestsApiEndpoint extends BaseApiEndpoint<TaskRequest, RequestRes
     const body = this.assembler.toRequestFromCreateCommand(command);
     return this.http.post<RequestResource>(requestsEndpointUrl, body).pipe(
       map(resource => this.assembler.toEntityFromResource(resource)),
-      catchError((error: HttpErrorResponse) => throwError(() => new Error(this.createErrorMessage(error))))
+      catchError((error: HttpErrorResponse) => throwError(() => new Error(this.createErrorMessage(error, command.requestType))))
     );
   }
 
@@ -58,8 +58,19 @@ export class RequestsApiEndpoint extends BaseApiEndpoint<TaskRequest, RequestRes
   }
 
   // The backend answers in English with ids, so the status (and the 409 message) is mapped to a user-facing text.
-  private createErrorMessage(error: HttpErrorResponse): string {
+  private createErrorMessage(error: HttpErrorResponse, type: RequestType): string {
     const backendMessage: string = error.error?.message ?? '';
+    if (type === 'MODIFICATION') {
+      switch (error.status) {
+        case 400: return 'Escribe qué quieres que se modifique de la tarea.';
+        case 403: return 'Solo el integrante asignado a la tarea puede pedir una modificación.';
+        case 404: return 'La tarea no existe.';
+        case 409: return backendMessage.includes('pending request')
+          ? 'Esta tarea ya tiene una solicitud pendiente.'
+          : 'La tarea debe estar en progreso para pedir una modificación.';
+        default: return 'No se pudo enviar la solicitud de modificación.';
+      }
+    }
     switch (error.status) {
       case 403: return 'Solo el integrante asignado a la tarea puede enviar la entrega.';
       case 404: return 'La tarea no existe.';
@@ -74,7 +85,7 @@ export class RequestsApiEndpoint extends BaseApiEndpoint<TaskRequest, RequestRes
     switch (error.status) {
       case 403: return 'Solo el líder del grupo puede ver las validaciones.';
       case 404: return 'El grupo no existe.';
-      default: return 'No se pudieron cargar las entregas.';
+      default: return 'No se pudieron cargar las solicitudes.';
     }
   }
 
@@ -83,9 +94,11 @@ export class RequestsApiEndpoint extends BaseApiEndpoint<TaskRequest, RequestRes
     switch (error.status) {
       case 403: return 'Solo el líder del grupo puede revisar entregas.';
       case 404: return 'La entrega ya no existe.';
-      case 409: return backendMessage.includes('already reviewed')
-        ? 'Esta entrega ya fue revisada.'
-        : 'La tarea ya no está completada, por lo que no se puede aprobar. Recarga la lista.';
+      case 409:
+        if (backendMessage.includes('resolved by editing')) return 'Las modificaciones se resuelven editando la tarea.';
+        return backendMessage.includes('already reviewed')
+          ? 'Esta entrega ya fue revisada.'
+          : 'La tarea ya no está completada, por lo que no se puede aprobar. Recarga la lista.';
       default: return 'No se pudo revisar la entrega.';
     }
   }

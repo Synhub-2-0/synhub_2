@@ -37,6 +37,44 @@ describe('TasksStore', () => {
     store.loadTasksByGroup(10);
   };
 
+  it('reanudar una tarea vencida cambia la fecha y luego la pasa a IN_PROGRESS', () => {
+    const expired = new Task({
+      id: 3, title: 'T3', description: 'd', dueDate: new Date('2026-01-01T10:00:00Z'), createdAt: new Date(), updatedAt: new Date(),
+      status: 'EXPIRED', assignedTo: { id: 5, username: 'ana', name: 'Ana', surname: 'T', imgUrl: '', email: '' },
+    });
+    const newDate = new Date(Date.now() + 86_400_000);
+    api.updateTask.mockReturnValue(of(task(3, 'EXPIRED')));
+    api.updateTaskStatus.mockReturnValue(of(task(3, 'IN_PROGRESS')));
+    loadGroup(task(3, 'EXPIRED'));
+    const onResumed = vi.fn();
+
+    store.resumeExpiredTask(expired, newDate, onResumed);
+
+    const command = api.updateTask.mock.calls[0][1] as UpdateTaskCommand;
+    expect([command.title, command.description, command.dueDate, command.userId]).toEqual(['T3', 'd', newDate, 5]);
+    expect(api.updateTaskStatus).toHaveBeenCalledWith(3, 'IN_PROGRESS');
+    expect(store.tasks().find((t) => t.id === 3)?.status).toBe('IN_PROGRESS');
+    expect(onResumed).toHaveBeenCalled();
+  });
+
+  it('si reanudar falla tras cambiar la fecha, el mensaje lo dice y no se llama a onResumed', () => {
+    const expired = task(3, 'EXPIRED');
+    api.updateTask.mockReturnValue(of(expired));
+    api.updateTaskStatus.mockReturnValue(throwError(() => ({ status: 409, error: { message: 'x' } })));
+    const onResumed = vi.fn();
+
+    store.resumeExpiredTask(expired, new Date(Date.now() + 86_400_000), onResumed);
+
+    expect(onResumed).not.toHaveBeenCalled();
+    expect(toasts.toasts()[0].message).toContain('La fecha ya se actualizó');
+  });
+
+  it('si no se puede cambiar la fecha no se intenta reanudar', () => {
+    api.updateTask.mockReturnValue(throwError(() => ({ status: 403, error: { message: 'no' } })));
+    store.resumeExpiredTask(task(3, 'EXPIRED'), new Date(Date.now() + 86_400_000));
+    expect(api.updateTaskStatus).not.toHaveBeenCalled();
+  });
+
   it('carga las tareas de un grupo y pasa el filtro de estado al backend', () => {
     loadGroup(task(1), task(2, 'DONE'));
     expect(store.taskCount()).toBe(2);
