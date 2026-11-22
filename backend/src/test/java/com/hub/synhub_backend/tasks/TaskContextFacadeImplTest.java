@@ -71,6 +71,35 @@ class TaskContextFacadeImplTest {
     }
 
     @Test
+    void denyingTheModificationResumesTheTaskAndRestartsItsClock() {
+        var task = new Task();
+        task.setStatus(TaskStatus.ON_HOLD);
+        ReflectionTestUtils.setField(
+                task, "dueDate", OffsetDateTime.now(ZoneOffset.UTC).plusDays(1));
+        when(repo.findById(1L)).thenReturn(Optional.of(task));
+
+        assertEquals(
+                TaskStatus.IN_PROGRESS, facade.resumeAfterModificationDenied(1L).getStatus());
+        assertNotNull(task.getActiveSince());
+        verify(repo).save(task);
+    }
+
+    @Test
+    void denyingAModificationOfATaskThatIsNotOnHoldChangesNothing() {
+        var task = new Task();
+        task.setStatus(TaskStatus.EXPIRED);
+        when(repo.findById(1L)).thenReturn(Optional.of(task));
+        assertEquals(
+                TaskStatus.EXPIRED, facade.resumeAfterModificationDenied(1L).getStatus());
+    }
+
+    @Test
+    void resumeOfUnknownTaskIs404() {
+        when(repo.findById(9L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> facade.resumeAfterModificationDenied(9L));
+    }
+
+    @Test
     void putOnHoldOfUnknownTaskIs404() {
         when(repo.findById(9L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> facade.putOnHoldForModification(9L));

@@ -228,10 +228,6 @@ class TaskLifecycleApiTests extends ApiTestSupport {
                 put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null)
                         .status());
         assertEquals(
-                409,
-                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null)
-                        .status());
-        assertEquals(
                 409, delete("/requests/" + requestId, team.leader().token()).status());
         assertEquals(
                 409, delete("/requests/" + requestId, team.member().token()).status());
@@ -265,6 +261,52 @@ class TaskLifecycleApiTests extends ApiTestSupport {
                 "APPROVED", get("/requests/" + requestId, team.leader().token()).text("requestStatus"));
 
         // El integrante ya puede entregar; el tiempo medido no incluye la espera de 1,5 s.
+        submit(team.member(), taskId);
+        var time =
+                get("/metrics/tasks/" + taskId + "/time-passed", team.leader().token());
+        assertEquals(200, time.status(), time.raw());
+        assertTrue(time.json().get("timePassed").asLong() < 1500, "el tiempo en espera no cuenta: " + time.raw());
+    }
+
+    @Test
+    void theLeaderCanDenyAModificationAndTheTaskGoesBackToInProgress() throws InterruptedException {
+        var team = team();
+        var taskId = createTask(team.leader(), team.groupId(), team.member());
+        var requestId = requestModification(team, taskId);
+        assertEquals("ON_HOLD", get("/tasks/" + taskId, team.leader().token()).text("status"));
+
+        // Un ajeno y el propio integrante no la deniegan; aprobarla sigue siendo editar la tarea.
+        assertEquals(
+                403,
+                put(
+                                "/requests/" + requestId + "/status/REJECTED",
+                                team.stranger().token(),
+                                null)
+                        .status());
+        assertEquals(
+                403,
+                put("/requests/" + requestId + "/status/REJECTED", team.member().token(), null)
+                        .status());
+        assertEquals(
+                409,
+                put("/requests/" + requestId + "/status/APPROVED", team.leader().token(), null)
+                        .status());
+
+        Thread.sleep(1500); // tiempo en espera: no debe contarse
+        var denied =
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null);
+
+        assertEquals(200, denied.status(), denied.raw());
+        assertEquals("REJECTED", denied.text("requestStatus"));
+        assertEquals(
+                "IN_PROGRESS", get("/tasks/" + taskId, team.leader().token()).text("status"));
+        assertEquals(
+                409,
+                put("/requests/" + requestId + "/status/REJECTED", team.leader().token(), null)
+                        .status(),
+                "una sola revisión");
+
+        // La tarea sigue su curso: el integrante ya puede entregar y la espera no cuenta.
         submit(team.member(), taskId);
         var time =
                 get("/metrics/tasks/" + taskId + "/time-passed", team.leader().token());

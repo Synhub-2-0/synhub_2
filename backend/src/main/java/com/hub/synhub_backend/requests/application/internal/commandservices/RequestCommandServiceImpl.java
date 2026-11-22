@@ -94,17 +94,22 @@ public class RequestCommandServiceImpl implements RequestCommandService {
             throw new AccessDeniedException("Only the leader of the group can review requests");
         task.getProfile().getGroup().ensureNotLocked();
 
-        if (RequestType.MODIFICATION.name().equals(request.getRequestType()))
-            throw new ModificationResolvedByEditingException(request.getId());
-
         var newStatus = RequestStatus.fromString(command.requestStatus());
         if (newStatus == RequestStatus.PENDING)
             throw new IllegalArgumentException("A request can only be reviewed as APPROVED or REJECTED");
+        // El vencimiento tampoco se rechaza: solo se reanuda la tarea (eso cierra el aviso).
+        if (RequestType.EXPIRED.name().equals(request.getRequestType()) && newStatus == RequestStatus.REJECTED)
+            throw new ExpiredRequestCannotBeRejectedException(request.getId());
+        // Una modificación se aprueba editando la tarea (eso cierra la solicitud); desde aquí solo se puede denegar.
+        if (RequestType.MODIFICATION.name().equals(request.getRequestType()) && newStatus == RequestStatus.APPROVED)
+            throw new ModificationResolvedByEditingException(request.getId());
         if (!RequestStatus.PENDING.name().equals(request.getRequestStatus()))
             throw new RequestAlreadyReviewedException(request.getId(), request.getRequestStatus());
 
-        // Solo SUBMISSION mueve la tarea (EXPIRED solo se cierra; MODIFICATION se resuelve editando la tarea).
-        if (RequestType.SUBMISSION.name().equals(request.getRequestType())) {
+        // SUBMISSION mueve la tarea según la revisión; denegar una MODIFICATION la reanuda; EXPIRED solo se cierra.
+        if (RequestType.MODIFICATION.name().equals(request.getRequestType())) {
+            this.tasksContextFacade.resumeAfterModificationDenied(task.getId());
+        } else if (RequestType.SUBMISSION.name().equals(request.getRequestType())) {
             if (newStatus == RequestStatus.APPROVED) {
                 if (task.getStatus() != TaskStatus.COMPLETED)
                     throw new TaskWithIncorrectStatusException(

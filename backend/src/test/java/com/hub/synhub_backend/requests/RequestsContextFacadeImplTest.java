@@ -57,6 +57,27 @@ class RequestsContextFacadeImplTest {
     }
 
     @Test
+    void resumingATaskClosesItsPendingExpirationNotice() {
+        var expiration = request("EXPIRED", "PENDING");
+        var modification = request("MODIFICATION", "PENDING");
+        var oldExpiration = request("EXPIRED", "APPROVED");
+        when(repo.findByTaskId(TASK)).thenReturn(List.of(expiration, modification, oldExpiration));
+
+        assertTrue(facade.resolvePendingExpiration(TASK));
+
+        assertEquals("APPROVED", expiration.getRequestStatus());
+        assertEquals("PENDING", modification.getRequestStatus());
+        verify(repo).saveAll(List.of(expiration));
+    }
+
+    @Test
+    void resumingATaskWithoutAnExpirationNoticeDoesNothing() {
+        when(repo.findByTaskId(TASK)).thenReturn(List.of(request("SUBMISSION", "PENDING")));
+        assertFalse(facade.resolvePendingExpiration(TASK));
+        verify(repo, never()).saveAll(any());
+    }
+
+    @Test
     void resolvingWithoutAPendingModificationDoesNothing() {
         when(repo.findByTaskId(TASK)).thenReturn(List.of(request("EXPIRED", "PENDING")));
         assertFalse(facade.resolvePendingModification(TASK));

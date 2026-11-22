@@ -100,7 +100,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
         var edited = task.updateTask(command) || reassigned;
         // Editar la tarea es lo que resuelve su solicitud de modificación y la reanuda (el reloj vuelve a correr).
         if (edited && this.requestsContextFacade.resolvePendingModification(task.getId())) {
-            task.resumeAfterEditing();
+            task.resumeAfterModification();
         }
         return this.taskRepository.save(task);
     }
@@ -126,6 +126,7 @@ public class TaskCommandServiceImpl implements TaskCommandService {
     }
 
     @Override
+    @Transactional
     public Task handle(UpdateTaskStatusCommand command) {
         var taskToUpdate = this.taskRepository
                 .findById(command.taskId())
@@ -145,7 +146,12 @@ public class TaskCommandServiceImpl implements TaskCommandService {
                 && this.requestsContextFacade.hasPendingModification(taskToUpdate.getId()))
             throw new TaskStatusTransitionNotAllowedException(
                     "The task has a pending modification request: it resumes when the leader edits the task");
+        var wasExpired = taskToUpdate.getStatus() == TaskStatus.EXPIRED;
         taskToUpdate.updateStatus(command);
+        // Reanudar una tarea vencida (por cualquier vía) cierra su aviso de vencimiento.
+        if (wasExpired && command.status() == TaskStatus.IN_PROGRESS) {
+            this.requestsContextFacade.resolvePendingExpiration(taskToUpdate.getId());
+        }
         return this.taskRepository.save(taskToUpdate);
     }
 

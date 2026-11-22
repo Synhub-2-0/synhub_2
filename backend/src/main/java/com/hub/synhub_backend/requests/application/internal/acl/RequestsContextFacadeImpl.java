@@ -35,8 +35,18 @@ public class RequestsContextFacadeImpl implements RequestsContextFacade {
     @Override
     @Transactional
     public boolean resolvePendingModification(Long taskId) {
+        return approvePending(taskId, RequestType.MODIFICATION);
+    }
+
+    @Override
+    @Transactional
+    public boolean resolvePendingExpiration(Long taskId) {
+        return approvePending(taskId, RequestType.EXPIRED);
+    }
+
+    private boolean approvePending(Long taskId, RequestType type) {
         var pending = requestRepository.findByTaskId(taskId).stream()
-                .filter(request -> RequestType.MODIFICATION.name().equals(request.getRequestType())
+                .filter(request -> type.name().equals(request.getRequestType())
                         && RequestStatus.PENDING.name().equals(request.getRequestStatus()))
                 .toList();
         pending.forEach(request -> request.updateRequestStatus(RequestStatus.APPROVED.name()));

@@ -158,10 +158,10 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     }
 
     /**
-     * Pasa a IN_PROGRESS una tarea en espera porque el líder la editó (resuelve su solicitud de modificación).
-     * Si la edición ya la movió (nueva fecha límite), no hace nada.
+     * Pasa a IN_PROGRESS una tarea en espera porque su solicitud de modificación se resolvió: el líder la editó o la
+     * denegó. Si ya no está en espera (por ejemplo la edición ya la movió con una nueva fecha límite), no hace nada.
      */
-    public void resumeAfterEditing() {
+    public void resumeAfterModification() {
         if (this.status == TaskStatus.ON_HOLD) {
             this.updateStatus(new UpdateTaskStatusCommand(null, this.getId(), TaskStatus.IN_PROGRESS));
         }

@@ -60,6 +60,15 @@ public class TaskContextFacadeImpl implements TasksContextFacade {
     }
 
     @Override
+    public Task resumeAfterModificationDenied(Long taskId) {
+        var task = taskRepository
+                .findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + taskId + " does not exist"));
+        task.resumeAfterModification();
+        return taskRepository.save(task);
+    }
+
+    @Override
     public Task putOnHoldForModification(Long taskId) {
         var task = taskRepository
                 .findById(taskId)

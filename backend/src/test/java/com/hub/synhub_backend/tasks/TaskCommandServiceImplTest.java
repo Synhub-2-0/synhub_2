@@ -185,6 +185,24 @@ class TaskCommandServiceImplTest {
     }
 
     @Test
+    void resumingAnExpiredTaskClosesItsExpirationNotice() {
+        task.setStatus(TaskStatus.EXPIRED);
+
+        var resumed = service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.IN_PROGRESS));
+
+        assertEquals(TaskStatus.IN_PROGRESS, resumed.getStatus());
+        verify(requests).resolvePendingExpiration(TASK);
+    }
+
+    @Test
+    void otherStatusChangesDoNotTouchTheExpirationNotice() {
+        service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.ON_HOLD)); // IN_PROGRESS -> ON_HOLD
+        task.setStatus(TaskStatus.EXPIRED);
+        service.handle(new UpdateTaskStatusCommand(LEADER, TASK, TaskStatus.ON_HOLD)); // EXPIRED -> ON_HOLD
+        verify(requests, never()).resolvePendingExpiration(anyLong());
+    }
+
+    @Test
     void theLeaderCannotResumeATaskWithAPendingModificationByHand() {
         task.setStatus(TaskStatus.ON_HOLD);
         when(requests.hasPendingModification(TASK)).thenReturn(true);

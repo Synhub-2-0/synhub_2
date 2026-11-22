@@ -26,6 +26,9 @@ public interface TasksContextFacade {
     /** Pasa la tarea de IN_PROGRESS a COMPLETED cuando su integrante envía la entrega (sin comprobar al usuario). */
     Task completeForSubmission(Long taskId);
 
+    /** El líder denegó la modificación: la tarea en espera vuelve a IN_PROGRESS y su reloj se reanuda. */
+    Task resumeAfterModificationDenied(Long taskId);
+
     /** Pone la tarea en espera (ON_HOLD) y detiene su reloj cuando su integrante pide una modificación. */
     Task putOnHoldForModification(Long taskId);
 }
