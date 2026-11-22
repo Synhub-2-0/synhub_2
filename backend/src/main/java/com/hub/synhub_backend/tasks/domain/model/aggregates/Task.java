@@ -8,8 +8,11 @@ import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskCommand;
 import com.hub.synhub_backend.tasks.domain.model.commands.UpdateTaskStatusCommand;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import jakarta.persistence.*;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SoftDelete;
@@ -55,8 +58,12 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
     @Column(nullable = false)
     private Integer timesRearranged = 0;
 
+    /** Milisegundos acumulados en los que la tarea estuvo IN_PROGRESS (no cuenta pausas, ni vencida, ni completada). */
     @Column(nullable = false)
     private Long timePassed = 0L;
+
+    /** Desde cuándo corre el tiempo activo: solo tiene valor mientras la tarea está IN_PROGRESS. */
+    private OffsetDateTime activeSince;
 
     public Task() {
         this.status = TaskStatus.IN_PROGRESS;
@@ -71,6 +78,7 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
         this.description = command.description() == null ? "" : command.description();
         this.dueDate = command.dueDate();
         this.status = TaskStatus.IN_PROGRESS;
+        this.activeSince = OffsetDateTime.now(ZoneOffset.UTC);
         this.updateClassification(
                 command.difficulty(),
                 command.context(),
@@ -98,26 +106,70 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
 
         var commandStatus = command.status();
 
-        if (this.status == TaskStatus.IN_PROGRESS && commandStatus == TaskStatus.COMPLETED) {
-            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            if (timesRearranged > 0) {
-                long updatedAt = this.getUpdatedAt().toInstant().toEpochMilli();
-                this.timePassed += now.toInstant().toEpochMilli() - updatedAt;
-            } else {
-                this.timePassed = now.toInstant().toEpochMilli()
-                        - this.getCreatedAt().toInstant().toEpochMilli();
-            }
-        } else if (this.status == TaskStatus.COMPLETED && commandStatus == TaskStatus.IN_PROGRESS) {
-            timesRearranged++;
-        } else if (this.status == TaskStatus.ON_HOLD && commandStatus == TaskStatus.IN_PROGRESS) {
-            timesRearranged++;
-        } else if (this.status == TaskStatus.EXPIRED && commandStatus == TaskStatus.IN_PROGRESS) {
+        if (commandStatus == TaskStatus.IN_PROGRESS && this.status != TaskStatus.IN_PROGRESS) {
+            // Volver a IN_PROGRESS (desde COMPLETED, ON_HOLD o EXPIRED) cuenta como reagendado.
             timesRearranged++;
         }
-        this.status = command.status();
+        moveTo(commandStatus);
     }
 
-    public void updateTask(UpdateTaskCommand command) {
+    /**
+     * Cambia el estado y mantiene el reloj del tiempo activo: corre solo en IN_PROGRESS. Al salir de IN_PROGRESS
+     * se suma lo transcurrido (hasta la fecha límite si ya venció) y al volver a entrar empieza de nuevo.
+     */
+    private void moveTo(TaskStatus target) {
+        var now = OffsetDateTime.now(ZoneOffset.UTC);
+        if (this.status == TaskStatus.IN_PROGRESS && target != TaskStatus.IN_PROGRESS) {
+            closeActiveTime(now);
+        } else if (this.status != TaskStatus.IN_PROGRESS && target == TaskStatus.IN_PROGRESS) {
+            this.activeSince = now;
+        }
+        this.status = target;
+    }
+
+    /** Suma el tiempo activo pendiente, sin pasar de la fecha límite, y detiene el reloj (no hace nada si ya está detenido). */
+    private void closeActiveTime(OffsetDateTime now) {
+        if (this.activeSince == null) return;
+        var end = now.isBefore(this.dueDate) ? now : this.dueDate;
+        this.timePassed += Math.max(0L, Duration.between(this.activeSince, end).toMillis());
+        this.activeSince = null;
+    }
+
+    /**
+     * Cierra el tiempo activo de una tarea que el vencimiento automático ya marcó EXPIRED: cuenta hasta su fecha
+     * límite. Es idempotente.
+     */
+    public void settleActiveTime() {
+        closeActiveTime(OffsetDateTime.now(ZoneOffset.UTC));
+    }
+
+    /** Lo que el líder edita de una tarea: sirve para saber si una edición cambió algo. */
+    private List<Object> editableContent() {
+        return Arrays.asList(
+                title,
+                description,
+                dueDate == null ? null : dueDate.toInstant(),
+                difficulty,
+                context,
+                urgency,
+                labels,
+                aiAccepted,
+                aiRationale);
+    }
+
+    /**
+     * Pasa a IN_PROGRESS una tarea en espera porque el líder la editó (resuelve su solicitud de modificación).
+     * Si la edición ya la movió (nueva fecha límite), no hace nada.
+     */
+    public void resumeAfterEditing() {
+        if (this.status == TaskStatus.ON_HOLD) {
+            this.updateStatus(new UpdateTaskStatusCommand(null, this.getId(), TaskStatus.IN_PROGRESS));
+        }
+    }
+
+    /** Aplica la edición del líder. Devuelve si cambió algún dato (título, descripción, fecha o clasificación). */
+    public boolean updateTask(UpdateTaskCommand command) {
+        var before = editableContent();
         if (command.title() != null && !command.title().isEmpty()) {
             this.title = command.title();
         }
@@ -129,18 +181,19 @@ public class Task extends AuditableAbstractAggregateRoot<Task> {
             this.updateClassification(
                     c.difficulty(), c.context(), c.urgency(), c.labels(), c.aiAccepted(), c.aiRationale());
         }
-        if (command.dueDate() != null) {
+        // Una fecha igual a la actual no mueve el estado: la web siempre envía la fecha al editar.
+        if (command.dueDate() != null
+                && (this.dueDate == null
+                        || !this.dueDate.toInstant().equals(command.dueDate().toInstant()))) {
             this.dueDate = command.dueDate();
-            if (command.dueDate().isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
-                if (this.status != TaskStatus.EXPIRED) {
-                    this.status = TaskStatus.EXPIRED;
-                }
-            } else {
-                if (this.status != TaskStatus.EXPIRED) {
-                    this.status = TaskStatus.IN_PROGRESS;
-                }
+            if (this.status != TaskStatus.EXPIRED) {
+                moveTo(
+                        command.dueDate().isBefore(OffsetDateTime.now(ZoneOffset.UTC))
+                                ? TaskStatus.EXPIRED
+                                : TaskStatus.IN_PROGRESS);
             }
         }
+        return !before.equals(editableContent());
     }
 
     /**

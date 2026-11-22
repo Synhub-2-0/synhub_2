@@ -65,6 +65,11 @@ public class TaskStatusScheduler {
             return;
         }
         LOGGER.debug("Task {} expired", taskId);
+        // El UPDATE condicional solo cambia el estado: aquí se cierra el tiempo activo, hasta la fecha límite.
+        taskRepository.findById(taskId).ifPresent(task -> {
+            task.settleActiveTime();
+            taskRepository.save(task);
+        });
         requestCommandService.handle(new CreateRequestCommand("La tarea venció automáticamente.", "EXPIRED", taskId));
     }
 }
