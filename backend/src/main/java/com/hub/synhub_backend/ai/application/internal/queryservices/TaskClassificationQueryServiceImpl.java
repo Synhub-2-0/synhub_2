@@ -22,6 +22,8 @@ public class TaskClassificationQueryServiceImpl implements TaskClassificationQue
     private static final List<String> CONTEXTS =
             List.of("FRONTEND", "BACKEND", "DATABASE", "CLOUD", "QA", "DOCS", "DESIGN", "GENERAL");
     private static final List<String> URGENCIES = List.of("LOW", "MEDIUM", "HIGH");
+    // La tarea guarda la justificación en una columna de 500 caracteres.
+    private static final int MAX_RATIONALE = 500;
 
     private static final String SYSTEM = """
             Eres el asistente de Synhub, una app de gestión ágil de tareas para equipos. \
@@ -90,7 +92,11 @@ public class TaskClassificationQueryServiceImpl implements TaskClassificationQue
                 URGENCIES.contains(urgency) ? urgency : "MEDIUM",
                 Math.max(1, Math.min(5, in.get("difficulty").asNumber().intValue())),
                 CONTEXTS.contains(context) ? context : "GENERAL",
-                in.get("rationale").asString());
+                truncate(in.get("rationale").asString().trim(), MAX_RATIONALE));
+    }
+
+    private static String truncate(String text, int max) {
+        return text.length() <= max ? text : text.substring(0, max - 1).trim() + "…";
     }
 
     private static ToolSpecification toolSpec() {

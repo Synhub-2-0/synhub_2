@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import { AiReportCard } from './ai-report-card';
 import { AiApi } from '../../../infrastructure/ai.api';
+import { IamStore } from '../../../../iam/application/iam.store';
 
 describe('AiReportCard', () => {
   let fixture: ComponentFixture<AiReportCard>;
@@ -9,7 +11,10 @@ describe('AiReportCard', () => {
 
   beforeEach(async () => {
     api = { classifyTask: vi.fn(), getGroupReport: vi.fn().mockReturnValue(of('## Resumen\n- **Ana**: sobrecarga')) };
-    await TestBed.configureTestingModule({ imports: [AiReportCard], providers: [{ provide: AiApi, useValue: api }] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [AiReportCard],
+      providers: [{ provide: AiApi, useValue: api }, { provide: IamStore, useValue: { isSignedIn: signal(true) } }],
+    }).compileComponents();
     fixture = TestBed.createComponent(AiReportCard);
   });
 

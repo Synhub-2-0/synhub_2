@@ -10,6 +10,7 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.commands.DeleteTasksByUserIdAndGroupIdCommand;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.domain.services.TaskCommandService;
+import com.hub.synhub_backend.tasks.domain.services.TaskQueryService;
 import com.hub.synhub_backend.tasks.infrastructure.persistence.jpa.repositories.TaskRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,14 +20,16 @@ import org.junit.jupiter.api.Test;
 class TaskContextFacadeImplTest {
 
     private TaskCommandService commands;
+    private TaskQueryService queries;
     private TaskRepository repo;
     private TaskContextFacadeImpl facade;
 
     @BeforeEach
     void setUp() {
         commands = mock(TaskCommandService.class);
+        queries = mock(TaskQueryService.class);
         repo = mock(TaskRepository.class);
-        facade = new TaskContextFacadeImpl(commands, repo);
+        facade = new TaskContextFacadeImpl(commands, queries, repo);
         when(repo.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 

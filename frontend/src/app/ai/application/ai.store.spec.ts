@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { Subject, of, throwError } from 'rxjs';
 import { AiApi } from '../infrastructure/ai.api';
 import { AiStore } from './ai.store';
+import { IamStore } from '../../iam/application/iam.store';
 import { TaskClassification } from '../domain/model/task-classification.entity';
 
 describe('AiStore', () => {
@@ -9,11 +11,15 @@ describe('AiStore', () => {
     labels: ['Login'], urgency: 'HIGH', difficulty: 3, context: 'FRONTEND', rationale: 'Bug crítico',
   };
   let api: { classifyTask: ReturnType<typeof vi.fn>; getGroupReport: ReturnType<typeof vi.fn> };
+  let isSignedIn: ReturnType<typeof signal<boolean>>;
   let store: AiStore;
 
   beforeEach(() => {
     api = { classifyTask: vi.fn(), getGroupReport: vi.fn() };
-    TestBed.configureTestingModule({ providers: [{ provide: AiApi, useValue: api }] });
+    isSignedIn = signal(true);
+    TestBed.configureTestingModule({
+      providers: [{ provide: AiApi, useValue: api }, { provide: IamStore, useValue: { isSignedIn } }],
+    });
     store = TestBed.inject(AiStore);
   });
 
@@ -29,6 +35,49 @@ describe('AiStore', () => {
     store.classifyTask({ title: 'Login falla', description: '' });
     expect(store.classification()).toBeNull();
     expect(store.error()).toContain('IA no está disponible');
+  });
+
+  it('una sugerencia tardía no aparece en el siguiente formulario', () => {
+    const late = new Subject<TaskClassification>();
+    api.classifyTask.mockReturnValue(late);
+    store.classifyTask({ title: 'Tarea del grupo A', description: '' });
+    store.clearClassification(); // se sale del formulario antes de que responda la IA
+    expect(store.classifying()).toBe(false);
+    late.next(suggestion);
+    expect(store.classification()).toBeNull();
+  });
+
+  it('al volver a sugerir, solo cuenta la última respuesta', () => {
+    const first = new Subject<TaskClassification>();
+    api.classifyTask.mockReturnValueOnce(first).mockReturnValueOnce(of({ ...suggestion, difficulty: 5 }));
+    store.classifyTask({ title: 'Login falla', description: '' });
+    store.classifyTask({ title: 'Login falla', description: 'con más detalle' });
+    first.next(suggestion);
+    expect(store.classification()?.difficulty).toBe(5);
+  });
+
+  it('al cerrar sesión se vacían la sugerencia y los informes', () => {
+    api.classifyTask.mockReturnValue(of(suggestion));
+    api.getGroupReport.mockReturnValue(of('# Informe grupo 7'));
+    store.classifyTask({ title: 'Login falla', description: '' });
+    store.loadReport(7);
+    isSignedIn.set(false);
+    TestBed.tick();
+    expect(store.classification()).toBeNull();
+    expect(store.reportFor(7)).toBeNull();
+  });
+
+  it('un informe pedido en la sesión anterior no llega a la siguiente', () => {
+    const late = new Subject<string>();
+    api.getGroupReport.mockReturnValue(late);
+    store.loadReport(7);
+    isSignedIn.set(false);
+    TestBed.tick();
+    isSignedIn.set(true);
+    TestBed.tick();
+    late.next('# Informe de otra sesión');
+    expect(store.reportFor(7)).toBeNull();
+    expect(store.isReportLoading(7)).toBe(false);
   });
 
   it('carga el informe del grupo', () => {
