@@ -116,7 +116,10 @@ class GroupCommandServiceImplTest {
     // ---- Crear: por encima del límite del plan el grupo nace bloqueado
     private void leaderAlreadyLeads(Group... led) {
         // setUp ya hizo que el líder lidere el grupo 10; los demás se agregan.
-        when(profiles.findByUser_Id(1L)).thenReturn(leader.getGroupProfiles());
+        when(profiles.findByUser_IdAndRoleInGroup(1L, GroupRole.GROUP_LEADER))
+                .thenAnswer(inv -> leader.getGroupProfiles().stream()
+                        .filter(p -> p.getRoleInGroup() == GroupRole.GROUP_LEADER)
+                        .toList());
         for (var g : led) join(g, leader, GroupRole.GROUP_LEADER);
     }
 
@@ -166,7 +169,10 @@ class GroupCommandServiceImplTest {
     @Test
     void theLeaderActivatesALockedGroupWhenThereIsASlot() {
         group.lock();
-        when(profiles.findByUser_Id(1L)).thenReturn(leader.getGroupProfiles()); // solo el 10, bloqueado: 0 de 2
+        when(profiles.findByUser_IdAndRoleInGroup(1L, GroupRole.GROUP_LEADER))
+                .thenAnswer(inv -> leader.getGroupProfiles().stream()
+                        .filter(p -> p.getRoleInGroup() == GroupRole.GROUP_LEADER)
+                        .toList()); // solo el 10, bloqueado: 0 de 2
 
         var activated = service.handle(new ActivateGroupCommand(1L, 10L));
 
@@ -181,7 +187,10 @@ class GroupCommandServiceImplTest {
         var g12 = group(12, user(8, "y"));
         join(g11, leader, GroupRole.GROUP_LEADER);
         join(g12, leader, GroupRole.GROUP_LEADER);
-        when(profiles.findByUser_Id(1L)).thenReturn(leader.getGroupProfiles()); // 11 y 12 activos: 2 de 2
+        when(profiles.findByUser_IdAndRoleInGroup(1L, GroupRole.GROUP_LEADER))
+                .thenAnswer(inv -> leader.getGroupProfiles().stream()
+                        .filter(p -> p.getRoleInGroup() == GroupRole.GROUP_LEADER)
+                        .toList()); // 11 y 12 activos: 2 de 2
 
         assertThrows(NoFreeGroupSlotException.class, () -> service.handle(new ActivateGroupCommand(1L, 10L)));
         assertTrue(group.isLocked());

@@ -39,7 +39,10 @@ class GroupsContextFacadeImplTest {
         g10 = group(10, leader);
         g11 = group(11, leader);
         others = group(20, user(2, "otro"), leader); // aquí es solo integrante
-        when(profiles.findByUser_Id(LEADER)).thenReturn(leader.getGroupProfiles());
+        when(profiles.findByUser_IdAndRoleInGroup(LEADER, GroupRole.GROUP_LEADER))
+                .thenAnswer(inv -> leader.getGroupProfiles().stream()
+                        .filter(p -> p.getRoleInGroup() == GroupRole.GROUP_LEADER)
+                        .toList());
     }
 
     @Test

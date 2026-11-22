@@ -50,8 +50,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
 
     /** Grupos que el usuario lidera y están activos (los bloqueados no ocupan cupo). */
     private long activeLedGroups(Long userId) {
-        return groupProfileRepository.findByUser_Id(userId).stream()
-                .filter(profile -> profile.getRoleInGroup() == GroupRole.GROUP_LEADER)
+        return groupProfileRepository.findByUser_IdAndRoleInGroup(userId, GroupRole.GROUP_LEADER).stream()
                 .map(GroupProfile::getGroup)
                 .filter(group -> !group.isLocked())
                 .count();

@@ -66,8 +66,7 @@ public class GroupsContextFacadeImpl implements GroupsContextFacade {
 
     @Override
     public List<Group> fetchLedGroups(Long userId) {
-        return groupProfileRepository.findByUser_Id(userId).stream()
-                .filter(profile -> profile.getRoleInGroup() == GroupRole.GROUP_LEADER)
+        return groupProfileRepository.findByUser_IdAndRoleInGroup(userId, GroupRole.GROUP_LEADER).stream()
                 .map(GroupProfile::getGroup)
                 .sorted(Comparator.comparing(Group::getId))
                 .toList();
