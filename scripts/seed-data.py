@@ -22,8 +22,10 @@ Tareas: cada grupo trae tareas en todos los estados para probar el tablero y las
     progress      En progreso (sin más)             hold        En espera
     completed     Completada por el líder, sin entrega   submitted   Completada por la entrega PENDING (para validar)
     approved      Entrega aprobada -> DONE          rejected    Entrega rechazada -> vuelve a En progreso
-    modification  En progreso + solicitud de modificación PENDING
+    modification  En espera + solicitud de modificación PENDING (el líder la edita o la deniega)
+    modification_denied  Solicitud de modificación denegada -> vuelve a En progreso
     expired       Fecha límite pasada: el planificador del backend la vence en <= 60 s y crea su request EXPIRED
+                  (el líder solo puede reanudarla con una nueva fecha: en Validaciones o al mover la tarea en el tablero)
 
 "Soporte Técnico" tiene 24 tareas para probar la paginación (20 por página). Además deja invitaciones pendientes.
 
@@ -102,6 +104,7 @@ TASKS = {
         ('Refactor del carrito', 'Separar la lógica de precios del controlador.', 'alexiel', 60, (4, 'BACKEND', 'MEDIUM', 'Refactor'), 'rejected'),
         ('Documentar la API', 'Describir los endpoints públicos en Swagger.', 'lucia.torres', -48, (1, 'DOCS', 'LOW', 'Docs'), 'expired'),
         ('Optimizar consultas lentas', 'Revisar los índices de las tablas más grandes.', 'diego.paredes', 30, None, 'modification'),
+        ('Internacionalizar textos', 'Extraer los textos a archivos de idioma.', 'lucia.torres', 84, (3, 'FRONTEND', 'LOW', 'i18n'), 'modification_denied'),
     ],
     'Marketing Digital': [
         ('Calendario de contenidos', 'Plan editorial del mes para todas las redes.', 'maria.lopez', 72, (2, 'GENERAL', 'LOW', 'Planificación'), 'progress'),
@@ -129,6 +132,9 @@ TASKS = {
     'Operaciones': [
         ('Inventario trimestral', 'Conteo físico y ajuste de existencias.', 'sofia.vega', 96, (3, 'GENERAL', 'MEDIUM', 'Inventario'), 'progress'),
         ('Auditoría de procesos', 'Levantar y revisar los procesos de bodega.', 'lucia.torres', 72, (2, 'QA', 'LOW', 'Auditoría'), 'completed'),
+        # Con entrega y modificación pendientes: al final el grupo queda bloqueado y se ven sin acciones.
+        ('Conteo de bodega norte', 'Contar y registrar las existencias de la bodega norte.', 'sofia.vega', 60, (2, 'GENERAL', 'MEDIUM', 'Inventario'), 'submitted'),
+        ('Reubicar estantes', 'Reorganizar los estantes por rotación.', 'lucia.torres', 96, (3, 'GENERAL', 'LOW', 'Logística'), 'modification'),
     ],
 }
 
@@ -172,7 +178,7 @@ class Client:
         self.id = body['id']
 
 
-REQUEST_STATES = ('submitted', 'approved', 'rejected', 'modification')
+REQUEST_STATES = ('submitted', 'approved', 'rejected', 'modification', 'modification_denied')
 
 
 def ok(status):
@@ -276,11 +282,36 @@ def apply_state(clients, leader, assignee, task, state):
             status, body = leader.call('PUT', f'/requests/{req["id"]}/status/{verdict}')
             if not ok(status):
                 print(f'  ! revisión de "{task["title"]}": {status} {body}')
-    elif state == 'modification':
-        status, body = member.call('POST', '/requests',
-                                   {'taskId': tid, 'description': 'Necesito ajustar el alcance de la tarea.', 'requestType': 'MODIFICATION'})
+    elif state in ('modification', 'modification_denied'):
+        # El backend deja la tarea en espera (su reloj se detiene) hasta que el líder la edite o la deniegue.
+        status, req = member.call('POST', '/requests',
+                                  {'taskId': tid, 'description': 'Necesito ajustar el alcance de la tarea.', 'requestType': 'MODIFICATION'})
         if not ok(status):
-            print(f'  ! modificación de "{task["title"]}": {status} {body}')
+            print(f'  ! modificación de "{task["title"]}": {status} {req}')
+            return
+        if state == 'modification_denied':
+            status, body = leader.call('PUT', f'/requests/{req["id"]}/status/REJECTED')  # la tarea vuelve a En progreso
+            if not ok(status):
+                print(f'  ! denegar la modificación de "{task["title"]}": {status} {body}')
+
+
+def normalize_modification(clients, leader, assignee, task):
+    """Deja la tarea de estado `modification` como hoy la deja el backend: en espera con una solicitud pendiente.
+
+    Una corrida anterior (antes de que la solicitud pusiera la tarea en espera) pudo dejar la solicitud pendiente con la
+    tarea en progreso o completada: se deniega, se devuelve la tarea a En progreso y se vuelve a pedir la modificación."""
+    tid = task['id']
+    _, reqs = leader.call('GET', f'/requests/task?taskId={tid}')
+    pending = [r for r in reqs or [] if r['requestType'] == 'MODIFICATION' and r['requestStatus'] == 'PENDING']
+    _, current = leader.call('GET', f'/tasks/{tid}')
+    if pending and current['status'] == 'ON_HOLD':
+        return
+    for r in pending:
+        leader.call('PUT', f'/requests/{r["id"]}/status/REJECTED')
+        print(f'  ~ solicitud pendiente de "{task["title"]}" denegada (estaba inconsistente)')
+    if current['status'] != 'IN_PROGRESS':
+        leader.call('PUT', f'/tasks/{tid}/status?status=IN_PROGRESS')
+    apply_state(clients, leader, assignee, task, 'modification')
 
 
 def seed_tasks(clients, groups):
@@ -293,8 +324,10 @@ def seed_tasks(clients, groups):
         created = 0
         for title, description, assignee, hours, cls, state in tasks:
             if title in known:
+                if state == 'modification':
+                    normalize_modification(clients, leader, assignee, known[title])
                 # Reintento: si le faltó su entrega o solicitud (p. ej. una corrida anterior falló), se completa.
-                if state in REQUEST_STATES:
+                elif state in REQUEST_STATES:
                     _, reqs = leader.call('GET', f'/requests/task?taskId={known[title]["id"]}')
                     if not reqs:
                         apply_state(clients, leader, assignee, known[title], state)
@@ -330,6 +363,14 @@ def summary(clients, groups):
         for t in tasks or []:
             counts[t['status']] = counts.get(t['status'], 0) + 1
         print(f'  {name:18} {len(tasks or []):2} tareas  {counts}')
+    print('\nSolicitudes pendientes por grupo (lo que ve el líder en Validaciones):')
+    for name, group in groups.items():
+        leader = clients[next(g[2] for g in GROUPS if g[0] == name)]
+        _, pending = leader.call('GET', f'/requests/group?groupId={group["id"]}&status=PENDING')
+        counts = {}
+        for r in pending or []:
+            counts[r['requestType']] = counts.get(r['requestType'], 0) + 1
+        print(f'  {name:18} {counts or "-"}')
     print('\nLas tareas "expired" pasan a EXPIRED en <= 60 s (planificador del backend).')
 
 
