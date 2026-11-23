@@ -12,11 +12,14 @@ import { TaskBoard } from '../../../../tasks/presentation/components/task-board/
 import { IamStore } from '../../../../iam/application/iam.store';
 import { InvitationsStore } from '../../../../invitations/application/invitations.store';
 import { SubscriptionsStore } from '../../../../subscriptions/application/subscriptions.store';
+import { MetricsStore } from '../../../../metrics/application/metrics.store';
+import { TaskDistributionChart } from '../../../../metrics/presentation/components/task-distribution-chart/task-distribution-chart';
+import { RescheduledChart } from '../../../../metrics/presentation/components/rescheduled-chart/rescheduled-chart';
 
 @Component({
   selector: 'app-group-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, RouterLink, TaskList, TaskBoard],
+  imports: [CommonModule, FormsModule, MatIconModule, RouterLink, TaskList, TaskBoard, TaskDistributionChart, RescheduledChart],
   templateUrl: './group-details.html',
   styleUrl: './group-details.css',
 })
@@ -28,6 +31,7 @@ export class GroupDetails implements OnInit {
   readonly invitationsStore = inject(InvitationsStore);
   readonly iamStore = inject(IamStore);
   readonly subscriptionsStore = inject(SubscriptionsStore);
+  readonly metricsStore = inject(MetricsStore);
   readonly groupId = signal(0);
   readonly isEditing = signal(false);
   editName = '';
@@ -72,6 +76,8 @@ export class GroupDetails implements OnInit {
         this.invitationsStore.clearError();
         this.invitationsStore.loadGroupInvitations(id);
         if (!this.subscriptionsStore.subscription()) this.subscriptionsStore.load();
+        this.metricsStore.loadGroupDistribution(id);
+        this.metricsStore.loadGroupRescheduled(id);
       }
     });
   }
