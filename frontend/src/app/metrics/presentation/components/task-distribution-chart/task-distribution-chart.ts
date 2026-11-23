@@ -1,92 +1,72 @@
-import {
-  Component,
-  ElementRef,
-  Input,
-  OnChanges,
-  OnDestroy,
-  viewChild,
-} from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
+import { AgCharts } from 'ag-charts-angular';
+import { AgCartesianChartOptions } from 'ag-charts-community';
 import { TaskDistribution } from '../../../domain/model/task-distribution.model';
-import * as CanvasJS from '@canvasjs/charts';
 
 @Component({
   selector: 'app-task-distribution-chart',
   standalone: true,
+  imports: [AgCharts],
   template: `
     @if (loading) {
       <div class="flex h-56 items-center justify-center text-sm text-slate-400">Cargando...</div>
     } @else if (!distribution || distribution.total === 0) {
       <div class="flex h-56 items-center justify-center text-sm text-slate-400">Sin datos de distribución.</div>
     } @else {
-      <div #chartContainer class="h-56 w-full"></div>
+      <ag-charts [options]="chartOptions" class="block h-56 w-full"></ag-charts>
     }
   `,
 })
-export class TaskDistributionChart implements OnChanges, OnDestroy {
+export class TaskDistributionChart implements OnChanges {
   @Input() distribution: TaskDistribution | null = null;
   @Input() loading = false;
 
-  private readonly chartContainer = viewChild<ElementRef<HTMLDivElement>>('chartContainer');
-  private chart: CanvasJS.Chart | null = null;
+  chartOptions: AgCartesianChartOptions = { series: [] };
 
   ngOnChanges(): void {
-    Promise.resolve().then(() => this.renderChart());
+    this.buildOptions();
   }
 
-  ngOnDestroy(): void {
-    this.chart?.destroy();
-    this.chart = null;
-  }
+  private buildOptions(): void {
+    if (!this.distribution || this.distribution.total === 0) return;
 
-  private renderChart(): void {
-    const container = this.chartContainer()?.nativeElement;
-    if (!container || !this.distribution || this.distribution.total === 0) return;
-
-    const dataPoints = Object.values(this.distribution.details).map((info) => ({
-      label: info.memberName,
-      y: info.taskCount,
+    const data = Object.values(this.distribution.details).map((info) => ({
+      member: info.memberName,
+      tasks: info.taskCount,
     }));
 
-    if (this.chart) {
-      this.chart.options.data![0].dataPoints = dataPoints;
-      this.chart.render();
-      return;
-    }
-
-    this.chart = new CanvasJS.Chart(container, {
-      animationEnabled: true,
-      backgroundColor: 'transparent',
-      title: { text: '' },
-      axisX: {
-        labelFontSize: 12,
-        labelFontColor: '#64748b',
-        tickLength: 0,
-        lineThickness: 0,
-      },
-      axisY: {
-        gridThickness: 1,
-        gridColor: '#f1f5f9',
-        labelFontSize: 11,
-        labelFontColor: '#94a3b8',
-        lineThickness: 0,
-        tickLength: 0,
-        minimum: 0,
-      },
-      toolTip: {
-        borderThickness: 0,
-        cornerRadius: 8,
-        content: '{label}: <strong>{y} tarea(s)</strong>',
-      },
-      data: [
+    this.chartOptions = {
+      data,
+      background: { visible: false },
+      padding: { top: 8, right: 8, bottom: 8, left: 8 },
+      series: [
         {
-          type: 'column',
-          color: '#4A90E2',
-          cornerRadiusY: 6,
-          dataPoints,
+          type: 'bar',
+          xKey: 'member',
+          yKey: 'tasks',
+          yName: 'Tareas',
+          fill: '#4A90E2',
+          strokeWidth: 0,
+          cornerRadius: 4,
         },
       ],
-    });
-
-    this.chart.render();
+      axes: {
+        x: {
+          type: 'category',
+          position: 'bottom',
+          line: { enabled: false },
+          tick: { enabled: false },
+          label: { fontSize: 12, color: '#64748b' },
+        },
+        y: {
+          type: 'number',
+          position: 'left',
+          line: { enabled: false },
+          tick: { enabled: false },
+          label: { fontSize: 11, color: '#94a3b8' },
+        },
+      },
+      legend: { enabled: false },
+    };
   }
 }

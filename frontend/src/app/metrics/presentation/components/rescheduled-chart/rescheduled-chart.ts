@@ -1,17 +1,12 @@
-import {
-  Component,
-  ElementRef,
-  Input,
-  OnChanges,
-  OnDestroy,
-  viewChild,
-} from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
+import { AgCharts } from 'ag-charts-angular';
+import { AgCartesianChartOptions } from 'ag-charts-community';
 import { RescheduledTasks } from '../../../domain/model/rescheduled-tasks.model';
-import * as CanvasJS from '@canvasjs/charts';
 
 @Component({
   selector: 'app-rescheduled-chart',
   standalone: true,
+  imports: [AgCharts],
   template: `
     @if (loading) {
       <div class="flex h-56 items-center justify-center text-sm text-slate-400">Cargando...</div>
@@ -22,86 +17,67 @@ import * as CanvasJS from '@canvasjs/charts';
         <span class="text-slate-500">Total de tareas: <strong class="text-slate-800">{{ rescheduled.total }}</strong></span>
         <span class="text-slate-500">Reprogramadas: <strong class="text-[#E24A4A]">{{ rescheduled.rescheduled }}</strong></span>
       </div>
-      <div #chartContainer class="h-48 w-full"></div>
+      <ag-charts [options]="chartOptions" class="block h-48 w-full"></ag-charts>
     }
   `,
 })
-export class RescheduledChart implements OnChanges, OnDestroy {
+export class RescheduledChart implements OnChanges {
   @Input() rescheduled: RescheduledTasks | null = null;
   @Input() loading = false;
 
-  private readonly chartContainer = viewChild<ElementRef<HTMLDivElement>>('chartContainer');
-  private chart: CanvasJS.Chart | null = null;
+  chartOptions: AgCartesianChartOptions = { series: [] };
 
   ngOnChanges(): void {
-    Promise.resolve().then(() => this.renderChart());
+    this.buildOptions();
   }
 
-  ngOnDestroy(): void {
-    this.chart?.destroy();
-    this.chart = null;
-  }
-
-  private renderChart(): void {
-    const container = this.chartContainer()?.nativeElement;
-    if (!container || !this.rescheduled || this.rescheduled.total === 0) return;
+  private buildOptions(): void {
+    if (!this.rescheduled || this.rescheduled.total === 0) return;
 
     const { total, rescheduled } = this.rescheduled;
-    const onTime = total - rescheduled;
-
-    const dataPoints = [
-      { x: new Date(2000, 0, 1), y: onTime },
-      { x: new Date(2000, 0, 2), y: rescheduled },
+    const data = [
+      { estado: 'En plazo', tareas: total - rescheduled },
+      { estado: 'Reprogramadas', tareas: rescheduled },
     ];
 
-    if (this.chart) {
-      this.chart.options.data![0].dataPoints = dataPoints;
-      this.chart.render();
-      return;
-    }
-
-    this.chart = new CanvasJS.Chart(container, {
-      animationEnabled: true,
-      backgroundColor: 'transparent',
-      title: { text: '' },
-      axisX: {
-        labelFormatter: (e: { value: number | Date }) => {
-          const d = e.value instanceof Date ? e.value : new Date(e.value);
-          return d.getDate() === 1 ? 'En plazo' : 'Reprogramadas';
-        },
-        labelFontSize: 12,
-        labelFontColor: '#64748b',
-        tickLength: 0,
-        lineThickness: 0,
-        interval: 1,
-        intervalType: 'day',
-      },
-      axisY: {
-        gridThickness: 1,
-        gridColor: '#f1f5f9',
-        labelFontSize: 11,
-        labelFontColor: '#94a3b8',
-        lineThickness: 0,
-        tickLength: 0,
-        minimum: 0,
-      },
-      toolTip: {
-        borderThickness: 0,
-        cornerRadius: 8,
-        content: '{label}: <strong>{y} tarea(s)</strong>',
-      },
-      data: [
+    this.chartOptions = {
+      data,
+      background: { visible: false },
+      padding: { top: 8, right: 8, bottom: 8, left: 8 },
+      series: [
         {
           type: 'line',
-          lineThickness: 3,
-          markerType: 'circle',
-          markerSize: 10,
-          color: '#4A90E2',
-          dataPoints,
+          xKey: 'estado',
+          yKey: 'tareas',
+          yName: 'Tareas',
+          stroke: '#4A90E2',
+          strokeWidth: 3,
+          marker: {
+            enabled: true,
+            size: 8,
+            fill: '#4A90E2',
+            stroke: '#fff',
+            strokeWidth: 2,
+          },
         },
       ],
-    });
-
-    this.chart.render();
+      axes: {
+        x: {
+          type: 'category',
+          position: 'bottom',
+          line: { enabled: false },
+          tick: { enabled: false },
+          label: { fontSize: 12, color: '#64748b' },
+        },
+        y: {
+          type: 'number',
+          position: 'left',
+          line: { enabled: false },
+          tick: { enabled: false },
+          label: { fontSize: 11, color: '#94a3b8' },
+        },
+      },
+      legend: { enabled: false },
+    };
   }
 }
