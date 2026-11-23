@@ -1,10 +1,10 @@
 import {
-  AfterViewInit,
   Component,
   ElementRef,
   Input,
   OnChanges,
-  ViewChild,
+  OnDestroy,
+  viewChild,
 } from '@angular/core';
 import { TaskDistribution } from '../../../domain/model/task-distribution.model';
 import * as CanvasJS from '@canvasjs/charts';
@@ -22,26 +22,25 @@ import * as CanvasJS from '@canvasjs/charts';
     }
   `,
 })
-export class TaskDistributionChart implements AfterViewInit, OnChanges {
+export class TaskDistributionChart implements OnChanges, OnDestroy {
   @Input() distribution: TaskDistribution | null = null;
   @Input() loading = false;
 
-  @ViewChild('chartContainer') chartContainer?: ElementRef<HTMLDivElement>;
-
+  private readonly chartContainer = viewChild<ElementRef<HTMLDivElement>>('chartContainer');
   private chart: CanvasJS.Chart | null = null;
 
-  ngAfterViewInit(): void {
-    this.renderChart();
+  ngOnChanges(): void {
+    Promise.resolve().then(() => this.renderChart());
   }
 
-  ngOnChanges(): void {
-    if (this.chartContainer) {
-      this.renderChart();
-    }
+  ngOnDestroy(): void {
+    this.chart?.destroy();
+    this.chart = null;
   }
 
   private renderChart(): void {
-    if (!this.chartContainer || !this.distribution || this.distribution.total === 0) return;
+    const container = this.chartContainer()?.nativeElement;
+    if (!container || !this.distribution || this.distribution.total === 0) return;
 
     const dataPoints = Object.values(this.distribution.details).map((info) => ({
       label: info.memberName,
@@ -54,7 +53,7 @@ export class TaskDistributionChart implements AfterViewInit, OnChanges {
       return;
     }
 
-    this.chart = new CanvasJS.Chart(this.chartContainer.nativeElement, {
+    this.chart = new CanvasJS.Chart(container, {
       animationEnabled: true,
       backgroundColor: 'transparent',
       title: { text: '' },

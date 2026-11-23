@@ -1,10 +1,10 @@
 import {
-  AfterViewInit,
   Component,
   ElementRef,
   Input,
   OnChanges,
-  ViewChild,
+  OnDestroy,
+  viewChild,
 } from '@angular/core';
 import { RescheduledTasks } from '../../../domain/model/rescheduled-tasks.model';
 import * as CanvasJS from '@canvasjs/charts';
@@ -26,26 +26,25 @@ import * as CanvasJS from '@canvasjs/charts';
     }
   `,
 })
-export class RescheduledChart implements AfterViewInit, OnChanges {
+export class RescheduledChart implements OnChanges, OnDestroy {
   @Input() rescheduled: RescheduledTasks | null = null;
   @Input() loading = false;
 
-  @ViewChild('chartContainer') chartContainer?: ElementRef<HTMLDivElement>;
-
+  private readonly chartContainer = viewChild<ElementRef<HTMLDivElement>>('chartContainer');
   private chart: CanvasJS.Chart | null = null;
 
-  ngAfterViewInit(): void {
-    this.renderChart();
+  ngOnChanges(): void {
+    Promise.resolve().then(() => this.renderChart());
   }
 
-  ngOnChanges(): void {
-    if (this.chartContainer) {
-      this.renderChart();
-    }
+  ngOnDestroy(): void {
+    this.chart?.destroy();
+    this.chart = null;
   }
 
   private renderChart(): void {
-    if (!this.chartContainer || !this.rescheduled || this.rescheduled.total === 0) return;
+    const container = this.chartContainer()?.nativeElement;
+    if (!container || !this.rescheduled || this.rescheduled.total === 0) return;
 
     const { total, rescheduled } = this.rescheduled;
     const onTime = total - rescheduled;
@@ -61,7 +60,7 @@ export class RescheduledChart implements AfterViewInit, OnChanges {
       return;
     }
 
-    this.chart = new CanvasJS.Chart(this.chartContainer.nativeElement, {
+    this.chart = new CanvasJS.Chart(container, {
       animationEnabled: true,
       backgroundColor: 'transparent',
       title: { text: '' },
