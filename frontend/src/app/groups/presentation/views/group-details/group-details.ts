@@ -15,6 +15,9 @@ import { SubscriptionsStore } from '../../../../subscriptions/application/subscr
 import { MetricsStore } from '../../../../metrics/application/metrics.store';
 import { TaskDistributionChart } from '../../../../metrics/presentation/components/task-distribution-chart/task-distribution-chart';
 import { RescheduledChart } from '../../../../metrics/presentation/components/rescheduled-chart/rescheduled-chart';
+import { ModuleRegistry, AllCommunityModule } from 'ag-charts-community'
+
+ModuleRegistry.registerModules([AllCommunityModule])
 
 @Component({
   selector: 'app-group-details',
