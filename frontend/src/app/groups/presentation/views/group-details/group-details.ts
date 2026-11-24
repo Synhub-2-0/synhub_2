@@ -14,15 +14,26 @@ import { InvitationsStore } from '../../../../invitations/application/invitation
 import { SubscriptionsStore } from '../../../../subscriptions/application/subscriptions.store';
 import { MetricsStore } from '../../../../metrics/application/metrics.store';
 import { TaskDistributionChart } from '../../../../metrics/presentation/components/task-distribution-chart/task-distribution-chart';
+import { MemberWorkloadBreakdown } from '../../../../metrics/presentation/components/member-workload-breakdown/member-workload-breakdown';
 import { RescheduledChart } from '../../../../metrics/presentation/components/rescheduled-chart/rescheduled-chart';
-import { ModuleRegistry, AllCommunityModule } from 'ag-charts-community'
+import { ModuleRegistry, AllCommunityModule } from 'ag-charts-community';
 
-ModuleRegistry.registerModules([AllCommunityModule])
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-group-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, RouterLink, TaskList, TaskBoard, TaskDistributionChart, RescheduledChart],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatIconModule,
+    RouterLink,
+    TaskList,
+    TaskBoard,
+    TaskDistributionChart,
+    MemberWorkloadBreakdown,
+    RescheduledChart,
+  ],
   templateUrl: './group-details.html',
   styleUrl: './group-details.css',
 })
@@ -65,7 +76,7 @@ export class GroupDetails implements OnInit {
   readonly hasFreeSlot = computed(() => this.subscriptionsStore.subscription()?.hasFreeSlot ?? true);
 
   // Members are a separate resource (GET /groups/{id}/members), cached by group in the store.
-  private readonly groupMembers = computed(() => this.groupsStore.membersByGroup()[this.groupId()] ?? []);
+  readonly groupMembers = computed(() => this.groupsStore.membersByGroup()[this.groupId()] ?? []);
   readonly leader = computed(() => this.groupMembers().find(user => user.roleInGroup === 'GROUP_LEADER')?.user);
   readonly members = computed(() => this.groupMembers()
     .filter(user => user.roleInGroup === 'GROUP_MEMBER')
@@ -131,7 +142,10 @@ export class GroupDetails implements OnInit {
     this.pendingRemoval.set(null);
     if (!target || !this.groupId()) return;
     if (target === 'self') this.groupsStore.leaveGroup(this.groupId(), this.router);
-    else this.groupsStore.removeMember(this.groupId(), target, () => this.tasksStore.loadTasksByGroup(this.groupId()));
+    else this.groupsStore.removeMember(this.groupId(), target, () => {
+      this.tasksStore.loadTasksByGroup(this.groupId());
+      this.metricsStore.loadGroupDistribution(this.groupId());
+    });
   }
 
   cancelInvitation(invitationId: number): void {
@@ -167,6 +181,8 @@ export class GroupDetails implements OnInit {
     this.tasksStore.updateTaskStatus(event.taskId, event.status);
   }
 
-  onDeleteTask(taskId: number): void { this.tasksStore.deleteTask(taskId); }
+  onDeleteTask(taskId: number): void {
+    this.tasksStore.deleteTask(taskId, () => this.metricsStore.loadGroupDistribution(this.groupId()));
+  }
   goBack(): void { this.router.navigate([this.isLeaderView() ? '/groups/leader' : '/groups/member']).then(); }
 }
