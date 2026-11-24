@@ -159,6 +159,13 @@
             [distribution]="metricsStore.distribution()"
             [loading]="metricsStore.loadingDistribution()">
           </app-task-distribution-chart>
+          <app-member-workload-breakdown
+            [members]="groupMembers()"
+            [tasks]="tasksStore.tasks()"
+            [totalTasks]="metricsStore.distribution() ? tasksStore.tasks().length : null"
+            [loading]="groupsStore.membersLoading() || tasksStore.loading() || metricsStore.loadingDistribution()"
+            [error]="tasksStore.error()">
+          </app-member-workload-breakdown>
         </div>
       </section>
       <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
