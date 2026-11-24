@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { MetricsApiEndpoint } from './metrics.api-endpoint';
 import { TaskDistribution } from '../domain/model/task-distribution.model';
+import { TaskOverview } from '../domain/model/task-overview.model';
 import { RescheduledTasks } from '../domain/model/rescheduled-tasks.model';
 
 @Injectable({ providedIn: 'root' })
@@ -12,6 +13,10 @@ export class MetricsApi {
   constructor() {
     const http = inject(HttpClient);
     this.endpoint = new MetricsApiEndpoint(http);
+  }
+
+  getGroupOverview(groupId: number): Observable<TaskOverview> {
+    return this.endpoint.getGroupOverview(groupId);
   }
 
   getGroupDistribution(groupId: number): Observable<TaskDistribution> {

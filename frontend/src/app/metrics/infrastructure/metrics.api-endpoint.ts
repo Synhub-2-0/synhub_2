@@ -2,8 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { TaskDistribution } from '../domain/model/task-distribution.model';
+import { TaskOverview } from '../domain/model/task-overview.model';
 import { RescheduledTasks } from '../domain/model/rescheduled-tasks.model';
-import { TaskDistributionResource, RescheduledTasksResource } from './metrics.response';
+import { TaskDistributionResource, TaskOverviewResource, RescheduledTasksResource } from './metrics.response';
 import { MetricsAssembler } from './metrics.assembler';
 
 const metricsBaseUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderMetricsEndpointPath}`;
@@ -12,6 +13,16 @@ export class MetricsApiEndpoint {
   private readonly assembler = new MetricsAssembler();
 
   constructor(private readonly http: HttpClient) {}
+
+  /** GET /api/v1/metrics/groups/{groupId}/overview */
+  getGroupOverview(groupId: number): Observable<TaskOverview> {
+    return this.http
+      .get<TaskOverviewResource>(`${metricsBaseUrl}/groups/${groupId}/overview`)
+      .pipe(
+        map((resource) => this.assembler.toTaskOverview(resource)),
+        catchError(this.handleError(`Failed to fetch overview for group ${groupId}`)),
+      );
+  }
 
   /** GET /api/v1/metrics/groups/{groupId}/distribution */
   getGroupDistribution(groupId: number): Observable<TaskDistribution> {

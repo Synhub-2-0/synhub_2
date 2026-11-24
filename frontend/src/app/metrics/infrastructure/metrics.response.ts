@@ -9,6 +9,12 @@ export interface TaskDistributionResource {
   details: Record<string, MemberTaskInfoResource>;
 }
 
+export interface TaskOverviewResource {
+  type: string;
+  value: number;
+  details: Record<string, number>;
+}
+
 export interface RescheduledTasksResource {
   type: string;
   value: number;
