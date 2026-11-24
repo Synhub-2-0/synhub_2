@@ -7,15 +7,7 @@ import { TaskDistribution } from '../../../domain/model/task-distribution.model'
   selector: 'app-task-distribution-chart',
   standalone: true,
   imports: [AgCharts],
-  template: `
-    @if (loading) {
-      <div class="flex h-56 items-center justify-center text-sm text-slate-400">Cargando...</div>
-    } @else if (!distribution || distribution.total === 0) {
-      <div class="flex h-56 items-center justify-center text-sm text-slate-400">Sin datos de distribución.</div>
-    } @else {
-      <ag-charts [options]="chartOptions" class="block h-56 w-full"></ag-charts>
-    }
-  `,
+  templateUrl: './task-distribution-chart.html',
 })
 export class TaskDistributionChart implements OnChanges {
   @Input() distribution: TaskDistribution | null = null;

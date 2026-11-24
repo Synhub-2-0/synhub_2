@@ -7,19 +7,7 @@ import { RescheduledTasks } from '../../../domain/model/rescheduled-tasks.model'
   selector: 'app-rescheduled-chart',
   standalone: true,
   imports: [AgCharts],
-  template: `
-    @if (loading) {
-      <div class="flex h-56 items-center justify-center text-sm text-slate-400">Cargando...</div>
-    } @else if (!rescheduled || rescheduled.total === 0) {
-      <div class="flex h-56 items-center justify-center text-sm text-slate-400">Sin tareas registradas aún.</div>
-    } @else {
-      <div class="mb-3 flex items-center gap-6 text-sm">
-        <span class="text-slate-500">Total de tareas: <strong class="text-slate-800">{{ rescheduled.total }}</strong></span>
-        <span class="text-slate-500">Reprogramadas: <strong class="text-[#E24A4A]">{{ rescheduled.rescheduled }}</strong></span>
-      </div>
-      <ag-charts [options]="chartOptions" class="block h-48 w-full"></ag-charts>
-    }
-  `,
+  templateUrl: './rescheduled-chart.html',
 })
 export class RescheduledChart implements OnChanges {
   @Input() rescheduled: RescheduledTasks | null = null;
