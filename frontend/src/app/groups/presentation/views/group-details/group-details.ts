@@ -16,6 +16,7 @@ import { MetricsStore } from '../../../../metrics/application/metrics.store';
 import { TaskDistributionChart } from '../../../../metrics/presentation/components/task-distribution-chart/task-distribution-chart';
 import { MemberWorkloadBreakdown } from '../../../../metrics/presentation/components/member-workload-breakdown/member-workload-breakdown';
 import { RescheduledChart } from '../../../../metrics/presentation/components/rescheduled-chart/rescheduled-chart';
+import { TaskStatusOverview } from '../../../../metrics/presentation/components/task-status-overview/task-status-overview';
 import { ModuleRegistry, AllCommunityModule } from 'ag-charts-community';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -33,6 +34,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
     TaskDistributionChart,
     MemberWorkloadBreakdown,
     RescheduledChart,
+    TaskStatusOverview,
   ],
   templateUrl: './group-details.html',
   styleUrl: './group-details.css',
@@ -92,6 +94,7 @@ export class GroupDetails implements OnInit {
         if (!this.subscriptionsStore.subscription()) this.subscriptionsStore.load();
         this.metricsStore.loadGroupDistribution(id);
         this.metricsStore.loadGroupRescheduled(id);
+        this.metricsStore.loadGroupOverview(id);
       }
     });
   }
@@ -145,6 +148,7 @@ export class GroupDetails implements OnInit {
     else this.groupsStore.removeMember(this.groupId(), target, () => {
       this.tasksStore.loadTasksByGroup(this.groupId());
       this.metricsStore.loadGroupDistribution(this.groupId());
+      this.metricsStore.loadGroupOverview(this.groupId());
     });
   }
 
@@ -178,11 +182,15 @@ export class GroupDetails implements OnInit {
   }
 
   onChangeTaskStatus(event: { taskId: number; status: TaskStatus }): void {
-    this.tasksStore.updateTaskStatus(event.taskId, event.status);
+    this.tasksStore.updateTaskStatus(event.taskId, event.status, () =>
+      this.metricsStore.loadGroupOverview(this.groupId()));
   }
 
   onDeleteTask(taskId: number): void {
-    this.tasksStore.deleteTask(taskId, () => this.metricsStore.loadGroupDistribution(this.groupId()));
+    this.tasksStore.deleteTask(taskId, () => {
+      this.metricsStore.loadGroupDistribution(this.groupId());
+      this.metricsStore.loadGroupOverview(this.groupId());
+    });
   }
   goBack(): void { this.router.navigate([this.isLeaderView() ? '/groups/leader' : '/groups/member']).then(); }
 }

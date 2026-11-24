@@ -147,4 +147,16 @@ describe('GroupDetails', () => {
     expect(deleteTask).toHaveBeenCalledWith(7, expect.any(Function));
     expect(loadDistribution).toHaveBeenCalledWith(10);
   });
+
+  it('refresca el resumen de estado cuando cambia el estado de una tarea', () => {
+    const updateStatus = vi.spyOn(component.tasksStore, 'updateTaskStatus').mockImplementation(() => undefined);
+    const loadOverview = vi.spyOn(component.metricsStore, 'loadGroupOverview').mockImplementation(() => undefined);
+    component.groupId.set(10);
+
+    component.onChangeTaskStatus({ taskId: 7, status: 'DONE' });
+    updateStatus.mock.calls[0][2]?.();
+
+    expect(updateStatus).toHaveBeenCalledWith(7, 'DONE', expect.any(Function));
+    expect(loadOverview).toHaveBeenCalledWith(10);
+  });
 });
