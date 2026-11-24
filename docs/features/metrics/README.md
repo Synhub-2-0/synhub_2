@@ -11,11 +11,11 @@ Cálculos sobre las tareas de un grupo o de un integrante: distribución por est
 
 ## Estado actual
 
-Las 11 consultas se exponen en `/api/v1/metrics` (decisión HUM-05): métricas del grupo para sus integrantes, métricas de un integrante para el líder o para él mismo, y métricas de una tarea para los integrantes de su grupo. Ver [backend](backend/README.md). El informe de IA (`GroupReportQueryServiceImpl`, feature [ai](../ai/README.md)) usa el resumen por estado y las tareas reagendadas del grupo. En detalles del grupo, el líder ve la distribución de tareas en un donut y el desglose de carga por integrante.
+Las 11 consultas se exponen en `/api/v1/metrics` (decisión HUM-05): métricas del grupo para sus integrantes, métricas de un integrante para el líder o para él mismo, y métricas de una tarea para los integrantes de su grupo. Ver [backend](backend/README.md). El informe de IA (`GroupReportQueryServiceImpl`, feature [ai](../ai/README.md)) usa el resumen por estado y las tareas reagendadas del grupo. En detalles del grupo, el líder ve la distribución de tareas en un donut, el desglose de carga por integrante y el estado general de las tareas.
 
 ## Comunicación frontend ↔ backend
 
-En detalles del grupo, `GroupDetails` usa `MetricsStore` para consultar la distribución (`GET /metrics/groups/{groupId}/distribution`) y presenta el reparto con AG Charts. Debajo, el desglose incluye a todos los integrantes, su cantidad asignada y porcentaje sobre el total, además de tareas vencidas, en curso y terminadas. Los estados `IN_PROGRESS`, `ON_HOLD` y `COMPLETED` se agrupan como "en curso"; el desglose usa las tareas del grupo ya cargadas por `TasksStore`, sin hacer una petición por integrante.
+En detalles del grupo, `GroupDetails` usa `MetricsStore` para consultar distribución (`GET /metrics/groups/{groupId}/distribution`), estado general (`GET /metrics/groups/{groupId}/overview`) y tareas reprogramadas. La tarjeta de estado muestra el total, conteos y porcentajes por estado con un donut y su leyenda. `DONE` se muestra como terminada, `EXPIRED` como vencida/en riesgo, `IN_PROGRESS` como en progreso, y `ON_HOLD` junto con `COMPLETED` (pendiente de revisión) como en espera. El desglose de carga incluye a todos los integrantes, su cantidad asignada y porcentaje sobre el total, además de tareas vencidas, en curso y terminadas; reutiliza las tareas del grupo ya cargadas por `TasksStore`.
 
 ## Propiedad compartida
 

@@ -38,8 +38,8 @@ Registro de **todo lo que necesita casos de prueba** en el monorepo y del **esta
 |---|---|---|---|---|
 | Backend: pruebas unitarias | 27 | 22 | 5 | 0 |
 | Backend: API (integración) | 6 | 5 | 1 | 0 |
-| Frontend | 39 | 35 | 4 | 0 |
-| **Total** | **72** | **62** | **10** | **0** |
+| Frontend | 41 | 37 | 4 | 0 |
+| **Total** | **74** | **64** | **10** | **0** |
 
 ---
 
@@ -132,12 +132,14 @@ Vitest + Angular TestBed. Ruta base: `frontend/src/app/`.
 | F-GRP-02 | `groups/infrastructure/groups.assembler.spec.ts` | `GroupsAssembler` | resource ↔ entidad · `memberCount` por defecto 0 · miembros con `Profile` · comando → request · `locked` viaja con el grupo y por defecto es `false` | — | LISTO |
 | F-GRP-03 | `groups/infrastructure/groups.api.spec.ts` | `GroupsApi` (HTTP) | `/groups/user/role?groupRole=` · POST `/groups` · PUT `/groups/{id}` · GET members · POST `/groups/join` · DELETE `/groups/{id}/members/{userId}` · eliminar hace `DELETE /groups/{id}` con mensajes en español para 403, 404 y 500 · activar hace `POST /groups/{id}/activate` · mensajes en español para 403, 409 y 500 | — | LISTO |
 | F-GRP-04 | `groups/presentation/**` previos | Vistas y componentes de groups | (7 previos) se crean | — | PREVIO |
-| F-GRP-05 | `groups/presentation/views/member-groups/member-groups.spec.ts`, `group-details/group-details.spec.ts` | `MemberGroups`, `GroupDetails` | unirse con código desde el panel · código vacío no llama · quitar integrante con confirmación y refresco de tareas/métricas · salir del grupo · `GroupCard`: insignia "Bloqueado", "Activar grupo" con cupo y deshabilitado sin él, no abre el detalle · `GroupDetails`: solo lectura (`canManage`), activar, eliminar el grupo con confirmación (también bloqueado; un integrante no), refrescar distribución al borrar una tarea | HUM-05 | LISTO |
+| F-GRP-05 | `groups/presentation/views/member-groups/member-groups.spec.ts`, `group-details/group-details.spec.ts` | `MemberGroups`, `GroupDetails` | unirse con código desde el panel · código vacío no llama · quitar integrante con confirmación y refresco de tareas/métricas · salir del grupo · `GroupCard`: insignia "Bloqueado", "Activar grupo" con cupo y deshabilitado sin él, no abre el detalle · `GroupDetails`: solo lectura (`canManage`), activar, eliminar el grupo con confirmación (también bloqueado; un integrante no), refrescar distribución al borrar una tarea y resumen al cambiar estados | HUM-05 | LISTO |
 | F-SUB-01 | `subscriptions/infrastructure/subscriptions.api.spec.ts`, `subscriptions.assembler.spec.ts` | `SubscriptionsApi` (HTTP), `SubscriptionsAssembler` | `GET`/`PUT /subscriptions/me` · el cuerpo solo lleva el plan y los grupos elegidos, sin datos de pago · mensajes en español para 400, 409 y 500 · recurso → entidad con su catálogo, `isUnlimited` y `hasFreeSlot` | — | LISTO |
 | F-SUB-02 | `subscriptions/application/subscriptions.store.spec.ts` | `SubscriptionsStore` | carga mi plan · error → vacío y toast · cambiar de plan actualiza, avisa y llama a `onSuccess` · un error no cambia el plan · se vacía al cerrar sesión | — | LISTO |
 | F-SUB-03 | `subscriptions/presentation/views/plans/plans.spec.ts` | `Plans` | carga plan y grupos · catálogo con precios simulados · pago simulado · subir no pide elegir · bajar pide elegir exactamente N (sugiere los más antiguos, no deja pasarse, los bloqueados no se ofrecen) · cancelar · avisa los bloqueados | — | LISTO |
 | F-MET-01 | `metrics/presentation/components/task-distribution-chart/task-distribution-chart.spec.ts` | `TaskDistributionChart` | configura donut con reparto por integrante y total · limpia la gráfica sin tareas asignadas | — | LISTO |
 | F-MET-02 | `metrics/presentation/components/member-workload-breakdown/member-workload-breakdown.spec.ts` | `MemberWorkloadBreakdown` | calcula cantidades y porcentajes exactos · incluye integrantes sin tareas · agrupa `IN_PROGRESS`, `ON_HOLD` y `COMPLETED` como en curso · sin tareas no produce porcentajes inválidos | — | LISTO |
+| F-MET-03 | `metrics/infrastructure/metrics.api-endpoint.spec.ts` | `MetricsApiEndpoint.getGroupOverview` | GET `/metrics/groups/{groupId}/overview` · transforma el recurso a `TaskOverview` | — | LISTO |
+| F-MET-04 | `metrics/presentation/components/task-status-overview/task-status-overview.spec.ts` | `TaskStatusOverview` | agrupa estados y calcula porcentajes · donut · estado vacío · limpia datos al reiniciarse | — | LISTO |
 | F-INV-01 | `invitations/application/invitations.store.spec.ts` | `InvitationsStore` | inviteByUsername busca el perfil y crea la invitación · username vacío no llama · usuario inexistente → error amable · accept quita de la lista y llama a onSuccess · decline quita de las dos listas · loadInvitations y loadGroupInvitations | — | LISTO |
 | F-INV-02 | `invitations/infrastructure/invitations.api.spec.ts` | `InvitationsApi` (HTTP) | URLs: POST, accept, DELETE, `/user`, `/group?groupId=` · mensajes en español para 403, 404 y 409 (ya miembro / pendiente) | — | LISTO |
 | F-INV-03 | `invitations/infrastructure/invitations.assembler.spec.ts` | `InvitationsAssembler` | resource → entidad (`user` → `profile`) · comando → request | — | LISTO |
