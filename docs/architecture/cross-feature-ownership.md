@@ -38,7 +38,7 @@ En orden de prioridad:
 
 | Pieza | Carpeta | Stores / APIs que usa | **Dueño** | Interacciones documentadas en |
 |---|---|---|---|---|
-| `GroupDetails` | groups | Groups, Tasks, Invitations, Iam | **groups** | [tasks](../features/tasks/frontend/README.md), [invitations](../features/invitations/frontend/README.md) |
+| `GroupDetails` | groups | Groups, Tasks, Invitations, Iam, Metrics | **groups** | [tasks](../features/tasks/frontend/README.md), [invitations](../features/invitations/frontend/README.md), [metrics](../features/metrics/frontend/README.md) |
 | `MemberGroups` | groups | Groups, Invitations | **groups** | [invitations](../features/invitations/frontend/README.md) |
 | `InvitationsStore` | invitations | `InvitationsApi`, `IamApi`, `IamStore` | **invitations** | [iam](../features/iam/README.md) (búsqueda por username) |
 | `InvitationsAssembler` | invitations | `GroupsAssembler`, `ProfilesAssembler` | **invitations** | — |

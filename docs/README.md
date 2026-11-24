@@ -41,7 +41,7 @@ docs/
 | **requests** | Entregas de tareas y validación por el líder | `/requests`, `/requests/task`, `/requests/group` | `requests` | `requests/` | [README](features/requests/README.md) · [backend](features/requests/backend/README.md) · [frontend](features/requests/frontend/README.md) |
 | **subscriptions** | Planes Gratis/Pro/Ultra, límite de grupos liderados activos y grupos bloqueados (pago simulado) | `/subscriptions` | `subscriptions` (el bloqueo, en `groups`) | `subscriptions/` | [README](features/subscriptions/README.md) · [backend](features/subscriptions/backend/README.md) · [frontend](features/subscriptions/frontend/README.md) |
 | **ai** | Clasificación de tareas e informe de grupo con Bedrock | `/ai` | `ai` | `ai/` | [README](features/ai/README.md) · [backend](features/ai/backend/README.md) · [frontend](features/ai/frontend/README.md) |
-| **metrics** | Cálculos de productividad (API base de solo lectura; los usa el informe de IA) | `/metrics` | `metrics` | — | [README](features/metrics/README.md) · [backend](features/metrics/backend/README.md) · [frontend](features/metrics/frontend/README.md) |
+| **metrics** | Cálculos de productividad; informe de IA y distribución de carga en detalles del grupo | `/metrics` | `metrics` | `metrics/` | [README](features/metrics/README.md) · [backend](features/metrics/backend/README.md) · [frontend](features/metrics/frontend/README.md) |
 | **tour** | Video de recorrido por capítulos | — | — | `tour/` | [README](features/tour/README.md) · [backend](features/tour/backend/README.md) · [frontend](features/tour/frontend/README.md) |
 
 ⚠ = el recurso REST y el código del backend pertenecen a contextos distintos.

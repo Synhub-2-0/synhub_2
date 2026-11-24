@@ -10,9 +10,9 @@ Carpeta: [`frontend/src/app/groups`](../../../../frontend/src/app/groups)
 |---|---|---|---|
 | `/groups/leader` | `LeaderGroups` | `GroupsStore` | Lista los grupos donde soy líder. `?create=true` abre el modal para crear un grupo (`addGroup`). |
 | `/groups/member` | `MemberGroups` | `GroupsStore`, `InvitationsStore` | Lista los grupos donde soy miembro. El panel "Unirse a un grupo" acepta un **código** o muestra **mis invitaciones pendientes** (aceptar / rechazar). |
-| `/groups/:id` | `GroupDetails` | `GroupsStore`, `TasksStore`, `InvitationsStore`, `IamStore` | Detalle del grupo (el rol sale de `leaderGroups`, no de la URL; secciones con el mismo diseño de tarjeta y un botón que lleva a Gestión de tareas): integrantes, edición (líder), quitar integrantes con confirmación (líder) o salir del grupo (miembro), tablero de tareas del grupo, invitaciones enviadas e invitación por nombre de usuario. |
+| `/groups/:id` | `GroupDetails` | `GroupsStore`, `TasksStore`, `InvitationsStore`, `IamStore`, `MetricsStore` | Detalle del grupo (el rol sale de `leaderGroups`, no de la URL; secciones con el mismo diseño de tarjeta y un botón que lleva a Gestión de tareas): integrantes, edición (líder), quitar integrantes con confirmación (líder) o salir del grupo (miembro), tablero de tareas, distribución de carga con donut y desglose de tareas por integrante para el líder, invitaciones enviadas e invitación por nombre de usuario. |
 
-Componentes: `GroupList` → `GroupCard` (navega al detalle o a las tareas del grupo con `queryParams`), `NoGroupLeader` y `NoGroupMember` (estados vacíos). `GroupDetails` reutiliza `TaskBoard` y `TaskList` de [tasks](../../tasks/frontend/README.md).
+Componentes: `GroupList` → `GroupCard` (navega al detalle o a las tareas del grupo con `queryParams`), `NoGroupLeader` y `NoGroupMember` (estados vacíos). `GroupDetails` reutiliza `TaskBoard` y `TaskList` de [tasks](../../tasks/frontend/README.md) y los componentes de métricas de [metrics](../../metrics/frontend/README.md).
 
 ## Estado: `GroupsStore` (`application/groups.store.ts`)
 
@@ -57,6 +57,8 @@ Los errores se muestran con `ToastStore` (shared).
 
 - `GroupsAssembler` → `ProfilesAssembler` ([iam](../../iam/frontend/README.md)).
 - `GroupDetails` → `TasksStore` ([tasks](../../tasks/frontend/README.md)) e `InvitationsStore` ([invitations](../../invitations/frontend/README.md)).
+- La distribución de carga en `GroupDetails` → `MetricsStore` y componentes de [metrics](../../metrics/frontend/README.md); las tareas y los integrantes los proveen `TasksStore` y `GroupsStore`.
+- Al borrar una tarea o quitar un integrante desde `GroupDetails`, se recargan las métricas y tareas para mantener actualizado el desglose.
 - `GroupsStore` lo consumen `Home`, `LeaderTasks`, `MemberTasks`, `TaskForm` y `Validations`, que necesitan saber en qué grupos lidera o participa el usuario.
 
 ## Pruebas
