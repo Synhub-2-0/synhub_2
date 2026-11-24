@@ -1,0 +1,48 @@
+@if (loading) {
+  <div class="flex min-h-56 items-center justify-center text-sm text-slate-400" role="status">Cargando estado de tareas...</div>
+} @else if (error || !overview) {
+  <div class="flex min-h-56 items-center justify-center text-sm text-rose-600" role="alert">
+    {{ error || 'No se pudo cargar el estado de las tareas.' }}
+  </div>
+} @else {
+  <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <p class="text-[11px] text-slate-400">Total tareas</p>
+      <p class="mt-1 text-lg font-bold text-slate-800">{{ total }}</p>
+    </div>
+    @for (state of states.slice(0, 3); track state.key) {
+      <div class="rounded-xl border p-3" [style.border-color]="state.color + '33'" [style.background-color]="state.color + '0A'">
+        <p class="truncate text-[11px]" [style.color]="state.color">{{ state.label }}</p>
+        <p class="mt-1 text-lg font-bold" [style.color]="state.color">
+          {{ state.count }}
+          <span class="text-[10px] font-medium">({{ state.percentage | number:'1.0-1' }}%)</span>
+        </p>
+      </div>
+    }
+  </div>
+
+  <div class="mt-4 flex min-h-36 flex-col items-center gap-4 rounded-xl bg-slate-50 p-4 sm:flex-row sm:gap-6">
+    @if (total > 0) {
+      <ag-charts [options]="chartOptions" class="block h-32 w-full shrink-0 sm:w-32"></ag-charts>
+    } @else {
+      <div class="flex h-32 w-full shrink-0 items-center justify-center text-xs text-slate-400 sm:w-32">
+        Sin tareas aún
+      </div>
+    }
+
+    <ul class="w-full space-y-2" aria-label="Leyenda del estado de las tareas">
+      @for (state of states; track state.key) {
+        <li class="flex items-center gap-2 text-xs">
+          <span class="h-2 w-2 shrink-0 rounded-full" [style.background-color]="state.color" aria-hidden="true"></span>
+          <span class="min-w-0 flex-1 text-slate-700">{{ state.label }}</span>
+          <span class="shrink-0 text-right font-semibold text-slate-700">
+            {{ state.count }} {{ state.count === 1 ? 'tarea' : 'tareas' }}
+          </span>
+          <span class="w-12 shrink-0 rounded bg-white px-1.5 py-0.5 text-center text-[10px] text-slate-500">
+            {{ state.percentage | number:'1.0-1' }}%
+          </span>
+        </li>
+      }
+    </ul>
+  </div>
+}
