@@ -262,7 +262,7 @@ export class TasksStore {
   }
 
   /** DELETE /api/v1/tasks/{taskId} */
-  deleteTask(id: number): void {
+  deleteTask(id: number, onSuccess?: () => void): void {
     if (this.isDone(id)) {
       this.setError(this.lockedMessage);
       return;
@@ -280,6 +280,7 @@ export class TasksStore {
           }
           this.loadingSignal.set(false);
           this.errorSignal.set(null);
+          onSuccess?.();
         },
         error: (err) => {
           this.setError(this.formatError(err, 'Failed to delete task'));

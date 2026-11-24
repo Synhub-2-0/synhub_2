@@ -146,13 +146,15 @@ describe('TasksStore', () => {
     api.updateTaskStatus.mockReturnValue(of(task(1, 'COMPLETED')));
     api.updateTask.mockReturnValue(of(new Task({ ...{ id: 2, title: 'Editada', description: '', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date(), status: 'IN_PROGRESS' } })));
     api.deleteTask.mockReturnValue(of(undefined));
+    const onDeleted = vi.fn();
 
     store.addTask(new CreateTaskCommand('T2', '', new Date(), 5, 10));
     store.updateTaskStatus(1, 'COMPLETED');
     store.updateTask(2, new UpdateTaskCommand('Editada', '', new Date(), 5));
-    store.deleteTask(1);
+    store.deleteTask(1, onDeleted);
 
     expect(store.tasks().map((t) => [t.id, t.title])).toEqual([[2, 'Editada']]);
+    expect(onDeleted).toHaveBeenCalledOnce();
   });
 
   it('applyUpdatedTask reemplaza la tarea en la lista y en la seleccionada', () => {
