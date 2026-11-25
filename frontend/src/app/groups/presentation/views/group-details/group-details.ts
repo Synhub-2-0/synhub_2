@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,6 +17,8 @@ import { TaskDistributionChart } from '../../../../metrics/presentation/componen
 import { MemberWorkloadBreakdown } from '../../../../metrics/presentation/components/member-workload-breakdown/member-workload-breakdown';
 import { RescheduledChart } from '../../../../metrics/presentation/components/rescheduled-chart/rescheduled-chart';
 import { TaskStatusOverview } from '../../../../metrics/presentation/components/task-status-overview/task-status-overview';
+import { DeadlineComplianceReport } from '../../../../metrics/presentation/components/deadline-compliance-report/deadline-compliance-report';
+import { MemberProductivity, MemberOption } from '../../../../metrics/presentation/components/member-productivity/member-productivity';
 import { ModuleRegistry, AllCommunityModule } from 'ag-charts-community';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -35,6 +37,8 @@ ModuleRegistry.registerModules([AllCommunityModule]);
     MemberWorkloadBreakdown,
     RescheduledChart,
     TaskStatusOverview,
+    DeadlineComplianceReport,
+    MemberProductivity,
   ],
   templateUrl: './group-details.html',
   styleUrl: './group-details.css',
@@ -84,6 +88,17 @@ export class GroupDetails implements OnInit {
     .filter(user => user.roleInGroup === 'GROUP_MEMBER')
     .map(user => user.user));
 
+  /** El líder elige a cualquier integrante del grupo; un integrante solo se ve a sí mismo (US-012). */
+  readonly memberOptions = computed<MemberOption[]>(() => {
+    if (this.isLeaderView()) {
+      return this.groupMembers().map(({ user }) => ({ id: user.id, name: `${user.name} ${user.surname}`.trim() }));
+    }
+    const me = this.iamStore.currentUserId();
+    const profile = this.iamStore.currentProfile();
+    return me ? [{ id: me, name: profile ? `${profile.name} ${profile.surname}`.trim() : 'Yo' }] : [];
+  });
+  readonly selectedMemberId = signal<number | null>(null);
+
   constructor() {
     // Only the leader sees the invitations: they load once the groups say this user leads the group.
     effect(() => {
@@ -95,8 +110,34 @@ export class GroupDetails implements OnInit {
         this.metricsStore.loadGroupDistribution(id);
         this.metricsStore.loadGroupRescheduled(id);
         this.metricsStore.loadGroupOverview(id);
+        this.metricsStore.loadGroupAvgCompletion(id);
       }
     });
+
+    // Cada integrante ve su productividad; por defecto, la propia.
+    effect(() => {
+      const id = this.groupId();
+      const me = this.iamStore.currentUserId();
+      if (id && me) untracked(() => this.selectMember(this.selectedMemberId() ?? me));
+    });
+  }
+
+  selectMember(userId: number): void {
+    this.selectedMemberId.set(userId);
+    this.metricsStore.loadMember(this.groupId(), userId);
+  }
+
+  /** Recarga las métricas del grupo (líder) y del integrante seleccionado tras cambiar tareas o integrantes. */
+  private refreshMetrics(): void {
+    const id = this.groupId();
+    if (this.isLeaderView()) {
+      this.metricsStore.loadGroupDistribution(id);
+      this.metricsStore.loadGroupRescheduled(id);
+      this.metricsStore.loadGroupOverview(id);
+      this.metricsStore.loadGroupAvgCompletion(id);
+    }
+    const memberId = this.selectedMemberId();
+    if (memberId) this.metricsStore.loadMember(id, memberId);
   }
 
   ngOnInit(): void {
@@ -147,8 +188,7 @@ export class GroupDetails implements OnInit {
     if (target === 'self') this.groupsStore.leaveGroup(this.groupId(), this.router);
     else this.groupsStore.removeMember(this.groupId(), target, () => {
       this.tasksStore.loadTasksByGroup(this.groupId());
-      this.metricsStore.loadGroupDistribution(this.groupId());
-      this.metricsStore.loadGroupOverview(this.groupId());
+      this.refreshMetrics();
     });
   }
 
@@ -182,15 +222,11 @@ export class GroupDetails implements OnInit {
   }
 
   onChangeTaskStatus(event: { taskId: number; status: TaskStatus }): void {
-    this.tasksStore.updateTaskStatus(event.taskId, event.status, () =>
-      this.metricsStore.loadGroupOverview(this.groupId()));
+    this.tasksStore.updateTaskStatus(event.taskId, event.status, () => this.refreshMetrics());
   }
 
   onDeleteTask(taskId: number): void {
-    this.tasksStore.deleteTask(taskId, () => {
-      this.metricsStore.loadGroupDistribution(this.groupId());
-      this.metricsStore.loadGroupOverview(this.groupId());
-    });
+    this.tasksStore.deleteTask(taskId, () => this.refreshMetrics());
   }
   goBack(): void { this.router.navigate([this.isLeaderView() ? '/groups/leader' : '/groups/member']).then(); }
 }

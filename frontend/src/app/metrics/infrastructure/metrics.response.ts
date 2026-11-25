@@ -15,6 +15,12 @@ export interface TaskOverviewResource {
   details: Record<string, number>;
 }
 
+export interface AvgCompletionTimeResource {
+  type: string;
+  value: number;
+  details: { completedTasks: number };
+}
+
 export interface RescheduledTasksResource {
   type: string;
   value: number;

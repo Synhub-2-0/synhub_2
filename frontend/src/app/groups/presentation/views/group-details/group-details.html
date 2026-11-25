@@ -181,6 +181,19 @@
       </section>
       <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Métricas</span>
+        <h2 class="mt-1 text-xl font-extrabold text-slate-900">Cumplimiento de plazos</h2>
+        <p class="mt-1 text-sm text-slate-500">Cuánto tardan en cerrarse las tareas del grupo y cuántas han superado su fecha límite.</p>
+        <div class="mt-4">
+          <app-deadline-compliance-report
+            [avgCompletion]="metricsStore.avgCompletion()"
+            [overview]="metricsStore.overview()"
+            [loading]="metricsStore.loadingAvgCompletion() || metricsStore.loadingOverview()"
+            [error]="tasksStore.error()">
+          </app-deadline-compliance-report>
+        </div>
+      </section>
+      <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+        <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Métricas</span>
         <h2 class="mt-1 text-xl font-extrabold text-slate-900">Estado general de las tareas</h2>
         <p class="mt-1 text-sm text-slate-500">Visualización global del estado de todas las tareas del grupo seleccionado.</p>
         <div class="mt-4">
@@ -192,6 +205,20 @@
         </div>
       </section>
     }
+    <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+      <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Métricas</span>
+      <h2 class="mt-1 text-xl font-extrabold text-slate-900">Productividad individual</h2>
+      <p class="mt-1 text-sm text-slate-500">{{ isLeaderView() ? 'Desempeño de cada integrante del grupo.' : 'Tu desempeño en este grupo.' }}</p>
+      <div class="mt-4">
+        <app-member-productivity
+          [options]="memberOptions()"
+          [selectedId]="selectedMemberId()"
+          [metrics]="metricsStore.member()"
+          [loading]="metricsStore.loadingMember()"
+          (memberSelected)="selectMember($event)">
+        </app-member-productivity>
+      </div>
+    </section>
     <section class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
       <span class="text-xs font-bold uppercase tracking-widest text-[#4A90E2]">Flujo de trabajo</span>
       <h2 class="mt-1 text-xl font-extrabold text-slate-900">Tablero Kanban de Tareas</h2>

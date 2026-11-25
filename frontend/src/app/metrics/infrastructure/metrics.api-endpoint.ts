@@ -4,7 +4,13 @@ import { environment } from '../../../environments/environment';
 import { TaskDistribution } from '../domain/model/task-distribution.model';
 import { TaskOverview } from '../domain/model/task-overview.model';
 import { RescheduledTasks } from '../domain/model/rescheduled-tasks.model';
-import { TaskDistributionResource, TaskOverviewResource, RescheduledTasksResource } from './metrics.response';
+import { AvgCompletionTime } from '../domain/model/avg-completion-time.model';
+import {
+  AvgCompletionTimeResource,
+  TaskDistributionResource,
+  TaskOverviewResource,
+  RescheduledTasksResource,
+} from './metrics.response';
 import { MetricsAssembler } from './metrics.assembler';
 
 const metricsBaseUrl = `${environment.platformProviderApiBaseUrl}${environment.platformProviderMetricsEndpointPath}`;
@@ -41,6 +47,46 @@ export class MetricsApiEndpoint {
       .pipe(
         map((resource) => this.assembler.toRescheduledTasks(resource)),
         catchError(this.handleError(`Failed to fetch rescheduled tasks for group ${groupId}`)),
+      );
+  }
+
+  /** GET /api/v1/metrics/groups/{groupId}/avg-completion-time */
+  getGroupAvgCompletionTime(groupId: number): Observable<AvgCompletionTime> {
+    return this.http
+      .get<AvgCompletionTimeResource>(`${metricsBaseUrl}/groups/${groupId}/avg-completion-time`)
+      .pipe(
+        map((resource) => this.assembler.toAvgCompletionTime(resource)),
+        catchError(this.handleError(`Failed to fetch average completion time for group ${groupId}`)),
+      );
+  }
+
+  /** GET /api/v1/metrics/groups/{groupId}/members/{userId}/overview (líder o propio integrante) */
+  getMemberOverview(groupId: number, userId: number): Observable<TaskOverview> {
+    return this.http
+      .get<TaskOverviewResource>(`${metricsBaseUrl}/groups/${groupId}/members/${userId}/overview`)
+      .pipe(
+        map((resource) => this.assembler.toTaskOverview(resource)),
+        catchError(this.handleError(`Failed to fetch overview for member ${userId}`)),
+      );
+  }
+
+  /** GET /api/v1/metrics/groups/{groupId}/members/{userId}/rescheduled */
+  getMemberRescheduled(groupId: number, userId: number): Observable<RescheduledTasks> {
+    return this.http
+      .get<RescheduledTasksResource>(`${metricsBaseUrl}/groups/${groupId}/members/${userId}/rescheduled`)
+      .pipe(
+        map((resource) => this.assembler.toRescheduledTasks(resource)),
+        catchError(this.handleError(`Failed to fetch rescheduled tasks for member ${userId}`)),
+      );
+  }
+
+  /** GET /api/v1/metrics/groups/{groupId}/members/{userId}/avg-completion-time */
+  getMemberAvgCompletionTime(groupId: number, userId: number): Observable<AvgCompletionTime> {
+    return this.http
+      .get<AvgCompletionTimeResource>(`${metricsBaseUrl}/groups/${groupId}/members/${userId}/avg-completion-time`)
+      .pipe(
+        map((resource) => this.assembler.toAvgCompletionTime(resource)),
+        catchError(this.handleError(`Failed to fetch average completion time for member ${userId}`)),
       );
   }
 
