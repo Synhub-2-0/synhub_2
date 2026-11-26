@@ -106,7 +106,7 @@ Columna **Consumidor**: método del frontend que hace la petición ("—" = la w
 
 | Método | Ruta | Backend | Frontend |
 |---|---|---|---|
-| GET | `/metrics/groups/{groupId}/{overview\|distribution\|rescheduled\|avg-completion-time}` | `MetricsController` | — |
+| GET | `/metrics/groups/{groupId}/{overview\|distribution\|rescheduled\|avg-completion-time}` | `MetricsController` | `MetricsApiEndpoint` (overview, distribution y rescheduled en detalles del grupo) |
 | GET | `/metrics/groups/{groupId}/members/{userId}/{overview\|distribution\|rescheduled\|avg-completion-time\|time-passed}` | `MetricsController` | — |
 | GET | `/metrics/tasks/{taskId}/{time-passed\|duration}` | `MetricsController` | — |
 

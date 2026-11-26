@@ -1,0 +1,7 @@
+@if (loading) {
+  <div class="flex h-56 items-center justify-center text-sm text-slate-400">Cargando...</div>
+} @else if (!distribution || !distribution.total || !hasData) {
+  <div class="flex h-56 items-center justify-center text-sm text-slate-400">Sin datos de distribución.</div>
+} @else {
+  <ag-charts [options]="chartOptions" class="block h-56 w-full"></ag-charts>
+}

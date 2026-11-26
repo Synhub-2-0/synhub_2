@@ -1,0 +1,29 @@
+@if (loading) {
+  <div class="flex min-h-40 items-center justify-center text-sm text-slate-400" role="status">Cargando cumplimiento de plazos...</div>
+} @else if (error || !avgCompletion || !overview) {
+  <div class="flex min-h-40 items-center justify-center text-sm text-rose-600" role="alert">
+    {{ error || 'No se pudo cargar el cumplimiento de plazos.' }}
+  </div>
+} @else {
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+      <p class="text-[11px] text-blue-700">Tiempo promedio de cierre</p>
+      <p class="mt-1 text-2xl font-bold text-blue-800">
+        {{ avgCompletion.days | number:'1.1-1' }} <span class="text-xs font-medium">días</span>
+      </p>
+      <p class="mt-1 text-[11px] text-slate-500">Tareas terminadas (DONE) con su tiempo activo</p>
+    </div>
+    <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+      <p class="text-[11px] text-emerald-700">Tareas terminadas</p>
+      <p class="mt-1 text-2xl font-bold text-emerald-800">{{ avgCompletion.completedTasks }}</p>
+      <p class="mt-1 text-[11px] text-slate-500">de {{ total }} tareas del grupo</p>
+    </div>
+    <div class="rounded-xl border border-rose-100 bg-rose-50/60 p-4">
+      <p class="text-[11px] text-rose-700">Vencidas / en riesgo</p>
+      <p class="mt-1 text-2xl font-bold text-rose-800">
+        {{ expired }} <span class="text-xs font-medium">({{ expiredPercentage | number:'1.0-1' }}%)</span>
+      </p>
+      <p class="mt-1 text-[11px] text-slate-500">Tareas que superaron su fecha límite</p>
+    </div>
+  </div>
+}

@@ -22,6 +22,11 @@ describe('GroupDetails', () => {
     await fixture.whenStable();
   });
 
+  /** Marca al usuario como líder del grupo dado (las métricas del grupo solo se refrescan para el líder). */
+  function asLeader(groupId: number): void {
+    vi.spyOn(TestBed.inject(GroupsStore), 'leaderGroups').mockImplementation(signal([{ id: groupId }] as never[]) as never);
+  }
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -109,6 +114,9 @@ describe('GroupDetails', () => {
   it('HUM-05: quitar a un integrante pide confirmación', () => {
     const store = TestBed.inject(GroupsStore);
     const remove = vi.spyOn(store, 'removeMember').mockImplementation(() => undefined);
+    const loadTasks = vi.spyOn(component.tasksStore, 'loadTasksByGroup').mockImplementation(() => undefined);
+    const loadDistribution = vi.spyOn(component.metricsStore, 'loadGroupDistribution').mockImplementation(() => undefined);
+    asLeader(10);
     component.groupId.set(10);
 
     component.askRemoval(2);
@@ -120,6 +128,9 @@ describe('GroupDetails', () => {
     component.confirmRemoval();
     expect(remove).toHaveBeenCalledWith(10, 2, expect.any(Function));
     expect(component.pendingRemoval()).toBeNull();
+    remove.mock.calls[0][2]?.();
+    expect(loadTasks).toHaveBeenCalledWith(10);
+    expect(loadDistribution).toHaveBeenCalledWith(10);
   });
 
   it('HUM-05: salir del grupo', () => {
@@ -129,5 +140,45 @@ describe('GroupDetails', () => {
     component.askRemoval('self');
     component.confirmRemoval();
     expect(leave).toHaveBeenCalledWith(10, expect.anything());
+  });
+
+  it('refresca la distribución cuando se elimina una tarea del grupo', () => {
+    const deleteTask = vi.spyOn(component.tasksStore, 'deleteTask').mockImplementation(() => undefined);
+    const loadDistribution = vi.spyOn(component.metricsStore, 'loadGroupDistribution').mockImplementation(() => undefined);
+    asLeader(10);
+    component.groupId.set(10);
+
+    component.onDeleteTask(7);
+    deleteTask.mock.calls[0][1]?.();
+
+    expect(deleteTask).toHaveBeenCalledWith(7, expect.any(Function));
+    expect(loadDistribution).toHaveBeenCalledWith(10);
+  });
+
+  it('refresca el resumen de estado cuando cambia el estado de una tarea', () => {
+    const updateStatus = vi.spyOn(component.tasksStore, 'updateTaskStatus').mockImplementation(() => undefined);
+    const loadOverview = vi.spyOn(component.metricsStore, 'loadGroupOverview').mockImplementation(() => undefined);
+    asLeader(10);
+    component.groupId.set(10);
+
+    component.onChangeTaskStatus({ taskId: 7, status: 'DONE' });
+    updateStatus.mock.calls[0][2]?.();
+
+    expect(updateStatus).toHaveBeenCalledWith(7, 'DONE', expect.any(Function));
+    expect(loadOverview).toHaveBeenCalledWith(10);
+  });
+
+  it('un integrante solo refresca su propia productividad, no las métricas del grupo', () => {
+    const updateStatus = vi.spyOn(component.tasksStore, 'updateTaskStatus').mockImplementation(() => undefined);
+    const loadOverview = vi.spyOn(component.metricsStore, 'loadGroupOverview').mockImplementation(() => undefined);
+    const loadMember = vi.spyOn(component.metricsStore, 'loadMember').mockImplementation(() => undefined);
+    component.groupId.set(10);
+    component.selectedMemberId.set(5);
+
+    component.onChangeTaskStatus({ taskId: 7, status: 'DONE' });
+    updateStatus.mock.calls[0][2]?.();
+
+    expect(loadOverview).not.toHaveBeenCalled();
+    expect(loadMember).toHaveBeenCalledWith(10, 5);
   });
 });

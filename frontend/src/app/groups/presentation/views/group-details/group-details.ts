@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,11 +12,34 @@ import { TaskBoard } from '../../../../tasks/presentation/components/task-board/
 import { IamStore } from '../../../../iam/application/iam.store';
 import { InvitationsStore } from '../../../../invitations/application/invitations.store';
 import { SubscriptionsStore } from '../../../../subscriptions/application/subscriptions.store';
+import { MetricsStore } from '../../../../metrics/application/metrics.store';
+import { TaskDistributionChart } from '../../../../metrics/presentation/components/task-distribution-chart/task-distribution-chart';
+import { MemberWorkloadBreakdown } from '../../../../metrics/presentation/components/member-workload-breakdown/member-workload-breakdown';
+import { RescheduledChart } from '../../../../metrics/presentation/components/rescheduled-chart/rescheduled-chart';
+import { TaskStatusOverview } from '../../../../metrics/presentation/components/task-status-overview/task-status-overview';
+import { DeadlineComplianceReport } from '../../../../metrics/presentation/components/deadline-compliance-report/deadline-compliance-report';
+import { MemberProductivity, MemberOption } from '../../../../metrics/presentation/components/member-productivity/member-productivity';
+import { ModuleRegistry, AllCommunityModule } from 'ag-charts-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-group-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, RouterLink, TaskList, TaskBoard],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatIconModule,
+    RouterLink,
+    TaskList,
+    TaskBoard,
+    TaskDistributionChart,
+    MemberWorkloadBreakdown,
+    RescheduledChart,
+    TaskStatusOverview,
+    DeadlineComplianceReport,
+    MemberProductivity,
+  ],
   templateUrl: './group-details.html',
   styleUrl: './group-details.css',
 })
@@ -28,6 +51,7 @@ export class GroupDetails implements OnInit {
   readonly invitationsStore = inject(InvitationsStore);
   readonly iamStore = inject(IamStore);
   readonly subscriptionsStore = inject(SubscriptionsStore);
+  readonly metricsStore = inject(MetricsStore);
   readonly groupId = signal(0);
   readonly isEditing = signal(false);
   editName = '';
@@ -58,11 +82,22 @@ export class GroupDetails implements OnInit {
   readonly hasFreeSlot = computed(() => this.subscriptionsStore.subscription()?.hasFreeSlot ?? true);
 
   // Members are a separate resource (GET /groups/{id}/members), cached by group in the store.
-  private readonly groupMembers = computed(() => this.groupsStore.membersByGroup()[this.groupId()] ?? []);
+  readonly groupMembers = computed(() => this.groupsStore.membersByGroup()[this.groupId()] ?? []);
   readonly leader = computed(() => this.groupMembers().find(user => user.roleInGroup === 'GROUP_LEADER')?.user);
   readonly members = computed(() => this.groupMembers()
     .filter(user => user.roleInGroup === 'GROUP_MEMBER')
     .map(user => user.user));
+
+  /** El líder elige a cualquier integrante del grupo; un integrante solo se ve a sí mismo (US-012). */
+  readonly memberOptions = computed<MemberOption[]>(() => {
+    if (this.isLeaderView()) {
+      return this.groupMembers().map(({ user }) => ({ id: user.id, name: `${user.name} ${user.surname}`.trim() }));
+    }
+    const me = this.iamStore.currentUserId();
+    const profile = this.iamStore.currentProfile();
+    return me ? [{ id: me, name: profile ? `${profile.name} ${profile.surname}`.trim() : 'Yo' }] : [];
+  });
+  readonly selectedMemberId = signal<number | null>(null);
 
   constructor() {
     // Only the leader sees the invitations: they load once the groups say this user leads the group.
@@ -72,8 +107,37 @@ export class GroupDetails implements OnInit {
         this.invitationsStore.clearError();
         this.invitationsStore.loadGroupInvitations(id);
         if (!this.subscriptionsStore.subscription()) this.subscriptionsStore.load();
+        this.metricsStore.loadGroupDistribution(id);
+        this.metricsStore.loadGroupRescheduled(id);
+        this.metricsStore.loadGroupOverview(id);
+        this.metricsStore.loadGroupAvgCompletion(id);
       }
     });
+
+    // Cada integrante ve su productividad; por defecto, la propia.
+    effect(() => {
+      const id = this.groupId();
+      const me = this.iamStore.currentUserId();
+      if (id && me) untracked(() => this.selectMember(this.selectedMemberId() ?? me));
+    });
+  }
+
+  selectMember(userId: number): void {
+    this.selectedMemberId.set(userId);
+    this.metricsStore.loadMember(this.groupId(), userId);
+  }
+
+  /** Recarga las métricas del grupo (líder) y del integrante seleccionado tras cambiar tareas o integrantes. */
+  private refreshMetrics(): void {
+    const id = this.groupId();
+    if (this.isLeaderView()) {
+      this.metricsStore.loadGroupDistribution(id);
+      this.metricsStore.loadGroupRescheduled(id);
+      this.metricsStore.loadGroupOverview(id);
+      this.metricsStore.loadGroupAvgCompletion(id);
+    }
+    const memberId = this.selectedMemberId();
+    if (memberId) this.metricsStore.loadMember(id, memberId);
   }
 
   ngOnInit(): void {
@@ -122,7 +186,10 @@ export class GroupDetails implements OnInit {
     this.pendingRemoval.set(null);
     if (!target || !this.groupId()) return;
     if (target === 'self') this.groupsStore.leaveGroup(this.groupId(), this.router);
-    else this.groupsStore.removeMember(this.groupId(), target, () => this.tasksStore.loadTasksByGroup(this.groupId()));
+    else this.groupsStore.removeMember(this.groupId(), target, () => {
+      this.tasksStore.loadTasksByGroup(this.groupId());
+      this.refreshMetrics();
+    });
   }
 
   cancelInvitation(invitationId: number): void {
@@ -155,9 +222,11 @@ export class GroupDetails implements OnInit {
   }
 
   onChangeTaskStatus(event: { taskId: number; status: TaskStatus }): void {
-    this.tasksStore.updateTaskStatus(event.taskId, event.status);
+    this.tasksStore.updateTaskStatus(event.taskId, event.status, () => this.refreshMetrics());
   }
 
-  onDeleteTask(taskId: number): void { this.tasksStore.deleteTask(taskId); }
+  onDeleteTask(taskId: number): void {
+    this.tasksStore.deleteTask(taskId, () => this.refreshMetrics());
+  }
   goBack(): void { this.router.navigate([this.isLeaderView() ? '/groups/leader' : '/groups/member']).then(); }
 }

@@ -1,0 +1,49 @@
+<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <label class="flex items-center gap-2 text-xs font-bold text-slate-600">
+    Integrante
+    <select name="memberProductivity" [ngModel]="selectedId" (ngModelChange)="select($event)"
+      [disabled]="options.length <= 1"
+      class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[#4A90E2] disabled:opacity-70">
+      @for (option of options; track option.id) {
+        <option [ngValue]="option.id">{{ option.name }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+@if (loading) {
+  <div class="flex min-h-40 items-center justify-center text-sm text-slate-400" role="status">Cargando productividad...</div>
+} @else if (error || !metrics) {
+  <div class="flex min-h-40 items-center justify-center text-sm text-rose-600" role="alert">
+    {{ error || 'Elige un integrante para ver su productividad.' }}
+  </div>
+} @else {
+  <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <p class="text-[11px] text-slate-400">Asignadas</p>
+      <p class="mt-1 text-lg font-bold text-slate-800">{{ metrics.overview.total }}</p>
+    </div>
+    <div class="rounded-xl border border-purple-100 bg-purple-50/60 p-3">
+      <p class="text-[11px] text-purple-700">Terminadas</p>
+      <p class="mt-1 text-lg font-bold text-purple-800">{{ done }}</p>
+    </div>
+    <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+      <p class="text-[11px] text-blue-700">En curso / en espera</p>
+      <p class="mt-1 text-lg font-bold text-blue-800">{{ inProgress }}</p>
+    </div>
+    <div class="rounded-xl border border-rose-100 bg-rose-50/60 p-3">
+      <p class="text-[11px] text-rose-700">Vencidas / en riesgo</p>
+      <p class="mt-1 text-lg font-bold text-rose-800">{{ expired }}</p>
+    </div>
+    <div class="rounded-xl border border-amber-100 bg-amber-50/60 p-3">
+      <p class="text-[11px] text-amber-700">Reagendados</p>
+      <p class="mt-1 text-lg font-bold text-amber-800">{{ metrics.rescheduled.rescheduled }}</p>
+    </div>
+    <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+      <p class="text-[11px] text-emerald-700">Cierre promedio</p>
+      <p class="mt-1 text-lg font-bold text-emerald-800">
+        {{ metrics.avgCompletion.days | number:'1.1-1' }} <span class="text-[10px] font-medium">días</span>
+      </p>
+    </div>
+  </div>
+}

@@ -196,7 +196,7 @@ export class TasksStore {
   }
 
   /** PUT /api/v1/tasks/{taskId}/status?status=... */
-  updateTaskStatus(taskId: number, status: TaskStatus): void {
+  updateTaskStatus(taskId: number, status: TaskStatus, onSuccess?: () => void): void {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.tasksApi
@@ -211,6 +211,7 @@ export class TasksStore {
             this.selectedTaskSignal.set(updatedTask);
           }
           this.loadingSignal.set(false);
+          onSuccess?.();
         },
         error: (err) => {
           this.setError(this.formatError(err, 'Failed to update task status'));
@@ -262,7 +263,7 @@ export class TasksStore {
   }
 
   /** DELETE /api/v1/tasks/{taskId} */
-  deleteTask(id: number): void {
+  deleteTask(id: number, onSuccess?: () => void): void {
     if (this.isDone(id)) {
       this.setError(this.lockedMessage);
       return;
@@ -280,6 +281,7 @@ export class TasksStore {
           }
           this.loadingSignal.set(false);
           this.errorSignal.set(null);
+          onSuccess?.();
         },
         error: (err) => {
           this.setError(this.formatError(err, 'Failed to delete task'));
