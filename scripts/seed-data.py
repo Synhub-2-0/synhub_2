@@ -7,7 +7,7 @@ Con el backend levantado (por ejemplo `.\\scripts\\run-backend.ps1`):
 Es idempotente: reutiliza usuarios, grupos, membresías y tareas que ya existen (las tareas se buscan por título
 dentro del grupo). Todos los usuarios usan la contraseña PASSWORD. Solo usa la biblioteca estándar.
 
-Usuarios (L = líder, M = miembro). `alexiel` ya debe existir:
+Usuarios (L = líder, M = miembro). Si `alexiel` no existe, se crea con PASSWORD:
 
     usuario          Desarrollo  Marketing  Diseño UX  Soporte  Finanzas  RRHH  Operaciones
     alexiel               M          M          L         L        M        M       L      -> líder y miembro, 7 grupos
@@ -27,7 +27,21 @@ Tareas: cada grupo trae tareas en todos los estados para probar el tablero y las
     expired       Fecha límite pasada: el planificador del backend la vence en <= 60 s y crea su request EXPIRED
                   (el líder solo puede reanudarla con una nueva fecha: en Validaciones o al mover la tarea en el tablero)
 
+    rejected_approved  Entrega rechazada (reagendado +1), reentregada y aprobada -> DONE
+    rejected_twice     Rechazada dos veces (reagendados +2) y aprobada a la tercera -> DONE
+
 "Soporte Técnico" tiene 24 tareas para probar la paginación (20 por página). Además deja invitaciones pendientes.
+
+Métricas (US-012, US-021): cada grupo trae además un historial de tareas terminadas, reagendadas y vencidas
+(HISTORY_TASKS). Como la API cierra esas tareas segundos después de crearlas, el "cierre promedio" saldría en 0 días:
+el último paso (seed_metrics_history) retrocede por SQL (`psql`, credenciales DATABASE_* del entorno o del `.env` de la
+raíz) la creación y el tiempo activo de las tareas DONE/COMPLETED y vencidas. Cada integrante tiene un ritmo distinto
+(MEMBER_PACE) para que la vista de productividad individual compare perfiles:
+
+    lucia.torres  rápida, sin vencidas      diego.paredes  lento, reagenda y vence
+    sofia.vega    media                     alexiel / maria.lopez  medios, con algún reagendado
+
+Si no hay `psql`, el paso se salta y lo avisa: el resto de los datos queda igual.
 
 Planes (suscripciones): primero se suben a PRO/ULTRA para poder cargar todos los grupos y, al final, `alexiel` baja a
 Gratis (2 grupos activos) conservando Diseño UX y Soporte Técnico: **Operaciones queda bloqueado** (solo lectura) con sus
@@ -40,8 +54,13 @@ tareas, para probar el bloqueo, "Activar grupo" y la pantalla "Mi plan".
     diego.paredes    Ultra        ninguno (sin límite)
     lucia.torres, sofia.vega      Gratis, sin grupos liderados
 """
+import glob
 import http.cookiejar
 import json
+import os
+import re
+import shutil
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -53,6 +72,7 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8080/api/v1'
 PASSWORD = 'hola1234'
 
 NEW_USERS = [
+    ('alexiel', 'Alexiel', 'Demo'),  # si ya existe, se reutiliza (con la contraseña PASSWORD)
     ('maria.lopez', 'María', 'López'),
     ('carlos.ruiz', 'Carlos', 'Ruiz'),
     ('lucia.torres', 'Lucía', 'Torres'),
@@ -147,6 +167,58 @@ TASKS['Soporte Técnico'] = [
     for i in range(1, 25)
 ]
 
+# Historial para las métricas: tareas cerradas (con su entrega aprobada), reagendadas y vencidas.
+# Mismo formato que TASKS; se agregan al final de cada grupo.
+HISTORY_TASKS = {
+    'Desarrollo Web': [
+        ('Diseñar esquema de base de datos', 'Modelo entidad-relación del portal.', 'diego.paredes', 200, (4, 'DATABASE', 'HIGH', 'Modelado'), 'rejected_twice'),
+        ('Configurar entorno de staging', 'Servidor de pruebas con datos anonimizados.', 'lucia.torres', 220, (3, 'CLOUD', 'MEDIUM', 'DevOps'), 'approved'),
+        ('Formulario de contacto', 'Validaciones y envío por correo.', 'lucia.torres', 180, (1, 'FRONTEND', 'LOW', 'UI'), 'approved'),
+        ('Integrar pasarela de pagos', 'Cobros con tarjeta y webhooks de confirmación.', 'alexiel', 260, (5, 'BACKEND', 'HIGH', 'Pagos'), 'rejected_approved'),
+        ('Corregir bugs del sprint 3', 'Cerrar los bugs abiertos del último sprint.', 'alexiel', 150, (2, 'QA', 'MEDIUM', 'Bugs'), 'approved'),
+        ('Página de preguntas frecuentes', 'Sección FAQ con buscador.', 'diego.paredes', -72, (1, 'FRONTEND', 'LOW', 'Contenido'), 'expired'),
+        ('Auditoría de rendimiento', 'Lighthouse y tiempos de respuesta de la API.', 'diego.paredes', -30, (3, 'QA', 'MEDIUM', 'Rendimiento'), 'expired'),
+    ],
+    'Marketing Digital': [
+        ('Campaña de email', 'Secuencia de bienvenida para nuevos suscriptores.', 'sofia.vega', 200, (2, 'DESIGN', 'MEDIUM', 'Email'), 'approved'),
+        ('Reporte trimestral de marca', 'Alcance, interacción y sentimiento del trimestre.', 'alexiel', 240, (3, 'GENERAL', 'MEDIUM', 'Reporte'), 'rejected_approved'),
+        ('SEO on-page', 'Títulos, metadescripciones y enlaces internos.', 'maria.lopez', 170, (2, 'FRONTEND', 'LOW', 'SEO'), 'approved'),
+        ('Video promocional', 'Guion y edición de un video de 30 segundos.', 'sofia.vega', -96, (4, 'DESIGN', 'HIGH', 'Video'), 'expired'),
+    ],
+    'Diseño UX': [
+        ('Mapa de empatía', 'Síntesis de las entrevistas por perfil.', 'sofia.vega', 190, (2, 'DESIGN', 'MEDIUM', 'Research'), 'approved'),
+        ('Wireframes del checkout', 'Flujo de pago en baja fidelidad.', 'lucia.torres', 210, (3, 'DESIGN', 'HIGH', 'Wireframes'), 'rejected_approved'),
+        ('Guía de iconografía', 'Estilo, grilla y exportación de íconos.', 'diego.paredes', 230, (2, 'DESIGN', 'LOW', 'Íconos'), 'approved'),
+        ('Test de usabilidad', 'Sesiones moderadas con cinco usuarios.', 'lucia.torres', 160, (3, 'QA', 'MEDIUM', 'Usabilidad'), 'approved'),
+        ('Benchmark de competidores', 'Comparar los flujos de registro de tres competidores.', 'diego.paredes', -50, (2, 'GENERAL', 'LOW', 'Research'), 'expired'),
+    ],
+    'Soporte Técnico': [
+        (f'Ticket cerrado #{i:02d}', f'Incidencia {i} resuelta y confirmada por el cliente.',
+         _SUPPORT_ASSIGNEES[i % 4], 150 + 10 * i, (1 + i % 3, 'BACKEND', 'MEDIUM', 'Soporte'),
+         'rejected_approved' if i % 3 == 0 else 'approved')
+        for i in range(1, 7)
+    ] + [
+        ('Ticket vencido: caída del correo', 'El cliente reporta que no recibe correos.', 'diego.paredes', -20, (3, 'CLOUD', 'HIGH', 'Soporte'), 'expired'),
+        ('Ticket vencido: factura duplicada', 'Revisar el doble cobro reportado.', 'sofia.vega', -60, (2, 'DATABASE', 'MEDIUM', 'Soporte'), 'expired'),
+    ],
+    'Finanzas': [
+        ('Reporte de flujo de caja', 'Entradas y salidas del mes anterior.', 'diego.paredes', 200, (3, 'GENERAL', 'MEDIUM', 'Reporte'), 'rejected_approved'),
+        ('Pago a proveedores', 'Programar los pagos de la quincena.', 'alexiel', 160, (1, 'GENERAL', 'HIGH', 'Pagos'), 'approved'),
+        ('Declaración de impuestos', 'Preparar y presentar la declaración mensual.', 'diego.paredes', -40, (4, 'GENERAL', 'HIGH', 'Impuestos'), 'expired'),
+    ],
+    'Recursos Humanos': [
+        ('Publicar vacantes', 'Avisos en portales de empleo y LinkedIn.', 'sofia.vega', 180, (1, 'GENERAL', 'MEDIUM', 'Selección'), 'approved'),
+        ('Plan de capacitación', 'Cursos del semestre por área.', 'lucia.torres', 220, (3, 'DOCS', 'LOW', 'Capacitación'), 'approved'),
+        ('Actualizar reglamento interno', 'Incorporar la política de trabajo remoto.', 'alexiel', -36, (2, 'DOCS', 'MEDIUM', 'Políticas'), 'expired'),
+    ],
+}
+for _group, _tasks in HISTORY_TASKS.items():
+    TASKS[_group] = TASKS[_group] + _tasks
+
+# Ritmo de cada integrante (multiplica los días activos de sus tareas cerradas): menor es más rápido.
+MEMBER_PACE = {'lucia.torres': 0.6, 'alexiel': 0.9, 'sofia.vega': 1.0, 'carlos.ruiz': 1.0,
+               'maria.lopez': 1.1, 'diego.paredes': 1.6}
+
 
 class Client:
     def __init__(self, username):
@@ -178,7 +250,16 @@ class Client:
         self.id = body['id']
 
 
-REQUEST_STATES = ('submitted', 'approved', 'rejected', 'modification', 'modification_denied')
+REQUEST_STATES = ('submitted', 'approved', 'rejected', 'rejected_approved', 'rejected_twice',
+                  'modification', 'modification_denied')
+# Revisiones que recibe cada entrega sucesiva, por estado: un rechazo vuelve la tarea a En progreso (+1 reagendado).
+SUBMISSION_REVIEWS = {
+    'submitted': [None],
+    'approved': ['APPROVED'],
+    'rejected': ['REJECTED'],
+    'rejected_approved': ['REJECTED', 'APPROVED'],
+    'rejected_twice': ['REJECTED', 'REJECTED', 'APPROVED'],
+}
 
 
 def ok(status):
@@ -198,7 +279,6 @@ def seed_users(clients):
         else:
             sys.exit(f'Registro de {username} falló: {status} {body}')
         clients[username] = c
-    clients['alexiel'] = Client('alexiel')
     for c in clients.values():
         c.sign_in()
 
@@ -271,17 +351,20 @@ def apply_state(clients, leader, assignee, task, state):
         leader.call('PUT', f'/tasks/{tid}/status?status=ON_HOLD')
     elif state == 'completed':
         leader.call('PUT', f'/tasks/{tid}/status?status=COMPLETED')
-    elif state in ('submitted', 'approved', 'rejected'):
-        status, req = member.call('POST', '/requests',
-                                  {'taskId': tid, 'description': 'Entrega lista para revisión.', 'requestType': 'SUBMISSION'})
-        if not ok(status):
-            print(f'  ! entrega de "{task["title"]}": {status} {req}')
-            return
-        if state in ('approved', 'rejected'):
-            verdict = 'APPROVED' if state == 'approved' else 'REJECTED'
+    elif state in SUBMISSION_REVIEWS:
+        for attempt, verdict in enumerate(SUBMISSION_REVIEWS[state]):
+            text = 'Entrega lista para revisión.' if attempt == 0 else 'Corregí lo observado, va de nuevo.'
+            status, req = member.call('POST', '/requests',
+                                      {'taskId': tid, 'description': text, 'requestType': 'SUBMISSION'})
+            if not ok(status):
+                print(f'  ! entrega de "{task["title"]}": {status} {req}')
+                return
+            if verdict is None:
+                return
             status, body = leader.call('PUT', f'/requests/{req["id"]}/status/{verdict}')
             if not ok(status):
                 print(f'  ! revisión de "{task["title"]}": {status} {body}')
+                return
     elif state in ('modification', 'modification_denied'):
         # El backend deja la tarea en espera (su reloj se detiene) hasta que el líder la edite o la deniegue.
         status, req = member.call('POST', '/requests',
@@ -346,6 +429,107 @@ def seed_tasks(clients, groups):
         print(f'tareas {group_name}: {created} nuevas, {len(known)} ya existían')
 
 
+def database_settings():
+    """DATABASE_URL/USERNAME/PASSWORD del entorno o, si faltan, del `.env` de la raíz del repo (como run-backend.ps1)."""
+    values = {}
+    env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+    if os.path.exists(env_file):
+        with open(env_file, encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    values[key.strip()] = value.strip().strip('"')
+    get = lambda key, default: os.environ.get(key) or values.get(key) or default
+    url = get('DATABASE_URL', 'jdbc:postgresql://localhost:5432/postgres')
+    m = re.match(r'jdbc:postgresql://([^:/]+)(?::(\d+))?/([^?]+)', url)
+    if not m:
+        return None
+    return {'host': m.group(1), 'port': m.group(2) or '5432', 'db': m.group(3),
+            'user': get('DATABASE_USERNAME', 'postgres'), 'password': get('DATABASE_PASSWORD', 'admin')}
+
+
+def find_psql():
+    found = shutil.which('psql')
+    if found:
+        return found
+    candidates = sorted(glob.glob(r'C:\Program Files\PostgreSQL\*\bin\psql.exe'))
+    return candidates[-1] if candidates else None
+
+
+def seed_metrics_history():
+    """Retrocede en el tiempo las tareas cerradas y vencidas para que las métricas de plazos tengan valores reales.
+
+    Solo toca filas que aún no se retrocedieron (tiempo activo < 1 h o creadas después de su fecha límite): es idempotente.
+    - DONE/COMPLETED: días activos = (dificultad * 0.9 + id % 4 * 0.4) * ritmo del integrante; cerradas hace 1-9 días.
+    - Fecha límite pasada: creadas 3-7 días antes de vencer. Si ya están EXPIRED, el tiempo activo cubre hasta la fecha
+      límite; si el planificador aún no las venció, su reloj arranca en la creación y él lo cierra al vencerlas."""
+    psql, db = find_psql(), database_settings()
+    if not psql or not db:
+        print('\n! Historial de métricas omitido: no se encontró psql o DATABASE_URL no es de PostgreSQL.')
+        return
+    pace = ', '.join(f"('{u}', {p})" for u, p in MEMBER_PACE.items())
+    sql = f"""
+with pace(username, factor) as (values {pace}),
+closed as (
+    select t.id,
+           (coalesce(t.difficulty, 2) * 0.9 + (t.id % 4) * 0.4) * coalesce(pace.factor, 1) as active_days,
+           ((t.id % 9) + 1)::int as closed_days_ago
+    from tasks t
+    join group_profiles gp on gp.id = t.profile_id
+    join users u on u.id = gp.user_id
+    left join pace on pace.username = u.username
+    where t.status in ('DONE', 'COMPLETED') and t.time_passed < 3600000)
+update tasks t
+set time_passed = (c.active_days * 86400000)::bigint,
+    created_at  = now() - make_interval(secs => (c.active_days + c.closed_days_ago) * 86400),
+    updated_at  = now() - make_interval(days => c.closed_days_ago)
+from closed c where c.id = t.id;
+
+update tasks
+set created_at = due_date - make_interval(days => 3 + (id % 5)::int)
+where due_date < now() and created_at > due_date;
+
+update tasks
+set time_passed = extract(epoch from (due_date - created_at))::bigint * 1000
+where status = 'EXPIRED' and time_passed < 3600000;
+
+update tasks
+set active_since = created_at
+where status = 'IN_PROGRESS' and due_date < now() and active_since > due_date;
+
+select count(*) filter (where status in ('DONE', 'COMPLETED')) || ' cerradas, '
+       || count(*) filter (where due_date < now() and status <> 'DONE') || ' vencidas o por vencer'
+from tasks where deleted_at is null;
+"""
+    env = dict(os.environ, PGPASSWORD=db['password'], PGCLIENTENCODING='UTF8', LC_MESSAGES='C')
+    result = subprocess.run(
+        [psql, '-h', db['host'], '-p', db['port'], '-U', db['user'], '-d', db['db'], '-w', '-q', '-t', '-A',
+         '-v', 'ON_ERROR_STOP=1'],
+        input=sql, text=True, capture_output=True, env=env, encoding='utf-8', errors='replace')
+    if result.returncode != 0:
+        print(f'\n! Historial de métricas falló: {result.stderr.strip()}')
+        return
+    print(f'\nhistorial de métricas: {result.stdout.strip()} (base {db["db"]})')
+
+
+def metrics_summary(clients, groups):
+    print('\nMétricas por grupo (lo que ve el líder en el detalle del grupo):')
+    for name, group in groups.items():
+        leader = clients[next(g[2] for g in GROUPS if g[0] == name)]
+        _, avg = leader.call('GET', f'/metrics/groups/{group["id"]}/avg-completion-time')
+        _, overview = leader.call('GET', f'/metrics/groups/{group["id"]}/overview')
+        _, resched = leader.call('GET', f'/metrics/groups/{group["id"]}/rescheduled')
+        if not isinstance(avg, dict) or not isinstance(overview, dict):
+            print(f'  {name:18} (sin acceso: {avg})')
+            continue
+        total = overview.get('value', 0)
+        expired = overview.get('details', {}).get('EXPIRED', 0)
+        print(f'  {name:18} cierre promedio {avg["value"]:4.1f} d · terminadas {avg["details"].get("completedTasks", 0):2}'
+              f' · vencidas {expired}/{total} ({(expired / total * 100) if total else 0:.0f} %)'
+              f' · reagendados {resched.get("value", 0) if isinstance(resched, dict) else "?"}')
+
+
 def summary(clients, groups):
     print('\nResumen por usuario:')
     for username, c in clients.items():
@@ -381,8 +565,10 @@ def main():
     groups = seed_groups(clients)
     seed_invitations(clients, groups)
     seed_tasks(clients, groups)
+    seed_metrics_history()
     finish_plans(clients, groups)
     summary(clients, groups)
+    metrics_summary(clients, groups)
 
 
 main()
