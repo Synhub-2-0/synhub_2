@@ -11,12 +11,12 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.LinkedHashMap;
 
 /**
  * Métricas de tareas de un grupo o de un integrante dentro de un grupo.
@@ -33,7 +33,8 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     private final GroupQueryService groupQueryService;
 
     private static int countRescheduledTasks(List<Task> tasks) {
-        return (int) tasks.stream().filter(task -> task.getTimesRearranged() > 0).count();
+        return (int)
+                tasks.stream().filter(task -> task.getTimesRearranged() > 0).count();
     }
 
     public TaskMetricsQueryServiceImpl(TasksContextFacade tasksContextFacade, GroupQueryService groupQueryService) {
@@ -81,20 +82,6 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     public TaskOverview handle(GetTaskOverviewInGroupQuery query) {
         var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
         return new TaskOverview("TASK_OVERVIEW", tasks.size(), countByStatus(tasks));
-    }
-
-    @Override
-    public TaskDistribution handle(GetTaskDistributionInGroupQuery query) {
-        var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
-        Map<String, MemberTaskCount> details = new HashMap<>();
-        tasks.stream()
-                .filter(task -> task.getProfile().getUser() != null)
-                .collect(Collectors.groupingBy(
-                        task -> task.getProfile().getUser().getId()))
-                .forEach((userId, memberTasks) -> details.put(
-                        userId.toString(),
-                        new MemberTaskCount(memberName(memberTasks.getFirst()), memberTasks.size())));
-        return new TaskDistribution("TASK_DISTRIBUTION", tasks.size(), details);
     }
 
     @Override
@@ -165,11 +152,23 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
                 .toList();
         Map<String, MemberTaskCount> details = new HashMap<>();
         assigned.stream()
-                .collect(Collectors.groupingBy(task -> task.getProfile().getUser().getId()))
+                .collect(Collectors.groupingBy(
+                        task -> task.getProfile().getUser().getId()))
                 .forEach((userId, memberTasks) -> details.put(
                         userId.toString(),
                         new MemberTaskCount(memberName(memberTasks.getFirst()), memberTasks.size())));
         return new TaskDistribution("TASK_DISTRIBUTION", assigned.size(), details);
+    }
+
+    @Override
+    public TaskTimePassed handle(GetTaskTimePassedForUserInGroupQuery query) {
+        // Mismo criterio de "terminada" que handle(GetTaskTimePassedByIdQuery): COMPLETED o DONE.
+        var average = memberTasks(query.groupId(), query.userId()).stream()
+                .filter(task -> task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.DONE)
+                .mapToLong(Task::getTimePassed)
+                .average()
+                .orElse(0);
+        return new TaskTimePassed(query.userId(), (long) average);
     }
 
     // ---- Una tarea
