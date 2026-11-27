@@ -1,7 +1,7 @@
 import { TaskDistributionChart } from './task-distribution-chart';
 
 describe('TaskDistributionChart', () => {
-  it('configura una gráfica donut con asignación por integrante y total en el centro', () => {
+  it('configura una gráfica de barras con las tareas asignadas por integrante', () => {
     const component = new TaskDistributionChart();
     component.distribution = {
       type: 'TASK_DISTRIBUTION',
@@ -14,12 +14,17 @@ describe('TaskDistributionChart', () => {
 
     component.ngOnChanges();
 
+    expect(component.hasData).toBe(true);
+    expect(component.chartOptions.data).toEqual([
+      { member: 'Ana', tasks: 2 },
+      { member: 'Luis', tasks: 1 },
+    ]);
     expect(component.chartOptions.series).toEqual([
       expect.objectContaining({
-        type: 'donut',
-        angleKey: 'tasks',
-        calloutLabelKey: 'member',
-        innerLabels: expect.arrayContaining([expect.objectContaining({ text: '3' })]),
+        type: 'bar',
+        xKey: 'member',
+        yKey: 'tasks',
+        yName: 'Tareas asignadas',
       }),
     ]);
   });
