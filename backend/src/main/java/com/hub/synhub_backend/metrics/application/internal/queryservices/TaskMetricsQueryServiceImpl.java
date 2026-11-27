@@ -152,12 +152,17 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     }
 
     @Override
-    public TaskTimePassed handle(GetTaskTimePassedForUserInGroupQuery query) {
-        var average = memberTasks(query.groupId(), query.userId()).stream()
-                .mapToLong(Task::getTimePassed)
-                .average()
-                .orElse(0);
-        return new TaskTimePassed(query.userId(), (long) average);
+    public TaskDistribution handle(GetTaskDistributionInGroupQuery query) {
+        var assigned = tasksContextFacade.fetchTasksByGroupId(query.groupId()).stream()
+                .filter(task -> task.getProfile().getUser() != null)
+                .toList();
+        Map<String, MemberTaskCount> details = new HashMap<>();
+        assigned.stream()
+                .collect(Collectors.groupingBy(task -> task.getProfile().getUser().getId()))
+                .forEach((userId, memberTasks) -> details.put(
+                        userId.toString(),
+                        new MemberTaskCount(memberName(memberTasks.getFirst()), memberTasks.size())));
+        return new TaskDistribution("TASK_DISTRIBUTION", assigned.size(), details);
     }
 
     // ---- Una tarea
