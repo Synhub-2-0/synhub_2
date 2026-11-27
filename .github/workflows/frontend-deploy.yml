@@ -38,14 +38,14 @@ jobs:
   deploy:
     needs: build
     # Sin variable AWS_DEPLOY_ROLE_ARN (AWS aún no configurado) se omite el deploy en vez de fallar.
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.AWS_DEPLOY_ROLE_ARN_FRONT != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with: { name: front, path: site }
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN_FRONT }}
           aws-region: ${{ env.AWS_REGION }}
       # El bucket es permanente; CloudFront se enciende/apaga a demanda.
       - run: aws s3 sync site "s3://$BUCKET" --delete
