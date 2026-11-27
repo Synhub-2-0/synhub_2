@@ -11,6 +11,7 @@ import com.hub.synhub_backend.tasks.domain.model.aggregates.Task;
 import com.hub.synhub_backend.tasks.domain.model.valueobjects.TaskStatus;
 import com.hub.synhub_backend.tasks.interfaces.acl.TasksContextFacade;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +32,11 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     private final TasksContextFacade tasksContextFacade;
     private final GroupQueryService groupQueryService;
 
+    private static int countRescheduledTasks(List<Task> tasks) {
+        return (int)
+                tasks.stream().filter(task -> task.getTimesRearranged() > 0).count();
+    }
+
     public TaskMetricsQueryServiceImpl(TasksContextFacade tasksContextFacade, GroupQueryService groupQueryService) {
         this.tasksContextFacade = tasksContextFacade;
         this.groupQueryService = groupQueryService;
@@ -41,8 +47,10 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     }
 
     private static Map<String, Integer> countByStatus(List<Task> tasks) {
-        return tasks.stream()
-                .collect(Collectors.groupingBy(task -> task.getStatus().name(), Collectors.summingInt(task -> 1)));
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (var status : TaskStatus.values()) counts.put(status.name(), 0);
+        tasks.forEach(task -> counts.merge(task.getStatus().name(), 1, Integer::sum));
+        return counts;
     }
 
     private static String memberName(Task task) {
@@ -77,20 +85,6 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     }
 
     @Override
-    public TaskDistribution handle(GetTaskDistributionInGroupQuery query) {
-        var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
-        Map<String, MemberTaskCount> details = new HashMap<>();
-        tasks.stream()
-                .filter(task -> task.getProfile().getUser() != null)
-                .collect(Collectors.groupingBy(
-                        task -> task.getProfile().getUser().getId()))
-                .forEach((userId, memberTasks) -> details.put(
-                        userId.toString(),
-                        new MemberTaskCount(memberName(memberTasks.getFirst()), memberTasks.size())));
-        return new TaskDistribution("TASK_DISTRIBUTION", tasks.size(), details);
-    }
-
-    @Override
     public RescheduledTasks handle(GetRescheduledTasksInGroupQuery query) {
         var tasks = tasksContextFacade.fetchTasksByGroupId(query.groupId());
         var rescheduledUserIds = tasks.stream()
@@ -103,7 +97,7 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
         return new RescheduledTasks(
                 "RESCHEDULED_TASKS",
                 total,
-                Map.of("total", tasks.size(), "rescheduled", (int) total),
+                Map.of("total", tasks.size(), "rescheduled", countRescheduledTasks(tasks)),
                 rescheduledUserIds);
     }
 
@@ -140,7 +134,7 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
         return new RescheduledTasks(
                 "RESCHEDULED_TASKS_MEMBER",
                 total,
-                Map.of("total", tasks.size(), "rescheduled", (int) total),
+                Map.of("total", tasks.size(), "rescheduled", countRescheduledTasks(tasks)),
                 total > 0 ? List.of(query.userId()) : List.of());
     }
 
@@ -152,8 +146,25 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     }
 
     @Override
+    public TaskDistribution handle(GetTaskDistributionInGroupQuery query) {
+        var assigned = tasksContextFacade.fetchTasksByGroupId(query.groupId()).stream()
+                .filter(task -> task.getProfile().getUser() != null)
+                .toList();
+        Map<String, MemberTaskCount> details = new HashMap<>();
+        assigned.stream()
+                .collect(Collectors.groupingBy(
+                        task -> task.getProfile().getUser().getId()))
+                .forEach((userId, memberTasks) -> details.put(
+                        userId.toString(),
+                        new MemberTaskCount(memberName(memberTasks.getFirst()), memberTasks.size())));
+        return new TaskDistribution("TASK_DISTRIBUTION", assigned.size(), details);
+    }
+
+    @Override
     public TaskTimePassed handle(GetTaskTimePassedForUserInGroupQuery query) {
+        // Mismo criterio de "terminada" que handle(GetTaskTimePassedByIdQuery): COMPLETED o DONE.
         var average = memberTasks(query.groupId(), query.userId()).stream()
+                .filter(task -> task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.DONE)
                 .mapToLong(Task::getTimePassed)
                 .average()
                 .orElse(0);

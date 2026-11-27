@@ -75,11 +75,13 @@ class TaskMetricsQueryServiceImplTest {
 
         assertEquals("TASK_OVERVIEW", overview.type());
         assertEquals(3, overview.value());
-        assertEquals(Map.of("IN_PROGRESS", 2, "DONE", 1), overview.details());
+        // El overview incluye todos los estados, también los que están en 0.
+        assertEquals(
+                Map.of("ON_HOLD", 0, "IN_PROGRESS", 2, "COMPLETED", 0, "DONE", 1, "EXPIRED", 0), overview.details());
     }
 
     @Test
-    void rescheduledSumsTimesAndListsMembers() {
+    void rescheduledSumsTimesAndCountsRescheduledTasks() {
         when(tasks.fetchTasksByGroupId(GROUP))
                 .thenReturn(List.of(
                         task(anaProfile, TaskStatus.IN_PROGRESS, 2, Duration.ZERO),
@@ -89,7 +91,8 @@ class TaskMetricsQueryServiceImplTest {
         var rescheduled = service.handle(new GetRescheduledTasksInGroupQuery(GROUP));
 
         assertEquals(3, rescheduled.value());
-        assertEquals(Map.of("total", 3, "rescheduled", 3), rescheduled.details());
+        // "rescheduled" son las tareas reprogramadas (2 de 3), no la suma de reprogramaciones (3).
+        assertEquals(Map.of("total", 3, "rescheduled", 2), rescheduled.details());
         assertEquals(List.of(ANA), rescheduled.rescheduledMemberIds());
     }
 

@@ -58,16 +58,17 @@ public class MetricsController {
                 .getId();
     }
 
-    private void requireGroupMember(Long groupId, UserDetails userDetails) {
+    private Long requireGroupMember(Long groupId, UserDetails userDetails) {
         if (groupsContextFacade.fetchLeaderIdByGroupId(groupId).isEmpty())
             throw new ResourceNotFoundException("Group with id " + groupId + " does not exist");
-        if (!groupsContextFacade.isMember(groupId, requesterId(userDetails)))
+        var requester = requesterId(userDetails);
+        if (!groupsContextFacade.isMember(groupId, requester))
             throw new AccessDeniedException("Only members of the group can see its metrics");
+        return requester;
     }
 
     private void requireLeaderOrSelf(Long groupId, Long userId, UserDetails userDetails) {
-        requireGroupMember(groupId, userDetails);
-        var requester = requesterId(userDetails);
+        var requester = requireGroupMember(groupId, userDetails);
         if (!requester.equals(userId) && !groupsContextFacade.isLeader(groupId, requester))
             throw new AccessDeniedException("Only the leader or the member can see the member's metrics");
         if (!groupsContextFacade.isMember(groupId, userId))
