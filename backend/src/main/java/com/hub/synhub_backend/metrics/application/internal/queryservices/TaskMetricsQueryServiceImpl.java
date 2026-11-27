@@ -31,6 +31,10 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     private final TasksContextFacade tasksContextFacade;
     private final GroupQueryService groupQueryService;
 
+    private static int countRescheduledTasks(List<Task> tasks) {
+        return (int) tasks.stream().filter(task -> task.getTimesRearranged() > 0).count();
+    }
+
     public TaskMetricsQueryServiceImpl(TasksContextFacade tasksContextFacade, GroupQueryService groupQueryService) {
         this.tasksContextFacade = tasksContextFacade;
         this.groupQueryService = groupQueryService;
@@ -103,7 +107,7 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
         return new RescheduledTasks(
                 "RESCHEDULED_TASKS",
                 total,
-                Map.of("total", tasks.size(), "rescheduled", (int) total),
+                Map.of("total", tasks.size(), "rescheduled", countRescheduledTasks(tasks)),
                 rescheduledUserIds);
     }
 
@@ -140,7 +144,7 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
         return new RescheduledTasks(
                 "RESCHEDULED_TASKS_MEMBER",
                 total,
-                Map.of("total", tasks.size(), "rescheduled", (int) total),
+                Map.of("total", tasks.size(), "rescheduled", countRescheduledTasks(tasks)),
                 total > 0 ? List.of(query.userId()) : List.of());
     }
 
