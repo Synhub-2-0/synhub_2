@@ -37,7 +37,8 @@ jobs:
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # Sin variable AWS_DEPLOY_ROLE_ARN (AWS aún no configurado) se omite el deploy en vez de fallar.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.AWS_DEPLOY_ROLE_ARN != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
