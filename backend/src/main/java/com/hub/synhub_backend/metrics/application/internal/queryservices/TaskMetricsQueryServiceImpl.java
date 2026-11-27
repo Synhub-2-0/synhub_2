@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.LinkedHashMap;
 
 /**
  * Métricas de tareas de un grupo o de un integrante dentro de un grupo.
@@ -45,8 +46,10 @@ public class TaskMetricsQueryServiceImpl implements TaskMetricsQueryService {
     }
 
     private static Map<String, Integer> countByStatus(List<Task> tasks) {
-        return tasks.stream()
-                .collect(Collectors.groupingBy(task -> task.getStatus().name(), Collectors.summingInt(task -> 1)));
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (var status : TaskStatus.values()) counts.put(status.name(), 0);
+        tasks.forEach(task -> counts.merge(task.getStatus().name(), 1, Integer::sum));
+        return counts;
     }
 
     private static String memberName(Task task) {
